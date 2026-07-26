@@ -11,17 +11,20 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,21 +33,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalDining
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingBasket
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -70,6 +79,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -165,6 +175,25 @@ private data class SequoShop(
     val products: List<SequoProduct>,
 )
 
+private data class SequoShopType(
+    val key: String,
+    val title: String,
+    val supportLabel: String,
+    val icon: ImageVector,
+    val accent: Color,
+)
+
+private val sequoShopTypes = listOf(
+    SequoShopType("food", "Food", "Hot meals", Icons.Filled.LocalDining, SequoSecondary),
+    SequoShopType("market", "Fresh market", "Produce", Icons.Filled.Storefront, SequoPrimary),
+    SequoShopType("phones", "Phones", "Electronics", Icons.Filled.PhoneAndroid, Color(0xFF4D6F9E)),
+    SequoShopType("water", "Water", "Home packs", Icons.Filled.WaterDrop, Color(0xFF3E8B92)),
+    SequoShopType("tires", "Tires & auto", "Car care", Icons.Filled.Build, Color(0xFF805E48)),
+    SequoShopType("pharmacy", "Pharmacy", "Care items", Icons.Filled.MedicalServices, Color(0xFF6C7E51)),
+    SequoShopType("home", "Home goods", "Daily basics", Icons.Filled.ShoppingBasket, Color(0xFFA77A41)),
+    SequoShopType("bargains", "Bargains", "Negotiate", Icons.Filled.LocalOffer, Color(0xFF9A5A68)),
+)
+
 private val sequoShops = listOf(
     SequoShop(
         name = "Chez Ramatou Attieke",
@@ -224,7 +253,7 @@ private val sequoShops = listOf(
     SequoShop(
         name = "Hedzranawoe Phones",
         area = "Hedzranawoe",
-        kind = "General goods",
+        kind = "Phones & electronics",
         distanceKm = 5.6,
         eta = "Tomorrow",
         photoStatus = "Live photos verified",
@@ -250,9 +279,9 @@ private val sequoShops = listOf(
         ),
     ),
     SequoShop(
-        name = "Akodessewa Maison Sante",
+        name = "Akodessewa Eau Service",
         area = "Akodessewa",
-        kind = "Home essentials",
+        kind = "Water & household",
         distanceKm = 7.2,
         eta = "Today 18:10",
         photoStatus = "Generic bottle uploads allowed",
@@ -268,11 +297,93 @@ private val sequoShops = listOf(
                 optionHint = "Voltic / room temperature",
             ),
             SequoProduct(
+                name = "Liquide vaisselle 1L",
+                detail = "Seller camera photo before checkout",
+                priceCfa = 1500,
+                label = "Home",
+                optionHint = "Lemon scent / sealed bottle",
+            ),
+        ),
+    ),
+    SequoShop(
+        name = "Agbalepedo Pneus Express",
+        area = "Agbalepedo",
+        kind = "Tires & auto",
+        distanceKm = 6.4,
+        eta = "Today 17:40",
+        photoStatus = "Tread photo required",
+        openStatus = "Open until 19:30",
+        rating = "4.4",
+        consolidation = "Auto goods only",
+        products = listOf(
+            SequoProduct(
+                name = "Pneu neuf 185/65 R15",
+                detail = "Real-time sidewall and tread photos",
+                priceCfa = 38500,
+                label = "Auto",
+                optionHint = "Brand photo / DOT date visible",
+                bargainNote = "Historical minimum: 35 000 CFA",
+            ),
+            SequoProduct(
+                name = "Kit meche tubeless",
+                detail = "Small auto repair kit for emergency punctures",
+                priceCfa = 4500,
+                label = "Auto",
+                optionHint = "5 strips / tools included",
+            ),
+        ),
+    ),
+    SequoShop(
+        name = "Pharmacie du Golfe",
+        area = "Be-Kpota",
+        kind = "Pharmacy & care",
+        distanceKm = 4.7,
+        eta = "35 min",
+        photoStatus = "Box photo before payment",
+        openStatus = "Open until 23:00",
+        rating = "4.7",
+        consolidation = "Care items sealed",
+        products = listOf(
+            SequoProduct(
                 name = "Thermometre digital",
                 detail = "Real seller camera photo before checkout",
                 priceCfa = 6500,
-                label = "Live",
+                label = "Care",
                 optionHint = "Battery included",
+            ),
+            SequoProduct(
+                name = "Gel hydroalcoolique 500ml",
+                detail = "Generic care item with sealed bottle photo",
+                priceCfa = 2200,
+                label = "Care",
+                optionHint = "Pump bottle / sealed",
+            ),
+        ),
+    ),
+    SequoShop(
+        name = "Baguida Maison Express",
+        area = "Baguida",
+        kind = "Home goods",
+        distanceKm = 9.1,
+        eta = "Tomorrow",
+        photoStatus = "Live photos required",
+        openStatus = "Ships today",
+        rating = "4.3",
+        consolidation = "Single package eligible",
+        products = listOf(
+            SequoProduct(
+                name = "Ampoule LED 12W",
+                detail = "Box and wattage photo before payment",
+                priceCfa = 1800,
+                label = "Home",
+                optionHint = "White light / E27",
+            ),
+            SequoProduct(
+                name = "Multiprise 4 ports",
+                detail = "Seller camera photo of socket type",
+                priceCfa = 5500,
+                label = "Home",
+                optionHint = "Cable 1.5m / switch",
             ),
         ),
     ),
@@ -471,16 +582,34 @@ private val recentOrders = listOf(
     ),
 )
 
-private val quickCategories = listOf("Food now", "Fresh market", "Phones", "Water", "Bargains")
+private fun shopTypeFor(key: String): SequoShopType =
+    sequoShopTypes.firstOrNull { it.key == key } ?: sequoShopTypes.first()
 
-private fun featuredProductsFor(category: String): List<Pair<SequoShop, SequoProduct>> =
-    when (category) {
-        "Food now" -> listOf(sequoShops[0] to sequoShops[0].products[0], sequoShops[0] to sequoShops[0].products[1])
-        "Fresh market" -> listOf(sequoShops[1] to sequoShops[1].products[1], sequoShops[1] to sequoShops[1].products[0])
-        "Phones" -> listOf(sequoShops[2] to sequoShops[2].products[0], sequoShops[2] to sequoShops[2].products[1])
-        "Water" -> listOf(sequoShops[3] to sequoShops[3].products[0], sequoShops[3] to sequoShops[3].products[1])
-        else -> listOf(sequoShops[1] to sequoShops[1].products[0], sequoShops[2] to sequoShops[2].products[1])
+private fun shopsForType(typeKey: String): List<SequoShop> =
+    when (typeKey) {
+        "food" -> sequoShops.filter { it.kind.contains("Food", ignoreCase = true) }
+        "market" -> sequoShops.filter { it.kind.contains("Market", ignoreCase = true) }
+        "phones" -> sequoShops.filter { it.kind.contains("Phone", ignoreCase = true) || it.kind.contains("electronics", ignoreCase = true) }
+        "water" -> sequoShops.filter { it.kind.contains("Water", ignoreCase = true) }
+        "tires" -> sequoShops.filter { it.kind.contains("Tires", ignoreCase = true) || it.kind.contains("auto", ignoreCase = true) }
+        "pharmacy" -> sequoShops.filter { it.kind.contains("Pharmacy", ignoreCase = true) || it.kind.contains("care", ignoreCase = true) }
+        "home" -> sequoShops.filter { it.kind.contains("Home", ignoreCase = true) || it.kind.contains("household", ignoreCase = true) }
+        "bargains" -> sequoShops.filter { shop -> shop.products.any { it.bargainNote != null } }
+        else -> sequoShops
     }
+
+private fun featuredProductsFor(typeKey: String): List<Pair<SequoShop, SequoProduct>> {
+    val pairs = if (typeKey == "bargains") {
+        sequoShops.flatMap { shop ->
+            shop.products.filter { it.bargainNote != null }.map { product -> shop to product }
+        }
+    } else {
+        shopsForType(typeKey).flatMap { shop ->
+            shop.products.map { product -> shop to product }
+        }
+    }
+    return pairs.take(3)
+}
 
 @Composable
 @Preview
@@ -554,54 +683,56 @@ private fun HomeContent(
     onDestinationSelected: (SequoSection) -> Unit,
     onAddProduct: () -> Unit,
 ) {
-    var selectedCategory by remember { mutableStateOf(quickCategories.first()) }
+    var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
+    val selectedType = shopTypeFor(selectedTypeKey)
+    val selectedShops = shopsForType(selectedTypeKey)
+    val nearestShop = selectedShops.minByOrNull { it.distanceKm } ?: sequoShops.first()
 
     HomeAppBar()
     SequoHeroCard(
-        eyebrow = "Lome today",
-        title = "Tokoin lunch, Assigame shopping, Hedzranawoe tech.",
-        body = "One customer app for hot meals, fresh market errands, and general goods, with delivery fees visible before checkout.",
+        eyebrow = "Lome now",
+        title = "Food. Market. Goods.",
+        body = "Pick a shop, see the fee, pay mobile money.",
         primaryLabel = "Shop Lome",
         secondaryLabel = "Track order",
         onPrimary = { onDestinationSelected(SequoSection.Markets) },
         onSecondary = { onDestinationSelected(SequoSection.Orders) },
     )
     SequoSearchCard()
-    CategoryRail(
-        categories = quickCategories,
-        selectedCategory = selectedCategory,
-        onCategorySelected = { selectedCategory = it },
+    ShopTypeRail(
+        types = sequoShopTypes,
+        selectedTypeKey = selectedTypeKey,
+        onTypeSelected = { selectedTypeKey = it },
     )
     SequoMetricRow(
-        leftValue = "1.8 km",
-        leftLabel = "Chez Ramatou",
-        rightValue = "400 CFA",
-        rightLabel = "Tokoin delivery",
+        leftValue = formatDistance(nearestShop.distanceKm),
+        leftLabel = nearestShop.area,
+        rightValue = formatCfa(baseDelivery(nearestShop.distanceKm)),
+        rightLabel = "delivery fee",
     )
-    SequoSectionCard(title = "Open around you", action = "Tokoin radius") {
-        sequoShops.take(3).forEach { shop ->
+    HomeSignalRow()
+    SequoSectionCard(title = "${selectedType.title} shops", action = "nearby") {
+        selectedShops.take(3).forEach { shop ->
             ShopSummaryRow(shop = shop)
         }
     }
-    SequoSectionCard(title = "Ready to add", action = selectedCategory) {
-        featuredProductsFor(selectedCategory).forEach { (shop, product) ->
+    SequoSectionCard(title = "Popular now", action = selectedType.supportLabel) {
+        featuredProductsFor(selectedTypeKey).forEach { (shop, product) ->
             CompactProductCard(shop, product, onAddProduct)
         }
-    }
-    SequoSectionCard(title = "Sequo promises", action = "before payment") {
-        RuleRow("Live seller camera photos", "Gallery uploads blocked except generic water and sealed basics.")
-        RuleRow("Yas Togo or Moov Africa", "Payment is validated before the order is completed.")
-        RuleRow("72h Point de Relai returns", "Refund starts after Sequo inspection accepts the product.")
     }
 }
 
 @Composable
 private fun MarketsContent(onAddProduct: () -> Unit) {
+    var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
     var selectedArea by remember { mutableStateOf("All Lome") }
+    val selectedType = shopTypeFor(selectedTypeKey)
+    val shopsByType = shopsForType(selectedTypeKey)
     val visibleShops = if (selectedArea == "All Lome") {
-        sequoShops
+        shopsByType
     } else {
-        sequoShops.filter { shop ->
+        shopsByType.filter { shop ->
             shop.area.contains(selectedArea) || shop.name.contains(selectedArea)
         }
     }
@@ -623,11 +754,16 @@ private fun MarketsContent(onAddProduct: () -> Unit) {
     )
     SequoIntroCard(
         eyebrow = "Markets",
-        title = "Browse real sellers across Lome.",
-        subtitle = "Every shop card shows distance, delivery fee, ETA, live photo rules, bargaining status, and whether Sequo can group the pickup.",
+        title = "${selectedType.title} shops in Lome.",
+        subtitle = "Distance, fee, photos, and pickup grouping are visible before checkout.",
+    )
+    ShopTypeRail(
+        types = sequoShopTypes,
+        selectedTypeKey = selectedTypeKey,
+        onTypeSelected = { selectedTypeKey = it },
     )
     CategoryRail(
-        categories = listOf("All Lome", "Tokoin", "Assigame", "Hedzranawoe", "Akodessewa"),
+        categories = listOf("All Lome", "Tokoin", "Assigame", "Hedzranawoe", "Akodessewa", "Agbalepedo", "Be-Kpota", "Baguida"),
         selectedCategory = selectedArea,
         onCategorySelected = { selectedArea = it },
     )
@@ -751,8 +887,8 @@ private fun OrderDetailScreen(order: SequoOrder, onBack: () -> Unit) {
     )
     when (selectedTab) {
         OrderDetailTab.Status -> {
-            SequoSectionCard(title = "Timeline", action = "${timelineEvents.size} steps") {
-                OrderTimeline(timelineEvents)
+            SequoSectionCard(title = "Timeline") {
+                OrderTimeline(events = timelineEvents, timelineKey = order.id)
             }
             if (order.state.shouldShowPickupCode) {
                 SequoSectionCard(title = "Pickup validation", action = order.pickupCode) {
@@ -965,6 +1101,127 @@ private fun SequoSearchCard() {
 }
 
 @Composable
+private fun ShopTypeRail(
+    types: List<SequoShopType>,
+    selectedTypeKey: String,
+    onTypeSelected: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SequoInlineSectionLabel("Shop type")
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            types.forEach { type ->
+                ShopTypeCard(
+                    type = type,
+                    selected = type.key == selectedTypeKey,
+                    onClick = { onTypeSelected(type.key) },
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun ShopTypeCard(
+    type: SequoShopType,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val alpha = if (selected) 1f else 0.72f
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .width(112.dp)
+            .height(126.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = type.accent.copy(alpha = if (selected) 0.20f else 0.12f),
+        border = BorderStroke(1.dp, type.accent.copy(alpha = if (selected) 0.38f else 0.18f)),
+    ) {
+        Box {
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 10.dp)
+                        .width(38.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(type.accent),
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = type.accent.copy(alpha = if (selected) 0.25f else 0.16f),
+                ) {
+                    Box(
+                        modifier = Modifier.size(44.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = type.icon,
+                            contentDescription = null,
+                            tint = type.accent.copy(alpha = alpha),
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+                Text(
+                    type.title,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (selected) 0.88f else 0.70f),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    type.supportLabel,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (selected) 0.62f else 0.48f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SequoInlineSectionLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+        )
+    }
+}
+
+@Composable
 private fun CategoryRail(
     categories: List<String>,
     selectedCategory: String,
@@ -1021,14 +1278,48 @@ private fun OrderDetailTabs(
     selectedTab: OrderDetailTab,
     onTabSelected: (OrderDetailTab) -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OrderDetailTab.values().forEach { tab ->
-            SequoFilterChip(
-                label = tab.label,
-                selected = tab == selectedTab,
-                onClick = { onTabSelected(tab) },
-                modifier = Modifier.weight(1f),
-            )
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(54.dp).padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OrderDetailTab.values().forEach { tab ->
+                val selected = tab == selectedTab
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { onTabSelected(tab) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(top = 8.dp, bottom = 5.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            tab.label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(width = 34.dp, height = 3.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1175,6 +1466,34 @@ private fun MetricCard(value: String, label: String, modifier: Modifier = Modifi
 }
 
 @Composable
+private fun HomeSignalRow() {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        HomeSignalPill(Icons.Filled.PhotoCamera, "Live photo", SequoPrimary, Modifier.weight(1f))
+        HomeSignalPill(Icons.Filled.Payments, "Yas/Moov", SequoSecondary, Modifier.weight(1f))
+        HomeSignalPill(Icons.Filled.CheckCircle, "72h relai", SequoAccent, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun HomeSignalPill(icon: ImageVector, label: String, color: Color, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = color.copy(alpha = 0.13f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.18f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 9.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(17.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
 private fun SequoIntroCard(eyebrow: String, title: String, subtitle: String) {
     SequoCard(shape = RoundedCornerShape(24.dp)) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -1196,12 +1515,18 @@ private fun SequoIntroCard(eyebrow: String, title: String, subtitle: String) {
 }
 
 @Composable
-private fun SequoSectionCard(title: String, action: String, content: @Composable ColumnScope.() -> Unit) {
+private fun SequoSectionCard(
+    title: String,
+    action: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     SequoCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text(action, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                if (!action.isNullOrBlank()) {
+                    Text(action, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
             }
             content()
         }
@@ -1213,7 +1538,7 @@ private fun SequoShopCard(shop: SequoShop, onAddProduct: () -> Unit) {
     SequoCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-                ShopMark(shop.name)
+                SequoIconMark(Icons.Filled.Storefront, MaterialTheme.colorScheme.primary, Modifier.size(52.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(shop.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("${shop.area} / ${shop.kind}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1236,14 +1561,42 @@ private fun SequoShopCard(shop: SequoShop, onAddProduct: () -> Unit) {
 
 @Composable
 private fun ShopSummaryRow(shop: SequoShop) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        ShopMark(shop.name)
-        Column(Modifier.weight(1f)) {
-            Text(shop.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("${shop.area} / ${formatDistance(shop.distanceKm)} / ${formatCfa(baseDelivery(shop.distanceKm))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                SequoIconMark(Icons.Filled.Storefront, MaterialTheme.colorScheme.primary, Modifier.size(46.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(shop.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("${shop.area} / ${shop.kind}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                RatingMark(shop.rating)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
+                MetaPill(formatCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
+                MetaPill(shop.eta, SequoAccent)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                ShopStatusDot()
+                Text(shop.openStatus, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(shop.photoStatus, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
-        MetaPill(shop.eta, SequoAccent)
     }
+}
+
+@Composable
+private fun ShopStatusDot() {
+    Box(
+        modifier = Modifier
+            .size(9.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary),
+    )
 }
 
 @Composable
@@ -1789,12 +2142,52 @@ private fun OrderItemDetailRow(item: OrderItem) {
 }
 
 @Composable
-private fun OrderTimeline(events: List<OrderTimelineEvent>) {
+private fun OrderTimeline(events: List<OrderTimelineEvent>, timelineKey: String) {
+    var expanded by remember(timelineKey) { mutableStateOf(false) }
+    val collapsedCount = 3
+    val visibleEvents = if (expanded || events.size <= collapsedCount) {
+        events
+    } else {
+        events.take(collapsedCount)
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        events.forEachIndexed { index, event ->
+        visibleEvents.forEachIndexed { index, event ->
             OrderTimelineRow(
                 event = event,
-                isLast = index == events.lastIndex,
+                isLast = index == visibleEvents.lastIndex,
+            )
+        }
+        if (events.size > collapsedCount) {
+            TimelineExpandButton(
+                expanded = expanded,
+                hiddenCount = events.size - collapsedCount,
+                onClick = { expanded = !expanded },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimelineExpandButton(
+    expanded: Boolean,
+    hiddenCount: Int,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(42.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = if (expanded) "Show fewer stages" else "Show $hiddenCount older stages",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
