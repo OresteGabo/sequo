@@ -98,7 +98,7 @@ Recommended states:
 | --- | --- |
 | Verified real-time photo | Strong trust badge |
 | Generic approved image | Neutral badge for generic sealed items |
-| Missing photo | Placeholder and lower trust |
+| Missing photo | Neutral empty image treatment and lower trust |
 | Stale or unverified photo | Warning/neutral trust cue |
 
 Do not show a photo as verified because it looks realistic. Verification must come from capture metadata or backend policy.
@@ -238,4 +238,3 @@ Prefer reusable components:
 - `ErrorState`.
 
 Domain logic should live outside composables. Composables should render backend-confirmed state and dispatch user events to view models.
-
