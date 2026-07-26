@@ -1,7 +1,13 @@
 package dev.orestegabo.sequo
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +27,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
@@ -60,6 +68,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -67,54 +76,58 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.domain.DeliveryPricingInput
 import dev.orestegabo.sequo.domain.calculateDeliveryPricing
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.painterResource
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.moov_africa_logo
+import sequo.shared.generated.resources.yas_togo_logo
 
-private val KazePrimary = Color(0xFF2F6970)
-private val KazeSecondary = Color(0xFFB4874F)
-private val KazeAccent = Color(0xFFD8C6A3)
-private val KazeSurface = Color(0xFFFCF8F1)
-private val KazeBackground = Color(0xFFF3EEE5)
-private val KazeSurfaceVariant = Color(0xFFF0EAE0)
-private val KazeOnSurface = Color(0xFF1A1712)
-private val KazeOnSurfaceVariant = Color(0xFF5E5A52)
-private val KazeOutline = Color(0xFFD4CABB)
+private val SequoPrimary = Color(0xFF2F6970)
+private val SequoSecondary = Color(0xFFB4874F)
+private val SequoAccent = Color(0xFFD8C6A3)
+private val SequoSurface = Color(0xFFFCF8F1)
+private val SequoBackground = Color(0xFFF3EEE5)
+private val SequoSurfaceVariant = Color(0xFFF0EAE0)
+private val SequoOnSurface = Color(0xFF1A1712)
+private val SequoOnSurfaceVariant = Color(0xFF5E5A52)
+private val SequoOutline = Color(0xFFD4CABB)
 
-private val kazeColorScheme = lightColorScheme(
-    primary = KazePrimary,
+private val sequoColorScheme = lightColorScheme(
+    primary = SequoPrimary,
     onPrimary = Color.White,
-    secondary = KazeSecondary,
+    secondary = SequoSecondary,
     onSecondary = Color.White,
-    tertiary = KazeAccent,
-    onTertiary = KazeOnSurface,
-    surface = KazeSurface,
-    onSurface = KazeOnSurface,
-    background = KazeBackground,
-    onBackground = KazeOnSurface,
-    primaryContainer = KazePrimary.copy(alpha = 0.12f),
-    onPrimaryContainer = KazePrimary,
-    secondaryContainer = KazeSecondary.copy(alpha = 0.14f),
+    tertiary = SequoAccent,
+    onTertiary = SequoOnSurface,
+    surface = SequoSurface,
+    onSurface = SequoOnSurface,
+    background = SequoBackground,
+    onBackground = SequoOnSurface,
+    primaryContainer = SequoPrimary.copy(alpha = 0.12f),
+    onPrimaryContainer = SequoPrimary,
+    secondaryContainer = SequoSecondary.copy(alpha = 0.14f),
     onSecondaryContainer = Color(0xFF3A2811),
-    tertiaryContainer = KazeAccent.copy(alpha = 0.20f),
+    tertiaryContainer = SequoAccent.copy(alpha = 0.20f),
     onTertiaryContainer = Color(0xFF4E3F21),
-    surfaceVariant = KazeSurfaceVariant,
-    onSurfaceVariant = KazeOnSurfaceVariant,
-    outline = KazeOutline,
+    surfaceVariant = SequoSurfaceVariant,
+    onSurfaceVariant = SequoOnSurfaceVariant,
+    outline = SequoOutline,
 )
 
-private data class KazeUiPalette(
-    val ambientBottom: Color = KazeSurfaceVariant,
-    val ambientLineStrong: Color = KazePrimary.copy(alpha = 0.13f),
-    val ambientLineSoft: Color = KazeAccent.copy(alpha = 0.10f),
-    val ambientCirclePrimary: Color = KazePrimary.copy(alpha = 0.08f),
-    val ambientCircleSecondary: Color = KazeAccent.copy(alpha = 0.07f),
-    val ambientPanelTop: Color = KazePrimary.copy(alpha = 0.035f),
-    val ambientPanelBottom: Color = KazeAccent.copy(alpha = 0.028f),
-    val floatingShell: Color = KazeSurface,
-    val floatingShellBorder: Color = KazeSecondary.copy(alpha = 0.20f),
+private data class SequoUiPalette(
+    val ambientBottom: Color = SequoSurfaceVariant,
+    val ambientLineStrong: Color = SequoPrimary.copy(alpha = 0.13f),
+    val ambientLineSoft: Color = SequoAccent.copy(alpha = 0.10f),
+    val ambientCirclePrimary: Color = SequoPrimary.copy(alpha = 0.08f),
+    val ambientCircleSecondary: Color = SequoAccent.copy(alpha = 0.07f),
+    val ambientPanelTop: Color = SequoPrimary.copy(alpha = 0.035f),
+    val ambientPanelBottom: Color = SequoAccent.copy(alpha = 0.028f),
+    val floatingShell: Color = SequoSurface,
+    val floatingShellBorder: Color = SequoSecondary.copy(alpha = 0.20f),
 )
 
-private val kazeUi = KazeUiPalette()
+private val sequoUi = SequoUiPalette()
 
-private enum class KazeSection(val label: String, val icon: ImageVector) {
+private enum class SequoSection(val label: String, val icon: ImageVector) {
     Markets("Markets", Icons.Filled.Storefront),
     Basket("Basket", Icons.Filled.ShoppingBasket),
     Home("Sequo", Icons.Filled.Home),
@@ -122,12 +135,12 @@ private enum class KazeSection(val label: String, val icon: ImageVector) {
     Account("Account", Icons.Filled.Person),
 }
 
-private val kazePrimaryDestinations = listOf(
-    KazeSection.Markets,
-    KazeSection.Basket,
-    KazeSection.Home,
-    KazeSection.Orders,
-    KazeSection.Account,
+private val sequoPrimaryDestinations = listOf(
+    SequoSection.Markets,
+    SequoSection.Basket,
+    SequoSection.Home,
+    SequoSection.Orders,
+    SequoSection.Account,
 )
 
 private data class SequoProduct(
@@ -271,6 +284,56 @@ private data class BasketEntry(
     val quantity: Int,
 )
 
+private enum class SequoOrderState(val label: String) {
+    Ordered("Ordered"),
+    PaymentPending("Payment pending"),
+    Paid("Paid"),
+    MerchantAccepted("Merchant accepted"),
+    MerchantDeclined("Merchant declined"),
+    Preparing("Preparing"),
+    ReadyForPickup("Ready for pickup"),
+    PickedUp("Picked up"),
+    InDelivery("In delivery"),
+    DeliveryAttempted("Delivery attempted"),
+    Delivered("Delivered"),
+    ReturnRequested("Return requested"),
+    ReturnInInspection("Return inspection"),
+    RefundIssued("Refund issued"),
+    ReturnRejected("Return rejected"),
+    CancelledByCustomer("Cancelled by customer"),
+    CancelledByMerchant("Cancelled by merchant"),
+    CancelledBySequo("Cancelled by Sequo"),
+}
+
+private data class OrderItem(
+    val name: String,
+    val quantity: Int,
+)
+
+private data class OrderTimelineEvent(
+    val state: SequoOrderState,
+    val time: String,
+    val detail: String,
+    val isCurrent: Boolean,
+)
+
+private enum class OrderDetailTab(val label: String) {
+    Status("Status"),
+    Details("Details"),
+}
+
+private data class SequoOrder(
+    val id: String,
+    val sellers: List<String>,
+    val items: List<OrderItem>,
+    val state: SequoOrderState,
+    val dateLine: String,
+    val note: String,
+    val amountCfa: Int,
+    val paymentMethod: String,
+    val pickupCode: String,
+)
+
 private data class AppBarAction(
     val icon: ImageVector,
     val contentDescription: String,
@@ -282,6 +345,130 @@ private val sequoBasket = listOf(
     BasketEntry(sequoShops[0], sequoShops[0].products[0], 1),
     BasketEntry(sequoShops[1], sequoShops[1].products[0], 1),
     BasketEntry(sequoShops[3], sequoShops[3].products[0], 2),
+)
+
+private val recentOrders = listOf(
+    SequoOrder(
+        id = "SQ-2419",
+        sellers = listOf("Chez Ramatou Attieke"),
+        items = listOf(OrderItem("Attieke poisson braise", 1), OrderItem("Bissap frais", 2)),
+        state = SequoOrderState.InDelivery,
+        dateLine = "Arriving in 9 min",
+        note = "Rider validated pickup at Tokoin and is heading to Pharmacie des Etoiles.",
+        amountCfa = 5600,
+        paymentMethod = "Yas Togo",
+        pickupCode = pickupCodeFor("SQ-2419"),
+    ),
+    SequoOrder(
+        id = "SQ-2418",
+        sellers = listOf("Akodessewa Maison Sante"),
+        items = listOf(OrderItem("Thermometre digital", 1), OrderItem("Eau minerale 1.5L", 2)),
+        state = SequoOrderState.PickedUp,
+        dateLine = "Picked up 12:44",
+        note = "Pickup code confirmed; package is being consolidated at Sequo for the Tokoin route.",
+        amountCfa = 9100,
+        paymentMethod = "Moov Africa",
+        pickupCode = pickupCodeFor("SQ-2418"),
+    ),
+    SequoOrder(
+        id = "SQ-2417",
+        sellers = listOf("Grand Marche Assigame"),
+        items = listOf(OrderItem("Tomato and onion basket", 1), OrderItem("Pagne wax 6 yards", 1)),
+        state = SequoOrderState.ReadyForPickup,
+        dateLine = "Ready since 12:31",
+        note = "Merchant photos accepted; Sequo rider is being assigned for Assigame pickup.",
+        amountCfa = 22700,
+        paymentMethod = "Yas Togo",
+        pickupCode = pickupCodeFor("SQ-2417"),
+    ),
+    SequoOrder(
+        id = "SQ-2416",
+        sellers = listOf("Hedzranawoe Phones"),
+        items = listOf(OrderItem("Tecno Spark 20 case", 1), OrderItem("Oraimo charger 20W", 1)),
+        state = SequoOrderState.Preparing,
+        dateLine = "Preparing now",
+        note = "Merchant accepted the items and is taking required real-time product photos.",
+        amountCfa = 10900,
+        paymentMethod = "Moov Africa",
+        pickupCode = pickupCodeFor("SQ-2416"),
+    ),
+    SequoOrder(
+        id = "SQ-2415",
+        sellers = listOf("Be-Kpota Superette"),
+        items = listOf(OrderItem("Pack eau minerale", 1)),
+        state = SequoOrderState.MerchantAccepted,
+        dateLine = "Accepted 12:09",
+        note = "Generic water product accepted; gallery restriction does not apply.",
+        amountCfa = 3900,
+        paymentMethod = "Yas Togo",
+        pickupCode = pickupCodeFor("SQ-2415"),
+    ),
+    SequoOrder(
+        id = "SQ-2414",
+        sellers = listOf("Adidogome Bazar"),
+        items = listOf(OrderItem("Lampe rechargeable", 1)),
+        state = SequoOrderState.Paid,
+        dateLine = "Paid 11:58",
+        note = "Payment validated; waiting for merchant acceptance and availability check.",
+        amountCfa = 8200,
+        paymentMethod = "Moov Africa",
+        pickupCode = pickupCodeFor("SQ-2414"),
+    ),
+    SequoOrder(
+        id = "SQ-2408",
+        sellers = listOf("Grand Marche Assigame", "Hedzranawoe Phones"),
+        items = listOf(OrderItem("Pagne wax 6 yards", 1), OrderItem("Oraimo charger 20W", 1)),
+        state = SequoOrderState.Delivered,
+        dateLine = "Delivered yesterday 18:40",
+        note = "Return possible at Point de Relai Tokoin until tomorrow 18:40.",
+        amountCfa = 27000,
+        paymentMethod = "Yas Togo",
+        pickupCode = pickupCodeFor("SQ-2408"),
+    ),
+    SequoOrder(
+        id = "SQ-2397",
+        sellers = listOf("Chez Ramatou Attieke"),
+        items = listOf(OrderItem("Attieke poisson braise", 1)),
+        state = SequoOrderState.Delivered,
+        dateLine = "Delivered Friday 13:05",
+        note = "Food order closed after delivery confirmation.",
+        amountCfa = 4600,
+        paymentMethod = "Yas Togo",
+        pickupCode = pickupCodeFor("SQ-2397"),
+    ),
+    SequoOrder(
+        id = "SQ-2388",
+        sellers = listOf("Akodessewa Maison Sante"),
+        items = listOf(OrderItem("Thermometre digital", 1)),
+        state = SequoOrderState.ReturnInInspection,
+        dateLine = "Dropped at Point de Relai today",
+        note = "Sequo inspection pending before refund is released.",
+        amountCfa = 7100,
+        paymentMethod = "Moov Africa",
+        pickupCode = pickupCodeFor("SQ-2388"),
+    ),
+    SequoOrder(
+        id = "SQ-2374",
+        sellers = listOf("Hedzranawoe Phones"),
+        items = listOf(OrderItem("Tecno Spark 20 case", 1)),
+        state = SequoOrderState.RefundIssued,
+        dateLine = "Return accepted Monday",
+        note = "Refund sent back to Moov Africa after inspection.",
+        amountCfa = 3900,
+        paymentMethod = "Moov Africa",
+        pickupCode = pickupCodeFor("SQ-2374"),
+    ),
+    SequoOrder(
+        id = "SQ-2360",
+        sellers = listOf("Grand Marche Assigame"),
+        items = listOf(OrderItem("Tomato and onion basket", 1), OrderItem("Pagne wax 6 yards", 1)),
+        state = SequoOrderState.CancelledBySequo,
+        dateLine = "Cancelled before pickup",
+        note = "Seller did not confirm the required live camera photo.",
+        amountCfa = 22700,
+        paymentMethod = "Yas Togo",
+        pickupCode = pickupCodeFor("SQ-2360"),
+    ),
 )
 
 private val quickCategories = listOf("Food now", "Fresh market", "Phones", "Water", "Bargains")
@@ -298,21 +485,21 @@ private fun featuredProductsFor(category: String): List<Pair<SequoShop, SequoPro
 @Composable
 @Preview
 fun App() {
-    MaterialTheme(colorScheme = kazeColorScheme) {
+    MaterialTheme(colorScheme = sequoColorScheme) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            SequoKazeShell()
+            SequoShell()
         }
     }
 }
 
 @Composable
-private fun SequoKazeShell() {
-    var currentDestination by remember { mutableStateOf(KazeSection.Home) }
+private fun SequoShell() {
+    var currentDestination by remember { mutableStateOf(SequoSection.Home) }
     var extraBasketItems by remember { mutableStateOf(0) }
     val basketCount = sequoBasket.sumOf { it.quantity } + extraBasketItems
 
     Box(modifier = Modifier.fillMaxSize()) {
-        KazeAmbientBackground(modifier = Modifier.fillMaxSize())
+        SequoAmbientBackground(modifier = Modifier.fillMaxSize())
         SequoContentStage(
             currentDestination = currentDestination,
             onDestinationSelected = { currentDestination = it },
@@ -320,7 +507,7 @@ private fun SequoKazeShell() {
             onAddProduct = { extraBasketItems += 1 },
             modifier = Modifier.fillMaxSize(),
         )
-        KazeBottomBar(
+        SequoBottomBar(
             currentDestination = currentDestination,
             onDestinationSelected = { currentDestination = it },
             pendingBasketCount = basketCount,
@@ -331,25 +518,25 @@ private fun SequoKazeShell() {
 
 @Composable
 private fun SequoContentStage(
-    currentDestination: KazeSection,
-    onDestinationSelected: (KazeSection) -> Unit,
+    currentDestination: SequoSection,
+    onDestinationSelected: (SequoSection) -> Unit,
     extraBasketItems: Int,
     onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    KazeScreenColumn(modifier = modifier) {
+    SequoScreenColumn(modifier = modifier) {
         when (currentDestination) {
-            KazeSection.Home -> HomeContent(onDestinationSelected, onAddProduct)
-            KazeSection.Markets -> MarketsContent(onAddProduct)
-            KazeSection.Basket -> BasketContent(extraBasketItems)
-            KazeSection.Orders -> OrdersContent()
-            KazeSection.Account -> AccountContent()
+            SequoSection.Home -> HomeContent(onDestinationSelected, onAddProduct)
+            SequoSection.Markets -> MarketsContent(onAddProduct)
+            SequoSection.Basket -> BasketContent(extraBasketItems)
+            SequoSection.Orders -> OrdersContent()
+            SequoSection.Account -> AccountContent()
         }
     }
 }
 
 @Composable
-private fun KazeScreenColumn(
+private fun SequoScreenColumn(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -364,44 +551,44 @@ private fun KazeScreenColumn(
 
 @Composable
 private fun HomeContent(
-    onDestinationSelected: (KazeSection) -> Unit,
+    onDestinationSelected: (SequoSection) -> Unit,
     onAddProduct: () -> Unit,
 ) {
     var selectedCategory by remember { mutableStateOf(quickCategories.first()) }
 
     HomeAppBar()
-    KazeHeroCard(
+    SequoHeroCard(
         eyebrow = "Lome today",
         title = "Tokoin lunch, Assigame shopping, Hedzranawoe tech.",
         body = "One customer app for hot meals, fresh market errands, and general goods, with delivery fees visible before checkout.",
         primaryLabel = "Shop Lome",
         secondaryLabel = "Track order",
-        onPrimary = { onDestinationSelected(KazeSection.Markets) },
-        onSecondary = { onDestinationSelected(KazeSection.Orders) },
+        onPrimary = { onDestinationSelected(SequoSection.Markets) },
+        onSecondary = { onDestinationSelected(SequoSection.Orders) },
     )
-    KazeSearchCard()
+    SequoSearchCard()
     CategoryRail(
         categories = quickCategories,
         selectedCategory = selectedCategory,
         onCategorySelected = { selectedCategory = it },
     )
-    KazeMetricRow(
+    SequoMetricRow(
         leftValue = "1.8 km",
         leftLabel = "Chez Ramatou",
         rightValue = "400 CFA",
         rightLabel = "Tokoin delivery",
     )
-    KazeSectionCard(title = "Open around you", action = "Tokoin radius") {
+    SequoSectionCard(title = "Open around you", action = "Tokoin radius") {
         sequoShops.take(3).forEach { shop ->
             ShopSummaryRow(shop = shop)
         }
     }
-    KazeSectionCard(title = "Ready to add", action = selectedCategory) {
+    SequoSectionCard(title = "Ready to add", action = selectedCategory) {
         featuredProductsFor(selectedCategory).forEach { (shop, product) ->
             CompactProductCard(shop, product, onAddProduct)
         }
     }
-    KazeSectionCard(title = "Sequo promises", action = "before payment") {
+    SequoSectionCard(title = "Sequo promises", action = "before payment") {
         RuleRow("Live seller camera photos", "Gallery uploads blocked except generic water and sealed basics.")
         RuleRow("Yas Togo or Moov Africa", "Payment is validated before the order is completed.")
         RuleRow("72h Point de Relai returns", "Refund starts after Sequo inspection accepts the product.")
@@ -434,7 +621,7 @@ private fun MarketsContent(onAddProduct: () -> Unit) {
         detail = "Seller gallery uploads stay blocked unless the product is generic.",
         tag = "active",
     )
-    KazeIntroCard(
+    SequoIntroCard(
         eyebrow = "Markets",
         title = "Browse real sellers across Lome.",
         subtitle = "Every shop card shows distance, delivery fee, ETA, live photo rules, bargaining status, and whether Sequo can group the pickup.",
@@ -446,7 +633,7 @@ private fun MarketsContent(onAddProduct: () -> Unit) {
     )
     LomeRouteCard()
     visibleShops.forEach { shop ->
-        KazeShopCard(shop = shop, onAddProduct = onAddProduct)
+        SequoShopCard(shop = shop, onAddProduct = onAddProduct)
     }
 }
 
@@ -470,7 +657,7 @@ private fun BasketContent(extraBasketItems: Int) {
         tag = "secure",
     )
     DeliveryAddressCard()
-    KazeSectionCard(title = "Basket", action = "${sequoBasket.sumOf { it.quantity } + extraBasketItems} items") {
+    SequoSectionCard(title = "Basket", action = "${sequoBasket.sumOf { it.quantity } + extraBasketItems} items") {
         sequoBasket.forEach { entry ->
             BasketLine(entry)
         }
@@ -478,51 +665,119 @@ private fun BasketContent(extraBasketItems: Int) {
             BasketAddedLine(extraBasketItems)
         }
     }
-    KazeSectionCard(title = "Food options", action = "custom") {
+    SequoSectionCard(title = "Food options", action = "custom") {
         RuleRow("Attieke poisson braise", sequoShops[0].products[0].optionHint)
         RuleRow("No mixing with goods", "Hot food travels in a separate sealed bag inside the Sequo package.")
     }
-    KazeSectionCard(title = "Consolidation", action = "Lome route") {
+    SequoSectionCard(title = "Consolidation", action = "Lome route") {
         RuleRow("Assigame + Akodessewa", "Eligible for one Sequo package after inspection at pickup.")
         RuleRow("Food exception", "Tokoin hot meal keeps its own thermal seal and pickup timing.")
     }
-    KazeCheckoutCard(extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
+    SequoCheckoutCard(extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
 }
 
 @Composable
 private fun OrdersContent() {
-    SequoAppBar(
-        title = "Orders",
-        subtitle = "Live route and returns",
-        leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
-        actions = listOf(
-            AppBarAction(Icons.Filled.SupportAgent, "Contact support"),
-            AppBarAction(Icons.Filled.Map, "Open route", emphasized = true),
-        ),
-    )
-    SequoStatusStrip(
-        icon = Icons.Filled.Map,
-        title = "Rider route active",
-        detail = "Tokoin pickup is moving toward Pharmacie des Etoiles.",
-        tag = "9 min",
-    )
-    KazeIntroCard(
-        eyebrow = "Orders",
-        title = "SQ-2419 is moving through Tokoin.",
-        subtitle = "Chez Ramatou is sealed, payment is validated, and the rider is heading toward Pharmacie des Etoiles. Delivery PIN: 4821.",
-    )
-    KazeSectionCard(title = "Live progress", action = "9 min") {
-        StepRow("Paid with Yas Togo", active = false, detail = "12:18")
-        StepRow("Seller camera photo approved", active = false, detail = "12:21")
-        StepRow("Thermal seal applied", active = false, detail = "12:27")
-        StepRow("Rider approaching Tokoin", active = true, detail = "now")
+    var selectedOrder by remember { mutableStateOf<SequoOrder?>(null) }
+    val activeOrder = recentOrders.first()
+    val orderForDetail = selectedOrder
+
+    if (orderForDetail != null) {
+        OrderDetailScreen(
+            order = orderForDetail,
+            onBack = { selectedOrder = null },
+        )
+    } else {
+        SequoAppBar(
+            title = "Orders",
+            subtitle = "Live route and returns",
+            leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
+            actions = listOf(
+                AppBarAction(Icons.Filled.SupportAgent, "Contact support"),
+                AppBarAction(Icons.Filled.Map, "Open route", emphasized = true),
+            )
+        )
+        SequoStatusStrip(
+            icon = Icons.Filled.Map,
+            title = if (activeOrder.state.shouldShowPickupCode) "Pickup validation required" else "Delivery route active",
+            detail = if (activeOrder.state.shouldShowPickupCode) {
+                "Rider must enter ${activeOrder.pickupCode} at ${activeOrder.sellers.first()} before the package leaves."
+            } else {
+                "${activeOrder.id} is ${activeOrder.state.label.lowercase()} with ${sellerSummary(activeOrder)}."
+            },
+            tag = "9 min",
+        )
+        SequoIntroCard(
+            eyebrow = "Orders",
+            title = "SQ-2419 is moving through Tokoin.",
+            subtitle = if (activeOrder.state.shouldShowPickupCode) {
+                "${activeOrder.sellers.first()} is sealed, payment is validated, and pickup code ${activeOrder.pickupCode} confirms the rider collected the right package."
+            } else {
+                "${activeOrder.sellers.first()} has already cleared pickup validation, so only route and delivery updates stay visible."
+            },
+        )
+        SequoSectionCard(title = "Live progress", action = "9 min") {
+            StepRow("Paid with Yas Togo", active = false, detail = "12:18")
+            StepRow("Seller camera photo approved", active = false, detail = "12:21")
+            StepRow("Thermal seal applied", active = false, detail = "12:27")
+            StepRow("Rider approaching Tokoin", active = true, detail = "now")
+        }
+        SequoSectionCard(title = "Recent orders", action = "${recentOrders.size} receipts") {
+            recentOrders.forEach { order ->
+                OrderMemory(
+                    order = order,
+                    onClick = { selectedOrder = order },
+                )
+            }
+        }
+        ReturnHubCard()
     }
-    KazeSectionCard(title = "Recent orders", action = "receipts") {
-        OrderMemory("Pagne wax 6 yards", "Delivered yesterday", "Return by 18:40")
-        OrderMemory("Oraimo charger 20W", "Delivered Saturday", "Return by Tuesday")
-        OrderMemory("Attieke poisson braise", "Delivered Friday", "Food order closed")
+}
+
+@Composable
+private fun OrderDetailScreen(order: SequoOrder, onBack: () -> Unit) {
+    var selectedTab by remember { mutableStateOf(OrderDetailTab.Status) }
+    val timelineEvents = orderTimelineEvents(order)
+
+    OrderDetailAppBar(order = order, onBack = onBack)
+    SequoIntroCard(
+        eyebrow = "Order detail",
+        title = "Order ${order.id}",
+        subtitle = "${order.state.label} / ${order.dateLine}",
+    )
+    OrderDetailTabs(
+        selectedTab = selectedTab,
+        onTabSelected = { selectedTab = it },
+    )
+    when (selectedTab) {
+        OrderDetailTab.Status -> {
+            SequoSectionCard(title = "Timeline", action = "${timelineEvents.size} steps") {
+                OrderTimeline(timelineEvents)
+            }
+            if (order.state.shouldShowPickupCode) {
+                SequoSectionCard(title = "Pickup validation", action = order.pickupCode) {
+                    PickupCodePanel(order)
+                }
+            }
+            SequoSectionCard(title = "Next step", action = orderNextStepTag(order.state)) {
+                RuleRow(orderNextStepTitle(order.state), orderNextStepDetail(order.state))
+            }
+        }
+        OrderDetailTab.Details -> {
+            SequoSectionCard(title = "Receipt", action = order.state.label) {
+                ValueRow("Amount", formatCfa(order.amountCfa), strong = true)
+                ValueRow("Items", "${order.itemCount()} item${if (order.itemCount() == 1) "" else "s"}")
+                ValueRow("Payment", order.paymentMethod)
+                OrderStatusPill(order.state)
+            }
+            SequoSectionCard(title = "Sellers and items", action = "${order.itemCount()} items") {
+                RuleRow("Seller${if (order.sellers.size == 1) "" else "s"}", order.sellers.joinToString(" + "))
+                order.items.forEach { item ->
+                    OrderItemDetailRow(item)
+                }
+            }
+        }
     }
-    ReturnHubCard()
 }
 
 @Composable
@@ -542,13 +797,17 @@ private fun AccountContent() {
         detail = "15% delivery-fee discount plus 500 CFA parrainage credit.",
         tag = "15%",
     )
-    KazePassCard()
-    KazeSectionCard(title = "Saved places", action = "Lome") {
+    SequoPassCard()
+    SequoSectionCard(title = "Saved places", action = "Lome") {
         AccountAddressRow("Home", "Tokoin Gbadago, near Pharmacie des Etoiles")
         AccountAddressRow("Family", "Adidogome, carrefour Limousine")
         AccountAddressRow("Office", "Be-Kpota, route du marche")
     }
-    KazeSectionCard(title = "Account tools", action = "secure") {
+    SequoSectionCard(title = "Supported payments", action = "no cash") {
+        SupportedPaymentRow("Yas Togo", "Primary mobile money validation before order completion")
+        SupportedPaymentRow("Moov Africa", "Backup mobile money validation for checkout")
+    }
+    SequoSectionCard(title = "Account tools", action = "secure") {
         SettingRow("Payments", "Yas Togo and Moov Africa validation")
         SettingRow("Returns", "Point de Relai drop-off within 72 hours")
         SettingRow("Parrainage", "Delivery credit, never cash payout")
@@ -584,7 +843,7 @@ private fun SequoAppBar(
     leadingIcon: ImageVector,
     actions: List<AppBarAction>,
 ) {
-    KazeCard(shape = RoundedCornerShape(28.dp)) {
+    SequoCard(shape = RoundedCornerShape(28.dp)) {
         Row(
             modifier = Modifier.padding(14.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -664,7 +923,7 @@ private fun SequoStatusStrip(
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            MetaPill(tag, KazeSecondary)
+            MetaPill(tag, SequoSecondary)
         }
     }
 }
@@ -683,14 +942,14 @@ private fun SequoIconMark(icon: ImageVector, color: Color, modifier: Modifier = 
 }
 
 @Composable
-private fun KazeSearchCard() {
-    KazeCard(shape = RoundedCornerShape(24.dp)) {
+private fun SequoSearchCard() {
+    SequoCard(shape = RoundedCornerShape(24.dp)) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SequoIconMark(Icons.Filled.Search, KazeSecondary, Modifier.size(34.dp))
+            SequoIconMark(Icons.Filled.Search, SequoSecondary, Modifier.size(34.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("Search Lome", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
@@ -715,7 +974,7 @@ private fun CategoryRail(
         categories.chunked(3).forEach { rowItems ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 rowItems.forEach { category ->
-                    KazeFilterChip(
+                    SequoFilterChip(
                         label = category,
                         selected = category == selectedCategory,
                         onClick = { onCategorySelected(category) },
@@ -731,7 +990,7 @@ private fun CategoryRail(
 }
 
 @Composable
-private fun KazeFilterChip(
+private fun SequoFilterChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -758,8 +1017,25 @@ private fun KazeFilterChip(
 }
 
 @Composable
+private fun OrderDetailTabs(
+    selectedTab: OrderDetailTab,
+    onTabSelected: (OrderDetailTab) -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OrderDetailTab.values().forEach { tab ->
+            SequoFilterChip(
+                label = tab.label,
+                selected = tab == selectedTab,
+                onClick = { onTabSelected(tab) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
 private fun LomeRouteCard() {
-    KazeCard(shape = RoundedCornerShape(24.dp)) {
+    SequoCard(shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Today route", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -795,7 +1071,7 @@ private fun RouteStop(label: String, active: Boolean, modifier: Modifier = Modif
 }
 
 @Composable
-private fun KazeHeroCard(
+private fun SequoHeroCard(
     eyebrow: String,
     title: String,
     body: String,
@@ -804,16 +1080,16 @@ private fun KazeHeroCard(
     onPrimary: () -> Unit,
     onSecondary: () -> Unit,
 ) {
-    KazeCard(shape = RoundedCornerShape(32.dp)) {
+    SequoCard(shape = RoundedCornerShape(32.dp)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            KazeSecondary.copy(alpha = 0.20f),
-                            KazeAccent.copy(alpha = 0.16f),
-                            KazePrimary.copy(alpha = 0.08f),
+                            SequoSecondary.copy(alpha = 0.20f),
+                            SequoAccent.copy(alpha = 0.16f),
+                            SequoPrimary.copy(alpha = 0.08f),
                             Color.Transparent,
                         ),
                     ),
@@ -821,8 +1097,8 @@ private fun KazeHeroCard(
                 .padding(20.dp),
         ) {
             Canvas(modifier = Modifier.matchParentSize()) {
-                drawCircle(KazeSecondary.copy(alpha = 0.12f), radius = size.minDimension * 0.42f, center = Offset(size.width * 0.92f, size.height * 0.06f))
-                drawCircle(KazePrimary.copy(alpha = 0.10f), radius = size.minDimension * 0.30f, center = Offset(size.width * 0.10f, size.height * 0.84f))
+                drawCircle(SequoSecondary.copy(alpha = 0.12f), radius = size.minDimension * 0.42f, center = Offset(size.width * 0.92f, size.height * 0.06f))
+                drawCircle(SequoPrimary.copy(alpha = 0.10f), radius = size.minDimension * 0.30f, center = Offset(size.width * 0.10f, size.height * 0.84f))
             }
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
@@ -855,20 +1131,20 @@ private fun KazeHeroCard(
                         modifier = Modifier.padding(start = 12.dp),
                         shape = RoundedCornerShape(26.dp),
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.68f),
-                        border = BorderStroke(1.dp, KazeSecondary.copy(alpha = 0.22f)),
+                        border = BorderStroke(1.dp, SequoSecondary.copy(alpha = 0.22f)),
                     ) {
                         Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
-                            SequoMonogram("SQ", KazeSecondary, Modifier.size(42.dp))
+                            SequoMonogram("SQ", SequoSecondary, Modifier.size(42.dp))
                         }
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetaPill("400 CFA nearby", KazePrimary)
-                    MetaPill("Live photos", KazeAccent)
+                    MetaPill("400 CFA nearby", SequoPrimary)
+                    MetaPill("Live photos", SequoAccent)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    KazePrimaryButton(primaryLabel, onPrimary, Modifier.weight(1f))
-                    KazeSecondaryButton(secondaryLabel, onSecondary, Modifier.weight(1f))
+                    SequoPrimaryButton(primaryLabel, onPrimary, Modifier.weight(1f))
+                    SequoSecondaryButton(secondaryLabel, onSecondary, Modifier.weight(1f))
                 }
             }
         }
@@ -876,7 +1152,7 @@ private fun KazeHeroCard(
 }
 
 @Composable
-private fun KazeMetricRow(
+private fun SequoMetricRow(
     leftValue: String,
     leftLabel: String,
     rightValue: String,
@@ -890,7 +1166,7 @@ private fun KazeMetricRow(
 
 @Composable
 private fun MetricCard(value: String, label: String, modifier: Modifier = Modifier) {
-    KazeCard(modifier = modifier, shape = RoundedCornerShape(24.dp)) {
+    SequoCard(modifier = modifier, shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f))
@@ -899,8 +1175,8 @@ private fun MetricCard(value: String, label: String, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun KazeIntroCard(eyebrow: String, title: String, subtitle: String) {
-    KazeCard(shape = RoundedCornerShape(24.dp)) {
+private fun SequoIntroCard(eyebrow: String, title: String, subtitle: String) {
+    SequoCard(shape = RoundedCornerShape(24.dp)) {
         Box(modifier = Modifier.fillMaxWidth()) {
             SequoMonogram(
                 text = "SQ",
@@ -920,8 +1196,8 @@ private fun KazeIntroCard(eyebrow: String, title: String, subtitle: String) {
 }
 
 @Composable
-private fun KazeSectionCard(title: String, action: String, content: @Composable ColumnScope.() -> Unit) {
-    KazeCard {
+private fun SequoSectionCard(title: String, action: String, content: @Composable ColumnScope.() -> Unit) {
+    SequoCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -933,8 +1209,8 @@ private fun KazeSectionCard(title: String, action: String, content: @Composable 
 }
 
 @Composable
-private fun KazeShopCard(shop: SequoShop, onAddProduct: () -> Unit) {
-    KazeCard {
+private fun SequoShopCard(shop: SequoShop, onAddProduct: () -> Unit) {
+    SequoCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 ShopMark(shop.name)
@@ -946,9 +1222,9 @@ private fun KazeShopCard(shop: SequoShop, onAddProduct: () -> Unit) {
                 RatingMark(shop.rating)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(formatDistance(shop.distanceKm), KazePrimary)
-                MetaPill(formatCfa(baseDelivery(shop.distanceKm)), KazeSecondary)
-                MetaPill(shop.eta, KazeAccent)
+                MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
+                MetaPill(formatCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
+                MetaPill(shop.eta, SequoAccent)
             }
             RuleRow(shop.photoStatus, shop.consolidation)
             shop.products.forEach { product ->
@@ -966,7 +1242,7 @@ private fun ShopSummaryRow(shop: SequoShop) {
             Text(shop.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("${shop.area} / ${formatDistance(shop.distanceKm)} / ${formatCfa(baseDelivery(shop.distanceKm))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        MetaPill(shop.eta, KazeAccent)
+        MetaPill(shop.eta, SequoAccent)
     }
 }
 
@@ -986,9 +1262,9 @@ private fun ProductLine(product: SequoProduct, onAddProduct: () -> Unit) {
                 Text(formatCfa(product.priceCfa), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                MetaPill(product.label, if (product.bargainNote == null) KazeAccent else KazeSecondary)
+                MetaPill(product.label, if (product.bargainNote == null) SequoAccent else SequoSecondary)
                 Text(product.optionHint, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                KazeTinyButton("Add", onAddProduct)
+                SequoTinyButton("Add", onAddProduct)
             }
             product.bargainNote?.let { note ->
                 RuleRow("Negotiation", note)
@@ -1014,7 +1290,7 @@ private fun CompactProductCard(shop: SequoShop, product: SequoProduct, onAddProd
                 Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${shop.area} / ${formatCfa(product.priceCfa)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            KazeTinyButton("Add", onAddProduct)
+            SequoTinyButton("Add", onAddProduct)
         }
     }
 }
@@ -1047,7 +1323,7 @@ private fun BasketAddedLine(count: Int) {
 
 @Composable
 private fun DeliveryAddressCard() {
-    KazeCard(shape = RoundedCornerShape(24.dp)) {
+    SequoCard(shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Delivery address", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -1055,15 +1331,15 @@ private fun DeliveryAddressCard() {
             }
             RuleRow("Tokoin Gbadago", "Near Pharmacie des Etoiles, call when outside.")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill("5.6 km route", KazePrimary)
-                MetaPill("Subscriber -15%", KazeSecondary)
+                MetaPill("5.6 km route", SequoPrimary)
+                MetaPill("Subscriber -15%", SequoSecondary)
             }
         }
     }
 }
 
 @Composable
-private fun KazeCheckoutCard(
+private fun SequoCheckoutCard(
     extraBasketItems: Int,
     selectedPayment: String,
     onPaymentSelected: (String) -> Unit,
@@ -1074,7 +1350,7 @@ private fun KazeCheckoutCard(
     )
     val total = subtotal + delivery.finalDeliveryFeeCfa
 
-    KazeSectionCard(title = "Pay securely", action = selectedPayment) {
+    SequoSectionCard(title = "Pay securely", action = selectedPayment) {
         ValueRow("Items", formatCfa(subtotal))
         ValueRow("Delivery", formatCfa(delivery.baseFeeCfa))
         ValueRow("Subscriber", "-${formatCfa(delivery.subscriptionDiscountCfa)}")
@@ -1084,7 +1360,7 @@ private fun KazeCheckoutCard(
             PaymentChoice("Yas Togo", selectedPayment, onPaymentSelected, Modifier.weight(1f))
             PaymentChoice("Moov Africa", selectedPayment, onPaymentSelected, Modifier.weight(1f))
         }
-        KazePrimaryButton("Pay ${formatCfa(total)}", {}, Modifier.fillMaxWidth())
+        SequoPrimaryButton("Pay ${formatCfa(total)}", {}, Modifier.fillMaxWidth())
         Text(
             "Payment must be confirmed before the seller receives completion status.",
             style = MaterialTheme.typography.bodySmall,
@@ -1100,22 +1376,96 @@ private fun PaymentChoice(
     onPaymentSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    KazeSecondaryButton(
-        label = label,
-        onClick = { onPaymentSelected(label) },
+    val selected = label == selectedPayment
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f)
+
+    Box(
+        modifier = modifier
+            .height(64.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(backgroundColor)
+            .border(1.2.dp, borderColor, RoundedCornerShape(20.dp))
+            .clickable { onPaymentSelected(label) }
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+            PaymentLogo(label, Modifier.size(width = 46.dp, height = 34.dp))
+            Text(
+                label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SupportedPaymentRow(label: String, detail: String) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PaymentLogo(label, Modifier.size(width = 74.dp, height = 44.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
+            }
+            MetaPill("Enabled", SequoPrimary)
+        }
+    }
+}
+
+@Composable
+private fun PaymentLogo(label: String, modifier: Modifier = Modifier) {
+    val logo = if (label.contains("Yas")) {
+        Res.drawable.yas_togo_logo
+    } else {
+        Res.drawable.moov_africa_logo
+    }
+
+    Surface(
         modifier = modifier,
-        emphasized = label == selectedPayment,
-    )
+        shape = RoundedCornerShape(11.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
+    ) {
+        Image(
+            painter = painterResource(logo),
+            contentDescription = label,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().padding(4.dp),
+        )
+    }
 }
 
 @Composable
 private fun ReturnHubCard() {
-    KazeSectionCard(title = "Return hub", action = "72 hours") {
+    SequoSectionCard(title = "Return hub", action = "72 hours") {
         RuleRow("Point de Relai Tokoin", "Open 08:00-19:00, accepts sealed general goods returns.")
         RuleRow("Inspection status", "Refund triggers automatically when Sequo accepts the returned product.")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            KazeSecondaryButton("Start return", {}, Modifier.weight(1f), emphasized = true)
-            KazeSecondaryButton("Find point", {}, Modifier.weight(1f))
+            SequoSecondaryButton("Start return", {}, Modifier.weight(1f), emphasized = true)
+            SequoSecondaryButton("Find point", {}, Modifier.weight(1f))
         }
     }
 }
@@ -1123,7 +1473,7 @@ private fun ReturnHubCard() {
 @Composable
 private fun AccountAddressRow(label: String, address: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        SequoMiniMark(label.take(1), KazeSecondary)
+        SequoMiniMark(label.take(1), SequoSecondary)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text(address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1132,17 +1482,17 @@ private fun AccountAddressRow(label: String, address: String) {
 }
 
 @Composable
-private fun KazePassCard() {
-    KazeCard(shape = RoundedCornerShape(34.dp), color = Color.Transparent, border = null) {
+private fun SequoPassCard() {
+    SequoCard(shape = RoundedCornerShape(34.dp), color = Color.Transparent, border = null) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Brush.linearGradient(listOf(Color(0xFF111419), Color(0xFF18242B), Color(0xFF24404A))))
-                .border(1.dp, KazeAccent.copy(alpha = 0.28f), RoundedCornerShape(34.dp))
+                .border(1.dp, SequoAccent.copy(alpha = 0.28f), RoundedCornerShape(34.dp))
                 .padding(20.dp),
         ) {
             Canvas(modifier = Modifier.matchParentSize()) {
-                drawCircle(KazeAccent.copy(alpha = 0.18f), radius = size.width * 0.26f, center = Offset(size.width * 0.92f, size.height * 0.16f))
+                drawCircle(SequoAccent.copy(alpha = 0.18f), radius = size.width * 0.26f, center = Offset(size.width * 0.92f, size.height * 0.16f))
                 drawRoundRect(Color(0x14FFF9F0), Offset(-34.dp.toPx(), size.height - 74.dp.toPx()), Size(180.dp.toPx(), 82.dp.toPx()), CornerRadius(44.dp.toPx(), 24.dp.toPx()))
             }
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -1151,8 +1501,8 @@ private fun KazePassCard() {
                 Text("Lome subscriber / 15% delivery discount", style = MaterialTheme.typography.bodyMedium, color = Color(0xCCFFF8EE))
                 Box(Modifier.height(44.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetaPill("500 CFA credit", KazeAccent, inverse = true)
-                    MetaPill("3 Lome addresses", KazePrimary, inverse = true)
+                    MetaPill("500 CFA credit", SequoAccent, inverse = true)
+                    MetaPill("3 Lome addresses", SequoPrimary, inverse = true)
                 }
             }
         }
@@ -1160,7 +1510,7 @@ private fun KazePassCard() {
 }
 
 @Composable
-private fun KazeCard(
+private fun SequoCard(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(26.dp),
     color: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
@@ -1179,7 +1529,7 @@ private fun KazeCard(
 }
 
 @Composable
-private fun KazePrimaryButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun SequoPrimaryButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .height(52.dp)
@@ -1194,7 +1544,7 @@ private fun KazePrimaryButton(label: String, onClick: () -> Unit, modifier: Modi
 }
 
 @Composable
-private fun KazeSecondaryButton(
+private fun SequoSecondaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1218,7 +1568,7 @@ private fun KazeSecondaryButton(
 }
 
 @Composable
-private fun KazeTinyButton(label: String, onClick: () -> Unit) {
+private fun SequoTinyButton(label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .height(34.dp)
@@ -1270,7 +1620,7 @@ private fun ShopMark(text: String) {
         modifier = Modifier
             .size(52.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(KazePrimary.copy(alpha = 0.88f), KazeSecondary.copy(alpha = 0.72f)))),
+            .background(Brush.linearGradient(listOf(SequoPrimary.copy(alpha = 0.88f), SequoSecondary.copy(alpha = 0.72f)))),
         contentAlignment = Alignment.Center,
     ) {
         Text(text.take(2).uppercase(), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Black)
@@ -1332,14 +1682,245 @@ private fun StepRow(text: String, active: Boolean, detail: String) {
 }
 
 @Composable
-private fun OrderMemory(name: String, status: String, note: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        ShopMark(name)
-        Column(Modifier.weight(1f)) {
-            Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun OrderMemory(
+    order: SequoOrder,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
+        modifier = Modifier.clickable(onClick = onClick),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SequoIconMark(Icons.AutoMirrored.Filled.ReceiptLong, orderStateColor(order.state), Modifier.size(48.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(orderTitle(order), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${sellerSummary(order)} / ${order.dateLine}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${order.id} / ${orderMetaLine(order)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                OrderStatusPill(order.state)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "View order details",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
-        Text(note, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun OrderDetailAppBar(order: SequoOrder, onBack: () -> Unit) {
+    SequoCard(shape = RoundedCornerShape(28.dp)) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(17.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f))
+                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), RoundedCornerShape(17.dp))
+                    .clickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back to orders",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(21.dp),
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Order detail", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${order.id} / ${order.state.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            OrderStatusPill(order.state)
+        }
+    }
+}
+
+@Composable
+private fun PickupCodePanel(order: SequoOrder) {
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SequoIconMark(Icons.Filled.Lock, MaterialTheme.colorScheme.primary, Modifier.size(46.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(order.pickupCode, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+                Text("Rider enters this 6-character code at the seller before pickup is validated.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderItemDetailRow(item: OrderItem) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 11.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(item.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            MetaPill("x${item.quantity}", SequoSecondary)
+        }
+    }
+}
+
+@Composable
+private fun OrderTimeline(events: List<OrderTimelineEvent>) {
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        events.forEachIndexed { index, event ->
+            OrderTimelineRow(
+                event = event,
+                isLast = index == events.lastIndex,
+            )
+        }
+    }
+}
+
+@Composable
+private fun OrderTimelineRow(event: OrderTimelineEvent, isLast: Boolean) {
+    val accent = orderStateColor(event.state)
+    val pulseTransition = rememberInfiniteTransition(label = "orderTimelinePulse")
+    val pulse by pulseTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "currentStepPulse",
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (event.isCurrent) {
+                    Box(
+                        modifier = Modifier
+                            .size((18f + pulse * 10f).dp)
+                            .clip(CircleShape)
+                            .background(accent.copy(alpha = 0.18f * (1f - pulse))),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(if (event.isCurrent) accent else accent.copy(alpha = 0.34f))
+                        .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                )
+            }
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 2.dp, height = 42.dp)
+                        .background(accent.copy(alpha = 0.18f)),
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f).padding(bottom = if (isLast) 0.dp else 12.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(event.state.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (event.isCurrent && event.state == SequoOrderState.InDelivery) {
+                    TimelineLivePill(accent)
+                } else {
+                    MetaPill(event.time, accent)
+                }
+            }
+            Text(event.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (event.isCurrent) 0.78f else 0.58f))
+        }
+    }
+}
+
+@Composable
+private fun TimelineLivePill(accentColor: Color) {
+    val transition = rememberInfiniteTransition(label = "timelineLivePill")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1050),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "timelineLivePhase",
+    )
+
+    Surface(
+        modifier = Modifier.size(width = 46.dp, height = 30.dp),
+        shape = RoundedCornerShape(999.dp),
+        color = accentColor.copy(alpha = 0.14f),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(3) { index ->
+                val localPhase = (phase + index * 0.22f) % 1f
+                val wave = if (localPhase < 0.5f) localPhase * 2f else (1f - localPhase) * 2f
+                val alpha = (0.36f + wave * 0.46f).coerceIn(0.36f, 0.82f)
+                Box(
+                    modifier = Modifier
+                        .offset(y = (-2f * wave).dp)
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(accentColor.copy(alpha = alpha)),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderStatusPill(state: SequoOrderState) {
+    val accent = orderStateColor(state)
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.20f)),
+    ) {
+        Text(
+            state.label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -1362,6 +1943,302 @@ private fun ValueRow(label: String, value: String, strong: Boolean = false) {
 private fun baseDelivery(distanceKm: Double): Int =
     calculateDeliveryPricing(DeliveryPricingInput(distanceKm)).baseFeeCfa
 
+private fun SequoOrder.itemCount(): Int =
+    items.sumOf { it.quantity }
+
+private fun orderTitle(order: SequoOrder): String =
+    if (order.itemCount() == 1) {
+        order.items.first().name
+    } else if (order.sellers.size == 1) {
+        "${order.itemCount()} items from ${order.sellers.first()}"
+    } else {
+        "Grouped Sequo package"
+    }
+
+private fun sellerSummary(order: SequoOrder): String =
+    if (order.sellers.size == 1) {
+        order.sellers.first()
+    } else {
+        "${order.sellers.size} sellers: ${order.sellers.take(2).joinToString(" + ")}"
+    }
+
+private fun orderMetaLine(order: SequoOrder): String =
+    "${formatCfa(order.amountCfa)} / ${order.itemCount()} item${if (order.itemCount() == 1) "" else "s"} / ${order.paymentMethod}"
+
+private fun orderTimelineEvents(order: SequoOrder): List<OrderTimelineEvent> {
+    val states = orderTimelineStates(order.state)
+    return states.mapIndexed { index, state ->
+        val isCurrent = state == order.state
+        OrderTimelineEvent(
+            state = state,
+            time = orderTimelineTime(order, state, index, states.lastIndex, isCurrent),
+            detail = orderTimelineDetail(order, state, isCurrent),
+            isCurrent = isCurrent,
+        )
+    }.asReversed()
+}
+
+private fun orderTimelineStates(state: SequoOrderState): List<SequoOrderState> {
+    val acceptedFlow = listOf(
+        SequoOrderState.Ordered,
+        SequoOrderState.Paid,
+        SequoOrderState.MerchantAccepted,
+    )
+    val preparedFlow = acceptedFlow + SequoOrderState.Preparing
+    val deliveryFlow = preparedFlow + listOf(
+        SequoOrderState.ReadyForPickup,
+        SequoOrderState.PickedUp,
+        SequoOrderState.InDelivery,
+    )
+    val deliveredFlow = deliveryFlow + SequoOrderState.Delivered
+    val returnFlow = deliveredFlow + SequoOrderState.ReturnRequested
+
+    return when (state) {
+        SequoOrderState.Ordered -> listOf(SequoOrderState.Ordered)
+        SequoOrderState.PaymentPending -> listOf(SequoOrderState.Ordered, SequoOrderState.PaymentPending)
+        SequoOrderState.Paid -> listOf(SequoOrderState.Ordered, SequoOrderState.Paid)
+        SequoOrderState.MerchantAccepted -> acceptedFlow
+        SequoOrderState.MerchantDeclined -> listOf(SequoOrderState.Ordered, SequoOrderState.Paid, SequoOrderState.MerchantDeclined)
+        SequoOrderState.Preparing -> preparedFlow
+        SequoOrderState.ReadyForPickup -> preparedFlow + SequoOrderState.ReadyForPickup
+        SequoOrderState.PickedUp -> preparedFlow + SequoOrderState.ReadyForPickup + SequoOrderState.PickedUp
+        SequoOrderState.InDelivery -> deliveryFlow
+        SequoOrderState.DeliveryAttempted -> deliveryFlow + SequoOrderState.DeliveryAttempted
+        SequoOrderState.Delivered -> deliveredFlow
+        SequoOrderState.ReturnRequested -> returnFlow
+        SequoOrderState.ReturnInInspection -> returnFlow + SequoOrderState.ReturnInInspection
+        SequoOrderState.RefundIssued -> returnFlow + SequoOrderState.ReturnInInspection + SequoOrderState.RefundIssued
+        SequoOrderState.ReturnRejected -> returnFlow + SequoOrderState.ReturnInInspection + SequoOrderState.ReturnRejected
+        SequoOrderState.CancelledByCustomer -> listOf(SequoOrderState.Ordered, SequoOrderState.CancelledByCustomer)
+        SequoOrderState.CancelledByMerchant -> listOf(SequoOrderState.Ordered, SequoOrderState.Paid, SequoOrderState.CancelledByMerchant)
+        SequoOrderState.CancelledBySequo -> preparedFlow + SequoOrderState.CancelledBySequo
+    }
+}
+
+private fun orderTimelineTime(
+    order: SequoOrder,
+    state: SequoOrderState,
+    index: Int,
+    lastIndex: Int,
+    isCurrent: Boolean,
+): String =
+    if (isCurrent) {
+        currentTimelineTime(order, state)
+    } else {
+        val dayPrefix = pastTimelineDayPrefix(order)
+        val time = timelineFallbackTime(state)
+        if (dayPrefix == null || index < lastIndex - 1) {
+            time
+        } else {
+            "$dayPrefix $time"
+        }
+    }
+
+private fun currentTimelineTime(order: SequoOrder, state: SequoOrderState): String {
+    val explicitTime = order.dateLine.extractClockTime()
+    return when {
+        explicitTime != null && order.dateLine.contains("yesterday", ignoreCase = true) -> "Yesterday $explicitTime"
+        explicitTime != null && order.dateLine.contains("friday", ignoreCase = true) -> "Friday $explicitTime"
+        explicitTime != null -> explicitTime
+        state == SequoOrderState.InDelivery -> "In progress"
+        order.dateLine.contains("now", ignoreCase = true) -> "Now"
+        order.dateLine.contains("min", ignoreCase = true) -> "Now"
+        order.dateLine.contains("today", ignoreCase = true) -> "Today ${timelineFallbackTime(state)}"
+        order.dateLine.contains("monday", ignoreCase = true) -> "Monday ${timelineFallbackTime(state)}"
+        else -> timelineFallbackTime(state)
+    }
+}
+
+private fun timelineFallbackTime(state: SequoOrderState): String =
+    when (state) {
+        SequoOrderState.Ordered -> "11:52"
+        SequoOrderState.PaymentPending -> "11:54"
+        SequoOrderState.Paid -> "11:58"
+        SequoOrderState.MerchantAccepted -> "12:09"
+        SequoOrderState.MerchantDeclined -> "12:12"
+        SequoOrderState.Preparing -> "12:18"
+        SequoOrderState.ReadyForPickup -> "12:31"
+        SequoOrderState.PickedUp -> "12:44"
+        SequoOrderState.InDelivery -> "12:51"
+        SequoOrderState.DeliveryAttempted -> "13:08"
+        SequoOrderState.Delivered -> "18:40"
+        SequoOrderState.ReturnRequested -> "10:24"
+        SequoOrderState.ReturnInInspection -> "14:12"
+        SequoOrderState.RefundIssued -> "16:05"
+        SequoOrderState.ReturnRejected -> "16:05"
+        SequoOrderState.CancelledByCustomer -> "12:02"
+        SequoOrderState.CancelledByMerchant -> "12:16"
+        SequoOrderState.CancelledBySequo -> "12:27"
+    }
+
+private fun pastTimelineDayPrefix(order: SequoOrder): String? =
+    when {
+        order.dateLine.contains("yesterday", ignoreCase = true) -> "Yesterday"
+        order.dateLine.contains("friday", ignoreCase = true) -> "Friday"
+        order.dateLine.contains("monday", ignoreCase = true) -> "Monday"
+        else -> null
+    }
+
+private fun String.extractClockTime(): String? {
+    val index = windowed(size = 5, step = 1).indexOfFirst { candidate ->
+        candidate[0].isDigit() &&
+            candidate[1].isDigit() &&
+            candidate[2] == ':' &&
+            candidate[3].isDigit() &&
+            candidate[4].isDigit()
+    }
+    return if (index >= 0) substring(index, index + 5) else null
+}
+
+private fun orderTimelineDetail(order: SequoOrder, state: SequoOrderState, isCurrent: Boolean): String =
+    if (isCurrent) {
+        "${order.dateLine}. ${order.note}"
+    } else {
+        when (state) {
+            SequoOrderState.Ordered -> "Order was created for ${sellerSummary(order)}."
+            SequoOrderState.PaymentPending -> "Payment validation was requested through ${order.paymentMethod}."
+            SequoOrderState.Paid -> "Payment was validated with ${order.paymentMethod} before merchant fulfillment."
+            SequoOrderState.MerchantAccepted -> "${order.sellers.first()} confirmed product availability."
+            SequoOrderState.MerchantDeclined -> "Merchant could not provide every requested product."
+            SequoOrderState.Preparing -> "Merchant prepared the order and submitted required live camera checks."
+            SequoOrderState.ReadyForPickup -> "Package was sealed and made ready for rider pickup."
+            SequoOrderState.PickedUp -> "Rider validated pickup and collected the package."
+            SequoOrderState.InDelivery -> "Package moved onto the customer delivery route."
+            SequoOrderState.DeliveryAttempted -> "Rider attempted delivery and needed customer action."
+            SequoOrderState.Delivered -> "Order was handed over at the delivery address."
+            SequoOrderState.ReturnRequested -> "Customer return was dropped at a Point de Relai."
+            SequoOrderState.ReturnInInspection -> "Sequo inspection started for the returned product."
+            SequoOrderState.RefundIssued -> "Refund was released to the original mobile money method."
+            SequoOrderState.ReturnRejected -> "Return was rejected after inspection."
+            SequoOrderState.CancelledByCustomer -> "Customer cancelled before fulfillment completed."
+            SequoOrderState.CancelledByMerchant -> "Merchant cancelled because fulfillment was not possible."
+            SequoOrderState.CancelledBySequo -> "Sequo stopped the order before pickup could be completed."
+        }
+    }
+
+private val SequoOrderState.shouldShowPickupCode: Boolean
+    get() = when (this) {
+        SequoOrderState.MerchantAccepted,
+        SequoOrderState.Preparing,
+        SequoOrderState.ReadyForPickup -> true
+        SequoOrderState.Ordered,
+        SequoOrderState.PaymentPending,
+        SequoOrderState.Paid,
+        SequoOrderState.MerchantDeclined,
+        SequoOrderState.PickedUp,
+        SequoOrderState.InDelivery,
+        SequoOrderState.DeliveryAttempted,
+        SequoOrderState.Delivered,
+        SequoOrderState.ReturnRequested,
+        SequoOrderState.ReturnInInspection,
+        SequoOrderState.RefundIssued,
+        SequoOrderState.ReturnRejected,
+        SequoOrderState.CancelledByCustomer,
+        SequoOrderState.CancelledByMerchant,
+        SequoOrderState.CancelledBySequo -> false
+    }
+
+private fun orderNextStepTag(state: SequoOrderState): String =
+    when (state) {
+        SequoOrderState.Ordered -> "order"
+        SequoOrderState.PaymentPending -> "payment"
+        SequoOrderState.Paid -> "paid"
+        SequoOrderState.MerchantAccepted -> "accepted"
+        SequoOrderState.MerchantDeclined -> "declined"
+        SequoOrderState.Preparing -> "photo"
+        SequoOrderState.ReadyForPickup -> "ready"
+        SequoOrderState.PickedUp -> "pickup"
+        SequoOrderState.InDelivery -> "route"
+        SequoOrderState.DeliveryAttempted -> "action"
+        SequoOrderState.Delivered -> "72h"
+        SequoOrderState.ReturnRequested -> "relay"
+        SequoOrderState.ReturnInInspection -> "inspect"
+        SequoOrderState.RefundIssued -> "refund"
+        SequoOrderState.ReturnRejected -> "support"
+        SequoOrderState.CancelledByCustomer -> "closed"
+        SequoOrderState.CancelledByMerchant -> "closed"
+        SequoOrderState.CancelledBySequo -> "closed"
+    }
+
+private fun orderNextStepTitle(state: SequoOrderState): String =
+    when (state) {
+        SequoOrderState.Ordered -> "Complete payment"
+        SequoOrderState.PaymentPending -> "Validate payment"
+        SequoOrderState.Paid -> "Merchant checks availability"
+        SequoOrderState.MerchantAccepted -> "Prepare the package"
+        SequoOrderState.MerchantDeclined -> "Payment reversal"
+        SequoOrderState.Preparing -> "Live photo check"
+        SequoOrderState.ReadyForPickup -> "Assign a rider"
+        SequoOrderState.PickedUp -> "Route consolidation"
+        SequoOrderState.InDelivery -> "Follow the rider"
+        SequoOrderState.DeliveryAttempted -> "Resolve delivery"
+        SequoOrderState.Delivered -> "Return window"
+        SequoOrderState.ReturnRequested -> "Drop-off received"
+        SequoOrderState.ReturnInInspection -> "Inspection in progress"
+        SequoOrderState.RefundIssued -> "Refund triggered"
+        SequoOrderState.ReturnRejected -> "Return rejected"
+        SequoOrderState.CancelledByCustomer -> "Order closed"
+        SequoOrderState.CancelledByMerchant -> "Order closed"
+        SequoOrderState.CancelledBySequo -> "Order closed"
+    }
+
+private fun orderNextStepDetail(state: SequoOrderState): String =
+    when (state) {
+        SequoOrderState.Ordered -> "Choose Yas Togo or Moov Africa and validate payment before the merchant receives the order."
+        SequoOrderState.PaymentPending -> "Complete Yas Togo or Moov Africa validation before Sequo finishes the order."
+        SequoOrderState.Paid -> "Sequo asks the merchant to confirm product availability before preparation begins."
+        SequoOrderState.MerchantAccepted -> "The merchant starts preparation and uploads required real-time camera photos."
+        SequoOrderState.MerchantDeclined -> "Sequo reverses or adjusts the payment because the merchant cannot fulfill the order."
+        SequoOrderState.Preparing -> "Sequo waits for the required real-time seller camera photo before releasing the rider."
+        SequoOrderState.ReadyForPickup -> "A rider is assigned and must enter the pickup code when arriving at the merchant."
+        SequoOrderState.PickedUp -> "Sequo can consolidate eligible grouped-seller orders before sending the rider to you."
+        SequoOrderState.InDelivery -> "Keep the app open for route updates while the rider moves toward your delivery address."
+        SequoOrderState.DeliveryAttempted -> "Confirm address details or contact support so the rider can complete or reschedule delivery."
+        SequoOrderState.Delivered -> "Eligible non-food products can be dropped at a Point de Relai within 72 hours."
+        SequoOrderState.ReturnRequested -> "The Point de Relai has received your return and Sequo will start inspection."
+        SequoOrderState.ReturnInInspection -> "Sequo inspects the returned product; refund starts automatically if accepted."
+        SequoOrderState.RefundIssued -> "The refund has been released to the original mobile money payment method."
+        SequoOrderState.ReturnRejected -> "Review the inspection reason and contact support if something looks wrong."
+        SequoOrderState.CancelledByCustomer -> "No pickup code is active; any eligible reversal follows the original payment method."
+        SequoOrderState.CancelledByMerchant -> "No pickup code is active; Sequo reverses or adjusts the payment after merchant cancellation."
+        SequoOrderState.CancelledBySequo -> "No pickup code is active; any eligible reversal follows the original payment method."
+    }
+
+private fun pickupCodeFor(orderId: String): String {
+    val alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    var value = orderId.fold(0) { accumulator, character ->
+        ((accumulator * 31) + character.code).and(0x7fffffff)
+    }
+    return buildString {
+        repeat(6) { index ->
+            value = ((value * 1103515245) + 12345 + index).and(0x7fffffff)
+            append(alphabet[value % alphabet.length])
+        }
+    }
+}
+
+private fun orderStateColor(state: SequoOrderState): Color =
+    when (state) {
+        SequoOrderState.Ordered -> SequoSecondary
+        SequoOrderState.PaymentPending -> SequoSecondary
+        SequoOrderState.Paid -> SequoPrimary
+        SequoOrderState.MerchantAccepted -> SequoPrimary
+        SequoOrderState.MerchantDeclined -> Color(0xFF9A5A4E)
+        SequoOrderState.Preparing -> SequoAccent
+        SequoOrderState.ReadyForPickup -> SequoPrimary
+        SequoOrderState.PickedUp -> SequoPrimary
+        SequoOrderState.InDelivery -> SequoPrimary
+        SequoOrderState.DeliveryAttempted -> SequoSecondary
+        SequoOrderState.Delivered -> SequoPrimary
+        SequoOrderState.ReturnRequested -> SequoSecondary
+        SequoOrderState.ReturnInInspection -> SequoSecondary
+        SequoOrderState.RefundIssued -> SequoAccent
+        SequoOrderState.ReturnRejected -> Color(0xFF9A5A4E)
+        SequoOrderState.CancelledByCustomer -> Color(0xFF9A5A4E)
+        SequoOrderState.CancelledByMerchant -> Color(0xFF9A5A4E)
+        SequoOrderState.CancelledBySequo -> Color(0xFF9A5A4E)
+    }
+
 private fun formatDistance(km: Double): String {
     val tenths = (km * 10).roundToInt()
     return if (tenths % 10 == 0) "${tenths / 10} km" else "${tenths / 10}.${tenths % 10} km"
@@ -1371,8 +2248,8 @@ private fun formatCfa(amount: Int): String =
     amount.toString().reversed().chunked(3).joinToString(" ").reversed() + " CFA"
 
 @Composable
-private fun KazeAmbientBackground(modifier: Modifier = Modifier) {
-    val uiPalette = kazeUi
+private fun SequoAmbientBackground(modifier: Modifier = Modifier) {
+    val uiPalette = sequoUi
     val baseTop = MaterialTheme.colorScheme.background
     val baseBottom = uiPalette.ambientBottom
     val lineColor = uiPalette.ambientLineStrong
@@ -1445,14 +2322,14 @@ private fun KazeAmbientBackground(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun KazeBottomBar(
+private fun SequoBottomBar(
     modifier: Modifier = Modifier,
-    currentDestination: KazeSection,
-    onDestinationSelected: (KazeSection) -> Unit,
+    currentDestination: SequoSection,
+    onDestinationSelected: (SequoSection) -> Unit,
     pendingBasketCount: Int = 0,
-    destinations: List<KazeSection> = kazePrimaryDestinations,
+    destinations: List<SequoSection> = sequoPrimaryDestinations,
 ) {
-    KazeNavigationContainer(
+    SequoNavigationContainer(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -1465,11 +2342,11 @@ private fun KazeBottomBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             destinations.forEach { destination ->
-                KazeBottomNavItem(
+                SequoBottomNavItem(
                     destination = destination,
                     selected = currentDestination == destination,
                     onClick = { onDestinationSelected(destination) },
-                    badgeCount = if (destination == KazeSection.Basket) pendingBasketCount else 0,
+                    badgeCount = if (destination == SequoSection.Basket) pendingBasketCount else 0,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -1478,11 +2355,11 @@ private fun KazeBottomBar(
 }
 
 @Composable
-private fun KazeNavigationContainer(
+private fun SequoNavigationContainer(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val uiPalette = kazeUi
+    val uiPalette = sequoUi
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = modifier,
@@ -1533,7 +2410,7 @@ private fun KazeNavigationContainer(
 }
 
 @Composable
-private fun KazeNavigationItemFrame(
+private fun SequoNavigationItemFrame(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1609,14 +2486,14 @@ private fun KazeNavigationItemFrame(
 }
 
 @Composable
-private fun KazeBottomNavItem(
-    destination: KazeSection,
+private fun SequoBottomNavItem(
+    destination: SequoSection,
     selected: Boolean,
     onClick: () -> Unit,
     badgeCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    KazeNavigationItemFrame(
+    SequoNavigationItemFrame(
         selected = selected,
         onClick = onClick,
         modifier = modifier,
