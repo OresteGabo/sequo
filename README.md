@@ -51,7 +51,7 @@ These rules override older legacy documentation.
 
 ## Legacy Material Reviewed
 
-The new docs were created after reviewing the legacy Sequo repository at `/Users/muhirwagabooreste/AndroidStudioProjects/Sequo`, including its README, product validation notes, market notes for Lome, features and requirements, order lifecycle, role permissions, task backlog, technical README, original French cahier des charges, and PlantUML/auth documentation. Useful legacy concepts were retained, especially verified sellers, landmark-based addresses, delivery PINs, Point Relai logistics, grouped logistics, seller/rider/admin role boundaries, low-connectivity support, and auditability.
+The new docs were created after reviewing the legacy Sequo repository supplied alongside this project, including its README, product validation notes, market notes for Lome, features and requirements, order lifecycle, role permissions, task backlog, technical README, original French cahier des charges, and PlantUML/auth documentation. Useful legacy concepts were retained, especially verified sellers, landmark-based addresses, delivery PINs, Point Relai logistics, grouped logistics, seller/rider/admin role boundaries, low-connectivity support, and auditability.
 
 Older assumptions that conflict with the current rules were intentionally replaced. Notably, the new customer app docs do not allow cash on delivery, do not use the older 14-day return window, and do not treat referral rewards as withdrawable money.
 
