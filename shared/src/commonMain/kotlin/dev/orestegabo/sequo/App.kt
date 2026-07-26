@@ -20,6 +20,24 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingBasket
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -95,12 +114,12 @@ private data class KazeUiPalette(
 
 private val kazeUi = KazeUiPalette()
 
-private enum class KazeSection(val label: String, val mark: String) {
-    Markets("Markets", "M"),
-    Basket("Basket", "B"),
-    Home("Sequo", "S"),
-    Orders("Orders", "O"),
-    Account("Account", "A"),
+private enum class KazeSection(val label: String, val icon: ImageVector) {
+    Markets("Markets", Icons.Filled.Storefront),
+    Basket("Basket", Icons.Filled.ShoppingBasket),
+    Home("Sequo", Icons.Filled.Home),
+    Orders("Orders", Icons.AutoMirrored.Filled.ReceiptLong),
+    Account("Account", Icons.Filled.Person),
 }
 
 private val kazePrimaryDestinations = listOf(
@@ -252,6 +271,13 @@ private data class BasketEntry(
     val quantity: Int,
 )
 
+private data class AppBarAction(
+    val icon: ImageVector,
+    val contentDescription: String,
+    val emphasized: Boolean = false,
+    val badge: String? = null,
+)
+
 private val sequoBasket = listOf(
     BasketEntry(sequoShops[0], sequoShops[0].products[0], 1),
     BasketEntry(sequoShops[1], sequoShops[1].products[0], 1),
@@ -393,6 +419,21 @@ private fun MarketsContent(onAddProduct: () -> Unit) {
         }
     }
 
+    SequoAppBar(
+        title = "Markets",
+        subtitle = "Verified Lomé sellers",
+        leadingIcon = Icons.Filled.Storefront,
+        actions = listOf(
+            AppBarAction(Icons.Filled.Search, "Search markets"),
+            AppBarAction(Icons.Filled.Tune, "Filter shops", emphasized = true),
+        ),
+    )
+    SequoStatusStrip(
+        icon = Icons.Filled.PhotoCamera,
+        title = "Live photo gate",
+        detail = "Seller gallery uploads stay blocked unless the product is generic.",
+        tag = "active",
+    )
     KazeIntroCard(
         eyebrow = "Markets",
         title = "Browse real sellers across Lome.",
@@ -413,6 +454,21 @@ private fun MarketsContent(onAddProduct: () -> Unit) {
 private fun BasketContent(extraBasketItems: Int) {
     var selectedPayment by remember { mutableStateOf("Yas Togo") }
 
+    SequoAppBar(
+        title = "Checkout",
+        subtitle = "Basket locked before payment",
+        leadingIcon = Icons.Filled.ShoppingBasket,
+        actions = listOf(
+            AppBarAction(Icons.Filled.Lock, "Secure checkout", emphasized = true),
+            AppBarAction(Icons.Filled.Payments, "Payment methods"),
+        ),
+    )
+    SequoStatusStrip(
+        icon = Icons.Filled.Lock,
+        title = "Payment validation required",
+        detail = "Order completion unlocks only after Yas Togo or Moov Africa confirms.",
+        tag = "secure",
+    )
     DeliveryAddressCard()
     KazeSectionCard(title = "Basket", action = "${sequoBasket.sumOf { it.quantity } + extraBasketItems} items") {
         sequoBasket.forEach { entry ->
@@ -435,6 +491,21 @@ private fun BasketContent(extraBasketItems: Int) {
 
 @Composable
 private fun OrdersContent() {
+    SequoAppBar(
+        title = "Orders",
+        subtitle = "Live route and returns",
+        leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
+        actions = listOf(
+            AppBarAction(Icons.Filled.SupportAgent, "Contact support"),
+            AppBarAction(Icons.Filled.Map, "Open route", emphasized = true),
+        ),
+    )
+    SequoStatusStrip(
+        icon = Icons.Filled.Map,
+        title = "Rider route active",
+        detail = "Tokoin pickup is moving toward Pharmacie des Etoiles.",
+        tag = "9 min",
+    )
     KazeIntroCard(
         eyebrow = "Orders",
         title = "SQ-2419 is moving through Tokoin.",
@@ -456,6 +527,21 @@ private fun OrdersContent() {
 
 @Composable
 private fun AccountContent() {
+    SequoAppBar(
+        title = "Afi K.",
+        subtitle = "Subscriber profile",
+        leadingIcon = Icons.Filled.Person,
+        actions = listOf(
+            AppBarAction(Icons.Filled.Settings, "Account settings", emphasized = true),
+            AppBarAction(Icons.Filled.Notifications, "Notification settings"),
+        ),
+    )
+    SequoStatusStrip(
+        icon = Icons.Filled.CheckCircle,
+        title = "Subscription active",
+        detail = "15% delivery-fee discount plus 500 CFA parrainage credit.",
+        tag = "15%",
+    )
     KazePassCard()
     KazeSectionCard(title = "Saved places", action = "Lome") {
         AccountAddressRow("Home", "Tokoin Gbadago, near Pharmacie des Etoiles")
@@ -472,29 +558,127 @@ private fun AccountContent() {
 
 @Composable
 private fun HomeAppBar() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("Deliver to", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f))
-            Text("Tokoin Gbadago", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        }
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SequoAppBar(
+            title = "Tokoin Gbadago",
+            subtitle = "Deliver to Pharmacie des Etoiles area",
+            leadingIcon = Icons.Filled.Place,
+            actions = listOf(
+                AppBarAction(Icons.Filled.Payments, "Yas payment ready", emphasized = true),
+                AppBarAction(Icons.Filled.Notifications, "Notifications", badge = "2"),
+            ),
+        )
+        SequoStatusStrip(
+            icon = Icons.Filled.PhotoCamera,
+            title = "Camera checks nearby",
+            detail = "8 live seller photos refreshed around Tokoin and Assigame.",
+            tag = "live",
+        )
+    }
+}
+
+@Composable
+private fun SequoAppBar(
+    title: String,
+    subtitle: String,
+    leadingIcon: ImageVector,
+    actions: List<AppBarAction>,
+) {
+    KazeCard(shape = RoundedCornerShape(28.dp)) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SequoMiniMark("Y", KazePrimary)
-                Text("Yas ready", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            SequoIconMark(leadingIcon, MaterialTheme.colorScheme.primary, Modifier.size(46.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            actions.forEach { action ->
+                AppBarIconButton(action)
             }
         }
+    }
+}
+
+@Composable
+private fun AppBarIconButton(action: AppBarAction) {
+    val accent = if (action.emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+    Box {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (action.emphasized) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f))
+                .border(1.dp, accent.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
+                .clickable { }
+                .padding(10.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = action.icon,
+                contentDescription = action.contentDescription,
+                tint = accent,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        action.badge?.let { badge ->
+            Surface(
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.32f)),
+            ) {
+                Text(
+                    text = badge,
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SequoStatusStrip(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+    tag: String,
+) {
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.56f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SequoIconMark(icon, MaterialTheme.colorScheme.primary, Modifier.size(34.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            MetaPill(tag, KazeSecondary)
+        }
+    }
+}
+
+@Composable
+private fun SequoIconMark(icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(17.dp))
+            .background(color.copy(alpha = 0.13f))
+            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(17.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(21.dp))
     }
 }
 
@@ -506,7 +690,7 @@ private fun KazeSearchCard() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SequoMiniMark("S", KazeSecondary)
+            SequoIconMark(Icons.Filled.Search, KazeSecondary, Modifier.size(34.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("Search Lome", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
@@ -1458,11 +1642,11 @@ private fun KazeBottomNavItem(
                         .background(selectedIconContainerColor),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = destination.mark,
-                        color = contentColor,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
+                    Icon(
+                        imageVector = destination.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(23.dp),
+                        tint = contentColor,
                     )
                 }
                 NavigationBadge(
