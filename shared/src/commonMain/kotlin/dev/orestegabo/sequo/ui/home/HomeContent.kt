@@ -47,38 +47,36 @@ internal fun HomeContent(
     val selectedType = shopTypeFor(selectedTypeKey)
     val selectedShops = shopsForType(selectedTypeKey)
     val nearestShop = selectedShops.minByOrNull { it.distanceKm } ?: sequoShops.first()
+    val featuredProducts = featuredProductsFor(selectedTypeKey)
 
-    HomeAppBar()
-    SequoHeroCard(
-        eyebrow = "Lome now",
-        title = "Food. Market. Goods.",
-        body = "Pick a shop, see the fee, pay mobile money.",
-        primaryLabel = "Shop Lome",
-        secondaryLabel = "Track order",
-        onPrimary = { onDestinationSelected(SequoSection.Markets) },
-        onSecondary = { onDestinationSelected(SequoSection.Orders) },
+    MarketplaceHeader(
+        address = "Tokoin Gbadago, Lome",
+        onProfile = { onDestinationSelected(SequoSection.Account) },
+        onNotifications = { onDestinationSelected(SequoSection.Orders) },
     )
     SequoSearchCard()
-    ShopTypeRail(
+    DeliveryDealBanner(
+        title = "Delivery is",
+        deal = "15%",
+        detail = "cheaper",
+        note = "Subscriber route from ${nearestShop.area} / ${formatCfa(baseDelivery(nearestShop.distanceKm))}",
+    )
+    MarketplaceCategorySection(
         types = sequoShopTypes,
         selectedTypeKey = selectedTypeKey,
         onTypeSelected = { selectedTypeKey = it },
+        onSeeAll = { onDestinationSelected(SequoSection.Markets) },
     )
-    SequoMetricRow(
-        leftValue = formatDistance(nearestShop.distanceKm),
-        leftLabel = nearestShop.area,
-        rightValue = formatCfa(baseDelivery(nearestShop.distanceKm)),
-        rightLabel = "delivery fee",
+    FlashSaleSection(
+        title = if (selectedType.key == "food") "Fast picks" else "Flash Sale",
+        countdown = "02:59:23",
+        products = featuredProducts,
+        onAddProduct = onAddProduct,
+        onSeeAll = { onDestinationSelected(SequoSection.Markets) },
     )
-    HomeSignalRow()
-    SequoSectionCard(title = "${selectedType.title} shops", action = "nearby") {
-        selectedShops.take(3).forEach { shop ->
+    SequoSectionCard(title = "Nearby shops", action = selectedType.supportLabel) {
+        selectedShops.take(2).forEach { shop ->
             ShopSummaryRow(shop = shop)
-        }
-    }
-    SequoSectionCard(title = "Popular now", action = selectedType.supportLabel) {
-        featuredProductsFor(selectedTypeKey).forEach { (shop, product) ->
-            CompactProductCard(shop, product, onAddProduct)
         }
     }
 }
