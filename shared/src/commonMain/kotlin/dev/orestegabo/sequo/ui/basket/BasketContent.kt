@@ -42,35 +42,14 @@ import sequo.shared.generated.resources.*
 internal fun BasketContent(extraBasketItems: Int) {
     var selectedPayment by remember { mutableStateOf("Yas Togo") }
 
-    SequoAppBar(
-        title = "Checkout",
-        subtitle = "Basket locked before payment",
-        leadingIcon = Icons.Filled.ShoppingBasket,
-        actions = listOf(
-            AppBarAction(Icons.Filled.Lock, "Secure checkout", emphasized = true),
-            AppBarAction(Icons.Filled.Payments, "Payment methods"),
-        ),
-    )
-    SequoStatusStrip(
-        icon = Icons.Filled.Lock,
-        title = "Payment validation required",
-        detail = "Order completion unlocks only after Yas Togo or Moov Africa confirms.",
-        tag = "secure",
-    )
+    CartHeader()
     DeliveryAddressCard()
-    SequoSectionCard(title = "Basket", action = "${sequoBasket.sumOf { it.quantity } + extraBasketItems} items") {
-        sequoBasket.forEach { entry ->
-            BasketLine(entry)
-        }
-        if (extraBasketItems > 0) {
-            BasketAddedLine(extraBasketItems)
-        }
-    }
-    SequoSectionCard(title = "Food options", action = "custom") {
+    CartItemsPanel(extraBasketItems)
+    SequoSectionCard(title = "Food options", action = "custom seal") {
         RuleRow("Attieke poisson braise", sequoShops[0].products[0].optionHint)
         RuleRow("No mixing with goods", "Hot food travels in a separate sealed bag inside the Sequo package.")
     }
-    SequoSectionCard(title = "Consolidation", action = "Lome route") {
+    SequoSectionCard(title = "Consolidation", action = "Sequo route") {
         RuleRow("Assigame + Akodessewa", "Eligible for one Sequo package after inspection at pickup.")
         RuleRow("Food exception", "Tokoin hot meal keeps its own thermal seal and pickup timing.")
     }
