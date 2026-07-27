@@ -208,6 +208,168 @@ internal fun HomeSignalPill(icon: ImageVector, label: String, color: Color, modi
 }
 
 @Composable
+internal fun FlashSaleSection(
+    title: String,
+    countdown: String,
+    products: List<Pair<SequoShop, SequoProduct>>,
+    onAddProduct: () -> Unit,
+    onSeeAll: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primary) {
+                    Text(
+                        countdown,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Surface(onClick = onSeeAll, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(21.dp),
+                    )
+                }
+            }
+        }
+        products.chunked(2).forEach { rowProducts ->
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                rowProducts.forEach { (shop, product) ->
+                    FlashProductCard(
+                        shop = shop,
+                        product = product,
+                        onAddProduct = onAddProduct,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowProducts.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun FlashProductCard(
+    shop: SequoShop,
+    product: SequoProduct,
+    onAddProduct: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(166.dp),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)),
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                Icon(
+                    imageVector = productVisualIcon(product),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                    modifier = Modifier.align(Alignment.Center).size(62.dp),
+                )
+                Surface(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(9.dp).size(36.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f)),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Filled.FavoriteBorder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                if (product.bargainNote != null) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.BottomStart).padding(9.dp),
+                        shape = RoundedCornerShape(999.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                    ) {
+                        Text(
+                            "Negotiate",
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+        Text(
+            product.name,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            shop.area,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                formatCfa(product.priceCfa),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                formatCfa(product.priceCfa + 800),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        SequoTinyButton("Add", onAddProduct)
+    }
+}
+
+internal fun productVisualIcon(product: SequoProduct): ImageVector =
+    when {
+        product.label.contains("Food", ignoreCase = true) || product.label.contains("Hot", ignoreCase = true) -> Icons.Filled.LocalDining
+        product.label.contains("Fresh", ignoreCase = true) -> Icons.Filled.Storefront
+        product.label.contains("Auto", ignoreCase = true) -> Icons.Filled.Build
+        product.label.contains("Care", ignoreCase = true) -> Icons.Filled.MedicalServices
+        product.label.contains("Bargain", ignoreCase = true) -> Icons.Filled.LocalOffer
+        product.name.contains("charger", ignoreCase = true) || product.name.contains("case", ignoreCase = true) -> Icons.Filled.PhoneAndroid
+        else -> Icons.Filled.ShoppingBasket
+    }
+
+@Composable
 internal fun SequoIntroCard(eyebrow: String, title: String, subtitle: String) {
     SequoCard(shape = RoundedCornerShape(24.dp)) {
         Box(modifier = Modifier.fillMaxWidth()) {
