@@ -40,19 +40,10 @@ import sequo.shared.generated.resources.*
 
 @Composable
 internal fun AccountContent() {
-    SequoAppBar(
-        title = "Afi K.",
-        subtitle = "Subscriber profile",
-        leadingIcon = Icons.Filled.Person,
-        actions = listOf(
-            AppBarAction(Icons.Filled.Settings, "Account settings", emphasized = true),
-            AppBarAction(Icons.Filled.Notifications, "Notification settings"),
-        ),
-    )
     SequoStatusStrip(
         icon = Icons.Filled.CheckCircle,
         title = "Subscription active",
-        detail = "15% delivery-fee discount plus 500 CFA parrainage credit.",
+        detail = "15% off / 500 CFA credit",
         tag = "15%",
     )
     SequoPassCard()
@@ -62,13 +53,13 @@ internal fun AccountContent() {
         AccountAddressRow("Office", "Be-Kpota, route du marche")
     }
     SequoSectionCard(title = "Supported payments", action = "no cash") {
-        SupportedPaymentRow("Yas Togo", "Primary mobile money validation before order completion")
-        SupportedPaymentRow("Moov Africa", "Backup mobile money validation for checkout")
+        SupportedPaymentRow("Yas Togo", "Primary")
+        SupportedPaymentRow("Moov Africa", "Backup")
     }
     SequoSectionCard(title = "Account tools", action = "secure") {
-        SettingRow("Payments", "Yas Togo and Moov Africa validation")
-        SettingRow("Returns", "Point de Relai drop-off within 72 hours")
-        SettingRow("Parrainage", "Delivery credit, never cash payout")
-        SettingRow("Subscription", "15% delivery fee discount active")
+        SettingRow("Payments", "Yas / Moov")
+        SettingRow("Returns", "72 hours")
+        SettingRow("Parrainage", "Delivery credit")
+        SettingRow("Subscription", "15% active")
     }
 }
