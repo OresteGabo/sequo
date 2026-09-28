@@ -42,48 +42,147 @@ import sequo.shared.generated.resources.*
 internal fun MarketsContent(onAddProduct: () -> Unit) {
     var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
     var selectedArea by remember { mutableStateOf("All Lome") }
+    var selectedSubcategory by remember { mutableStateOf("All") }
+    var selectedSort by remember { mutableStateOf("Nearby") }
+    var areaFiltersExpanded by remember { mutableStateOf(false) }
+    var subcategoryFiltersExpanded by remember { mutableStateOf(false) }
     val selectedType = shopTypeFor(selectedTypeKey)
     val shopsByType = shopsForType(selectedTypeKey)
-    val visibleShops = if (selectedArea == "All Lome") {
+    val subcategories = listOf("All") + productSubcategoriesFor(shopsByType)
+    val areaShops = if (selectedArea == "All Lome") {
         shopsByType
     } else {
         shopsByType.filter { shop ->
             shop.area.contains(selectedArea) || shop.name.contains(selectedArea)
         }
     }
+    val filteredShops = areaShops.filter { shop ->
+        selectedSubcategory == "All" || shop.products.any { product ->
+            productSubcategory(product) == selectedSubcategory
+        }
+    }
+    val visibleShops = when (selectedSort) {
+        "Fastest" -> filteredShops.sortedBy { it.etaSortRank() }
+        "Rating" -> filteredShops.sortedByDescending { it.rating.toDoubleOrNull() ?: 0.0 }
+        "Delivery" -> filteredShops.sortedBy { baseDelivery(it.distanceKm) }
+        else -> filteredShops.sortedBy { it.distanceKm }
+    }
 
-    SequoAppBar(
-        title = "Markets",
-        subtitle = "Verified Lomé sellers",
-        leadingIcon = Icons.Filled.Storefront,
-        actions = listOf(
-            AppBarAction(Icons.Filled.Search, "Search markets"),
-            AppBarAction(Icons.Filled.Tune, "Filter shops", emphasized = true),
-        ),
-    )
-    SequoStatusStrip(
-        icon = Icons.Filled.PhotoCamera,
-        title = "Live photo gate",
-        detail = "Seller gallery uploads stay blocked unless the product is generic.",
-        tag = "active",
-    )
-    SequoIntroCard(
-        eyebrow = "Markets",
-        title = "${selectedType.title} shops in Lome.",
-        subtitle = "Distance, fee, photos, and pickup grouping are visible before checkout.",
-    )
     ShopTypeRail(
         types = sequoShopTypes,
         selectedTypeKey = selectedTypeKey,
-        onTypeSelected = { selectedTypeKey = it },
+        onTypeSelected = {
+            selectedTypeKey = it
+            selectedSubcategory = "All"
+            selectedArea = "All Lome"
+            selectedSort = "Nearby"
+            areaFiltersExpanded = false
+            subcategoryFiltersExpanded = false
+        },
+    )
+    MarketSortBar(
+        selectedType = selectedType,
+        visibleCount = visibleShops.size,
+        selectedSort = selectedSort,
+        onSortSelected = { selectedSort = it },
     )
     CategoryRail(
-        categories = listOf("All Lome", "Tokoin", "Assigame", "Hedzranawoe", "Akodessewa", "Agbalepedo", "Be-Kpota", "Baguida"),
+        categories = subcategories,
+        selectedCategory = selectedSubcategory,
+        onCategorySelected = { selectedSubcategory = it },
+        expanded = subcategoryFiltersExpanded,
+        onExpandedChange = { subcategoryFiltersExpanded = it },
+    )
+    CategoryRail(
+        categories = listOf(
+            "All Lome",
+            "Tokoin",
+            "Assigame",
+            "Hedzranawoe",
+            "Akodessewa",
+            "Agbalepedo",
+            "Be-Kpota",
+            "Baguida",
+            "Adidogome",
+            "Nyekonakpoe",
+            "Agoe",
+            "Ablogame",
+            "Kodjoviakope",
+            "Be",
+        ),
         selectedCategory = selectedArea,
         onCategorySelected = { selectedArea = it },
+        expanded = areaFiltersExpanded,
+        onExpandedChange = { areaFiltersExpanded = it },
     )
     LomeRouteCard()
     visibleShops.forEach { shop ->
-        SequoShopCard(shop = shop, onAddProduct = onAddProduct)
+        SequoShopCard(
+            shop = shop,
+            selectedSubcategory = selectedSubcategory.takeUnless { it == "All" },
+            onAddProduct = onAddProduct,
+        )
     }
 }
+
+@Composable
+private fun MarketSortBar(
+    selectedType: SequoShopType,
+    visibleCount: Int,
+    selectedSort: String,
+    onSortSelected: (String) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = selectedType.accent.copy(alpha = 0.11f),
+        border = BorderStroke(1.dp, selectedType.accent.copy(alpha = 0.24f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Tune,
+                    contentDescription = null,
+                    tint = selectedType.accent,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    "${selectedType.title} / $visibleCount shops",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf("Nearby", "Fastest", "Rating", "Delivery").forEach { sort ->
+                    SequoFilterChip(
+                        label = sort,
+                        selected = sort == selectedSort,
+                        onClick = { onSortSelected(sort) },
+                        modifier = Modifier.widthIn(min = 88.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun SequoShop.etaSortRank(): Int =
+    when {
+        eta.contains("min", ignoreCase = true) -> eta.filter { it.isDigit() }.toIntOrNull() ?: 999
+        eta.contains("today", ignoreCase = true) -> 240
+        eta.contains("tomorrow", ignoreCase = true) -> 1440
+        else -> 999
+    }
