@@ -46,20 +46,12 @@ internal fun HomeContent(
     var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
     val selectedType = shopTypeFor(selectedTypeKey)
     val selectedShops = shopsForType(selectedTypeKey)
-    val nearestShop = selectedShops.minByOrNull { it.distanceKm } ?: sequoShops.first()
     val featuredProducts = featuredProductsFor(selectedTypeKey)
 
-    MarketplaceHeader(
-        address = "Tokoin Gbadago, Lome",
-        onProfile = { onDestinationSelected(SequoSection.Account) },
-        onNotifications = { onDestinationSelected(SequoSection.Orders) },
-    )
-    SequoSearchCard()
-    DeliveryDealBanner(
-        title = "Delivery is",
-        deal = "15%",
-        detail = "cheaper",
-        note = "Subscriber route from ${nearestShop.area} / ${formatCfa(baseDelivery(nearestShop.distanceKm))}",
+    ProductPromoCarousel(
+        promos = sequoPromos,
+        onAddProduct = onAddProduct,
+        onSeeAll = { onDestinationSelected(SequoSection.Markets) },
     )
     MarketplaceCategorySection(
         types = sequoShopTypes,
@@ -68,13 +60,18 @@ internal fun HomeContent(
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
     )
     FlashSaleSection(
-        title = if (selectedType.key == "food") "Fast picks" else "Flash Sale",
-        countdown = "02:59:23",
+        title = "Popular picks",
+        badge = selectedType.supportLabel,
         products = featuredProducts,
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
     )
-    SequoSectionCard(title = "Nearby shops", action = selectedType.supportLabel) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        MarketplaceSectionHeader(
+            title = "Nearby shops",
+            action = selectedType.supportLabel,
+            onAction = { onDestinationSelected(SequoSection.Markets) },
+        )
         selectedShops.take(2).forEach { shop ->
             ShopSummaryRow(shop = shop)
         }
