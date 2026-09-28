@@ -40,7 +40,7 @@ import sequo.shared.generated.resources.*
 
 internal enum class SequoSection(val label: String, val icon: ImageVector) {
     Markets("Markets", Icons.Filled.Storefront),
-    Basket("Basket", Icons.Filled.ShoppingBasket),
+    Basket("Cart", Icons.Filled.ShoppingBasket),
     Home("Sequo", Icons.Filled.Home),
     Orders("Orders", Icons.AutoMirrored.Filled.ReceiptLong),
     Account("Account", Icons.Filled.Person),
