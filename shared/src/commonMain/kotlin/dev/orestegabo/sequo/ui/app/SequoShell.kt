@@ -42,6 +42,7 @@ import sequo.shared.generated.resources.*
 internal fun SequoShell() {
     var currentDestination by remember { mutableStateOf(SequoSection.Home) }
     var extraBasketItems by remember { mutableStateOf(0) }
+    var searchVisible by remember { mutableStateOf(false) }
     val basketCount = sequoBasket.sumOf { it.quantity } + extraBasketItems
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -50,12 +51,23 @@ internal fun SequoShell() {
             currentDestination = currentDestination,
             onDestinationSelected = { currentDestination = it },
             extraBasketItems = extraBasketItems,
+            searchVisible = searchVisible,
+            onCloseSearch = { searchVisible = false },
             onAddProduct = { extraBasketItems += 1 },
             modifier = Modifier.fillMaxSize(),
         )
+        SequoTopAppBar(
+            currentDestination = currentDestination,
+            onSearchClick = { searchVisible = !searchVisible },
+            onNotificationsClick = { currentDestination = SequoSection.Orders },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
         SequoBottomBar(
             currentDestination = currentDestination,
-            onDestinationSelected = { currentDestination = it },
+            onDestinationSelected = {
+                currentDestination = it
+                searchVisible = false
+            },
             pendingBasketCount = basketCount,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -67,10 +79,15 @@ internal fun SequoContentStage(
     currentDestination: SequoSection,
     onDestinationSelected: (SequoSection) -> Unit,
     extraBasketItems: Int,
+    searchVisible: Boolean,
+    onCloseSearch: () -> Unit,
     onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SequoScreenColumn(modifier = modifier) {
+        if (searchVisible) {
+            SequoSearchCard(onClose = onCloseSearch)
+        }
         when (currentDestination) {
             SequoSection.Home -> HomeContent(onDestinationSelected, onAddProduct)
             SequoSection.Markets -> MarketsContent(onAddProduct)
@@ -89,7 +106,7 @@ internal fun SequoScreenColumn(
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 126.dp),
+            .padding(start = 20.dp, top = 104.dp, end = 20.dp, bottom = 126.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
