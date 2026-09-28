@@ -41,8 +41,8 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun ReturnHubCard() {
     SequoSectionCard(title = "Return hub", action = "72 hours") {
-        RuleRow("Point de Relai Tokoin", "Open 08:00-19:00, accepts sealed general goods returns.")
-        RuleRow("Inspection status", "Refund triggers automatically when Sequo accepts the returned product.")
+        RuleRow("Point de Relai Tokoin", "08:00-19:00")
+        RuleRow("Inspection", "Refund after approval")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SequoSecondaryButton("Start return", {}, Modifier.weight(1f), emphasized = true)
             SequoSecondaryButton("Find point", {}, Modifier.weight(1f))
