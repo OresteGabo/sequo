@@ -47,24 +47,33 @@ internal fun CartItemsPanel(extraBasketItems: Int) {
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CartCheckMark(checked = true)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "Your items",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "Ready for checkout",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
-                    "Select all",
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    "${sequoBasket.size + extraBasketItems} items",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                 )
-                CartToolButton(Icons.Filled.IosShare)
-                CartToolButton(Icons.Filled.Edit)
             }
             sequoBasket.forEachIndexed { index, entry ->
                 BasketLine(entry)
                 if (index != sequoBasket.lastIndex || extraBasketItems > 0) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
+                    Spacer(Modifier.height(2.dp))
                 }
             }
             if (extraBasketItems > 0) {
@@ -78,55 +87,165 @@ internal fun CartItemsPanel(extraBasketItems: Int) {
 internal fun BasketLine(entry: BasketEntry) {
     val shop = entry.shop
     val product = entry.product
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        CartCheckMark(checked = true, modifier = Modifier.padding(top = 16.dp))
-        ProductImage(product = product, modifier = Modifier.size(52.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(shop.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(formatCfa(product.priceCfa * entry.quantity), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
-                Text("x${entry.quantity}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+    val packageLabel = packageLabelForArea(shop.area)
+    CartItemTile(
+        image = {
+            ProductImage(
+                product = product,
+                modifier = Modifier.fillMaxSize(),
+            )
+        },
+        content = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    product.name,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                PackageBadge(packageLabel)
             }
+            Text(
+                shop.name,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    formatCfa(product.priceCfa * entry.quantity),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    "x${entry.quantity}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        trailing = { QuantityStepper(entry.quantity) },
+    )
+}
+
+private fun packageLabelForArea(area: String): String {
+    val areas = sequoBasket.map { it.shop.area }.distinct()
+    val index = areas.indexOf(area).coerceAtLeast(0)
+    return ('A'.code + index).toChar().toString()
+}
+
+@Composable
+private fun PackageBadge(label: String) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
+    ) {
+        Text(
+            "Pkg $label",
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun CartItemTile(
+    image: @Composable BoxScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+    trailing: @Composable BoxScope.() -> Unit,
+) {
+    val tileHeight = 92.dp
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(tileHeight),
+            shape = RoundedCornerShape(18.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.36f)),
+        ) {}
+        Box(
+            modifier = Modifier
+                .height(tileHeight)
+                .width(150.dp)
+                .clip(RoundedCornerShape(18.dp)),
+            content = image,
+        )
+        Box(
+            modifier = Modifier
+                .height(tileHeight)
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        0.0f to Color.Transparent,
+                        0.22f to MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.10f),
+                        0.42f to MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.86f),
+                        0.60f to MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.98f),
+                    ),
+                ),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 96.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                content = content,
+            )
+            Box(content = trailing)
         }
-        QuantityStepper(entry.quantity)
     }
 }
 
 @Composable
 internal fun BasketAddedLine(count: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        CartCheckMark(checked = true, modifier = Modifier.padding(top = 16.dp))
-        Surface(
-            modifier = Modifier.size(52.dp),
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.primaryContainer,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.ShoppingBasket, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
+    CartItemTile(
+        image = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.ShoppingBasket,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(28.dp),
+                )
             }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text("Added while browsing", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        },
+        content = {
+            Text("Added while browsing", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text("Temporary basket item", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(formatCfa(count * 3500), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
-        }
-        QuantityStepper(count)
-    }
+        },
+        trailing = { QuantityStepper(count) },
+    )
 }
 
 @Composable
-internal fun DeliveryAddressCard() {
+internal fun DeliveryAddressCard(packageCount: Int) {
     Surface(
-        modifier = Modifier.fillMaxWidth().height(64.dp),
+        modifier = Modifier.fillMaxWidth().height(78.dp),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -136,41 +255,176 @@ internal fun DeliveryAddressCard() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Filled.Place, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
-            Text(
-                "Tokoin Gbadago, near Pharmacie des Etoiles",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    "Tokoin Gbadago, near Pharmacie des Etoiles",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "Delivery in 35-45 min  |  $packageCount packages from shopping locations",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
         }
     }
 }
 
 @Composable
-internal fun CartCheckMark(
-    checked: Boolean,
-    modifier: Modifier = Modifier,
-) {
+internal fun CartDeliveryPackagesCard() {
+    var expanded by remember { mutableStateOf(false) }
+    val packages = sequoBasket.groupBy { it.shop.area }.values.toList()
+    val totalDelivery = cartPackageDeliveryFees().sum()
+
     Surface(
-        modifier = modifier.size(20.dp),
-        shape = RoundedCornerShape(6.dp),
-        color = if (checked) MaterialTheme.colorScheme.primary else Color.Transparent,
-        border = if (checked) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)),
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(13.dp),
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(38.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.78f),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Filled.LocalShipping,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Delivery & packaging", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "${packages.size} packages with item and delivery details",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Delivery", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatCfa(totalDelivery), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Collapse delivery fees" else "Show delivery fees",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            if (expanded) packages.forEachIndexed { index, entries ->
+                val shop = entries.first().shop
+                val itemCount = entries.sumOf { it.quantity }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f))
+                        .padding(horizontal = 10.dp, vertical = 9.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(
+                        modifier = Modifier.size(30.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                ('A'.code + index).toChar().toString(),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Black,
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Package ${('A'.code + index).toChar()}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text(
+                            "${shop.area}  |  $itemCount item${if (itemCount == 1) "" else "s"}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Text(
+                        formatCfa(baseDelivery(shop.distanceKm)),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Column(
+                    modifier = Modifier.padding(start = 50.dp, top = 2.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    entries.forEach { entry ->
+                        Text(
+                            "${entry.quantity} x ${entry.product.name}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    val foodEntries = entries.filter { isFoodBasketEntry(it) }
+                    if (foodEntries.isNotEmpty()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f))
+                        Text(
+                            "Packaging: sealed thermal bag",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        foodEntries.forEach { entry ->
+                            Text(
+                                "Preparation: ${entry.product.optionHint}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+private fun isFoodBasketEntry(entry: BasketEntry): Boolean =
+    entry.shop.kind.contains("food", ignoreCase = true) ||
+        entry.product.label.contains("food", ignoreCase = true) ||
+        entry.product.label.contains("hot", ignoreCase = true)
+
+private fun cartPackageDeliveryFees(): List<Int> =
+    sequoBasket
+        .groupBy { it.shop.area }
+        .values
+        .map { entries -> baseDelivery(entries.first().shop.distanceKm) }
 
 @Composable
 internal fun QuantityStepper(quantity: Int) {
@@ -211,36 +465,24 @@ internal fun StepperButton(icon: ImageVector) {
 }
 
 @Composable
-internal fun CartToolButton(icon: ImageVector) {
-    Surface(
-        modifier = Modifier.size(34.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-        }
-    }
-}
-
-@Composable
 internal fun SequoCheckoutCard(
     extraBasketItems: Int,
     selectedPayment: String,
     onPaymentSelected: (String) -> Unit,
 ) {
     val subtotal = sequoBasket.sumOf { it.product.priceCfa * it.quantity } + (extraBasketItems * 3500)
-    val delivery = calculateDeliveryPricing(
-        DeliveryPricingInput(distanceKm = 5.6, subscriptionDiscountPercent = 15, referralCreditCfa = 500),
-    )
-    val total = subtotal + delivery.finalDeliveryFeeCfa
+    val packageDelivery = cartPackageDeliveryFees().sum()
+    val subscriptionDiscount = (packageDelivery * 15) / 100
+    val deliveryAfterSubscription = packageDelivery - subscriptionDiscount
+    val referralCredit = 500.coerceAtMost(deliveryAfterSubscription)
+    val finalDelivery = deliveryAfterSubscription - referralCredit
+    val total = subtotal + finalDelivery
 
     SequoSectionCard(title = "Pay securely", action = selectedPayment) {
         ValueRow("Items", formatCfa(subtotal))
-        ValueRow("Delivery", formatCfa(delivery.baseFeeCfa))
-        ValueRow("Subscriber", "-${formatCfa(delivery.subscriptionDiscountCfa)}")
-        ValueRow("Parrainage", "-${formatCfa(delivery.referralCreditAppliedCfa)}")
+        ValueRow("Delivery", formatCfa(packageDelivery))
+        ValueRow("Subscriber", "-${formatCfa(subscriptionDiscount)}")
+        ValueRow("Parrainage", "-${formatCfa(referralCredit)}")
         ValueRow("Total", formatCfa(total), strong = true)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PaymentChoice("Yas Togo", selectedPayment, onPaymentSelected, Modifier.weight(1f))
