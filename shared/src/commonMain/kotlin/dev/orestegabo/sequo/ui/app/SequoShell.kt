@@ -35,6 +35,7 @@ import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
@@ -43,34 +44,54 @@ internal fun SequoShell() {
     var currentDestination by remember { mutableStateOf(SequoSection.Home) }
     var extraBasketItems by remember { mutableStateOf(0) }
     var searchVisible by remember { mutableStateOf(false) }
+    var selectedMarketTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     val basketCount = sequoBasket.sumOf { it.quantity } + extraBasketItems
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        SequoAmbientBackground(modifier = Modifier.fillMaxSize())
-        SequoContentStage(
-            currentDestination = currentDestination,
-            onDestinationSelected = { currentDestination = it },
-            extraBasketItems = extraBasketItems,
-            searchVisible = searchVisible,
-            onCloseSearch = { searchVisible = false },
-            onAddProduct = { extraBasketItems += 1 },
-            modifier = Modifier.fillMaxSize(),
-        )
-        SequoTopAppBar(
-            currentDestination = currentDestination,
-            onSearchClick = { searchVisible = !searchVisible },
-            onNotificationsClick = { currentDestination = SequoSection.Orders },
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-        SequoBottomBar(
-            currentDestination = currentDestination,
-            onDestinationSelected = {
-                currentDestination = it
-                searchVisible = false
-            },
-            pendingBasketCount = basketCount,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            SequoNavigationDrawer(
+                selectedMarketTypeKey = selectedMarketTypeKey,
+                onMarketTypeSelected = { typeKey ->
+                    selectedMarketTypeKey = typeKey
+                    currentDestination = SequoSection.Markets
+                    searchVisible = false
+                    scope.launch { drawerState.close() }
+                },
+            )
+        },
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            SequoAmbientBackground(modifier = Modifier.fillMaxSize())
+            SequoContentStage(
+                currentDestination = currentDestination,
+                onDestinationSelected = { currentDestination = it },
+                extraBasketItems = extraBasketItems,
+                searchVisible = searchVisible,
+                onCloseSearch = { searchVisible = false },
+                selectedMarketTypeKey = selectedMarketTypeKey,
+                onAddProduct = { extraBasketItems += 1 },
+                modifier = Modifier.fillMaxSize(),
+            )
+            SequoTopAppBar(
+                currentDestination = currentDestination,
+                onMenuClick = { scope.launch { drawerState.open() } },
+                onSearchClick = { searchVisible = !searchVisible },
+                onNotificationsClick = { currentDestination = SequoSection.Orders },
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+            SequoBottomBar(
+                currentDestination = currentDestination,
+                onDestinationSelected = {
+                    currentDestination = it
+                    searchVisible = false
+                },
+                pendingBasketCount = basketCount,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
     }
 }
 
@@ -81,6 +102,7 @@ internal fun SequoContentStage(
     extraBasketItems: Int,
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
+    selectedMarketTypeKey: String,
     onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -90,7 +112,10 @@ internal fun SequoContentStage(
         }
         when (currentDestination) {
             SequoSection.Home -> HomeContent(onDestinationSelected, onAddProduct)
-            SequoSection.Markets -> MarketsContent(onAddProduct)
+            SequoSection.Markets -> MarketsContent(
+                selectedTypeKey = selectedMarketTypeKey,
+                onAddProduct = onAddProduct,
+            )
             SequoSection.Basket -> BasketContent(extraBasketItems)
             SequoSection.Orders -> OrdersContent()
             SequoSection.Account -> AccountContent()
@@ -110,4 +135,94 @@ internal fun SequoScreenColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
+}
+
+@Composable
+private fun SequoNavigationDrawer(
+    selectedMarketTypeKey: String,
+    onMarketTypeSelected: (String) -> Unit,
+) {
+    ModalDrawerSheet(
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
+        drawerContentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.width(316.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 14.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SequoIconMark(Icons.Filled.Storefront, MaterialTheme.colorScheme.primary, Modifier.size(40.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Sequo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+                    Text("Browse faster", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
+            Text(
+                "Shop categories",
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+            )
+            sequoShopTypes.forEach { type ->
+                NavigationDrawerItem(
+                    label = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(type.title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            when (type.key) {
+                                "food" -> Text("Now", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                "bargains" -> Text("Deals", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    },
+                    selected = selectedMarketTypeKey == type.key,
+                    onClick = { onMarketTypeSelected(type.key) },
+                    icon = { Icon(type.icon, contentDescription = null, tint = type.accent) },
+                    shape = RoundedCornerShape(14.dp),
+                )
+            }
+            Text(
+                "Marketplace tools",
+                modifier = Modifier.padding(start = 12.dp, top = 10.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+            )
+            DrawerToolRow(Icons.Filled.LocalOffer, "Promos & campaigns", "Lunch, holidays, weekend deals")
+            DrawerToolRow(Icons.Filled.FavoriteBorder, "Saved shops", "Favorite sellers and repeat buys")
+            DrawerToolRow(Icons.Filled.Place, "Delivery areas", "Lome zones and fees")
+            DrawerToolRow(Icons.Filled.SupportAgent, "Support", "Orders, refunds, seller help")
+        }
+    }
+}
+
+@Composable
+private fun DrawerToolRow(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.56f))
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
 }
