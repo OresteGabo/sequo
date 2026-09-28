@@ -50,22 +50,13 @@ internal fun OrdersContent() {
             onBack = { selectedOrder = null },
         )
     } else {
-        SequoAppBar(
-            title = "Orders",
-            subtitle = "Live route and returns",
-            leadingIcon = Icons.AutoMirrored.Filled.ReceiptLong,
-            actions = listOf(
-                AppBarAction(Icons.Filled.SupportAgent, "Contact support"),
-                AppBarAction(Icons.Filled.Map, "Open route", emphasized = true),
-            )
-        )
         SequoStatusStrip(
             icon = Icons.Filled.Map,
             title = if (activeOrder.state.shouldShowPickupCode) "Pickup validation required" else "Delivery route active",
             detail = if (activeOrder.state.shouldShowPickupCode) {
-                "Rider must enter ${activeOrder.pickupCode} at ${activeOrder.sellers.first()} before the package leaves."
+                "${activeOrder.sellers.first()} / ${activeOrder.pickupCode}"
             } else {
-                "${activeOrder.id} is ${activeOrder.state.label.lowercase()} with ${sellerSummary(activeOrder)}."
+                "${activeOrder.id} / ${sellerSummary(activeOrder)}"
             },
             tag = "9 min",
         )
@@ -73,14 +64,14 @@ internal fun OrdersContent() {
             eyebrow = "Orders",
             title = "SQ-2419 is moving through Tokoin.",
             subtitle = if (activeOrder.state.shouldShowPickupCode) {
-                "${activeOrder.sellers.first()} is sealed, payment is validated, and pickup code ${activeOrder.pickupCode} confirms the rider collected the right package."
+                "${activeOrder.sellers.first()} / ${activeOrder.pickupCode}"
             } else {
-                "${activeOrder.sellers.first()} has already cleared pickup validation, so only route and delivery updates stay visible."
+                activeOrder.state.label
             },
         )
         SequoSectionCard(title = "Live progress", action = "9 min") {
             StepRow("Paid with Yas Togo", active = false, detail = "12:18")
-            StepRow("Seller camera photo approved", active = false, detail = "12:21")
+            StepRow("Item checked", active = false, detail = "12:21")
             StepRow("Thermal seal applied", active = false, detail = "12:27")
             StepRow("Rider approaching Tokoin", active = true, detail = "now")
         }
