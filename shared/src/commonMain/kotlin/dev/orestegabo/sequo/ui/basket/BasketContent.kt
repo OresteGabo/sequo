@@ -42,15 +42,8 @@ import sequo.shared.generated.resources.*
 internal fun BasketContent(extraBasketItems: Int) {
     var selectedPayment by remember { mutableStateOf("Yas Togo") }
 
-    DeliveryAddressCard()
+    DeliveryAddressCard(packageCount = sequoBasket.groupBy { it.shop.area }.size)
     CartItemsPanel(extraBasketItems)
-    SequoSectionCard(title = "Food options", action = "custom seal") {
-        RuleRow("Attieke poisson braise", sequoShops[0].products[0].optionHint)
-        RuleRow("Separate bag", "Thermal seal")
-    }
-    SequoSectionCard(title = "Consolidation", action = "Sequo route") {
-        RuleRow("Assigame + Akodessewa", "One package")
-        RuleRow("Tokoin meal", "Own seal")
-    }
+    CartDeliveryPackagesCard()
     SequoCheckoutCard(extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
 }
