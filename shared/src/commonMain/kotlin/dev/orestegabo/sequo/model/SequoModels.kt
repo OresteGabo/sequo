@@ -61,6 +61,7 @@ internal data class SequoProduct(
     val label: String,
     val optionHint: String,
     val bargainNote: String? = null,
+    val subcategory: String = "",
 )
 
 internal data class SequoShop(
@@ -82,6 +83,14 @@ internal data class SequoShopType(
     val supportLabel: String,
     val icon: ImageVector,
     val accent: Color,
+)
+
+internal data class SequoPromo(
+    val headline: String,
+    val title: String,
+    val subtitle: String,
+    val shop: SequoShop,
+    val product: SequoProduct,
 )
 
 internal data class BasketEntry(
