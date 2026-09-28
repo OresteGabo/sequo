@@ -39,6 +39,97 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
+internal fun SequoTopAppBar(
+    currentDestination: SequoSection,
+    onSearchClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+        tonalElevation = 3.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .statusBarsPadding()
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(start = 20.dp, end = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
+            ) {
+                Text(
+                    text = currentDestination.appBarTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = currentDestination.appBarSubtitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            IconButton(onClick = onNotificationsClick) {
+                BadgedBox(
+                    badge = {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ) {
+                            Text("2")
+                        }
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Notifications,
+                        contentDescription = "Notifications",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val SequoSection.appBarTitle: String
+    get() = when (this) {
+        SequoSection.Home -> "Tokoin Gbadago"
+        SequoSection.Markets -> "Markets"
+        SequoSection.Basket -> "Basket"
+        SequoSection.Orders -> "Orders"
+        SequoSection.Account -> "Account"
+    }
+
+private val SequoSection.appBarSubtitle: String
+    get() = when (this) {
+        SequoSection.Home -> "Deliver to Pharmacie des Etoiles area"
+        SequoSection.Markets -> "Verified Lome sellers"
+        SequoSection.Basket -> "Review and checkout"
+        SequoSection.Orders -> "Track every handoff"
+        SequoSection.Account -> "Addresses, payment, and support"
+    }
+
+@Composable
 internal fun HomeAppBar() {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SequoAppBar(
@@ -53,7 +144,7 @@ internal fun HomeAppBar() {
         SequoStatusStrip(
             icon = Icons.Filled.PhotoCamera,
             title = "Camera checks nearby",
-            detail = "8 live seller photos refreshed around Tokoin and Assigame.",
+            detail = "8 refreshed",
             tag = "live",
         )
     }
@@ -66,15 +157,15 @@ internal fun SequoAppBar(
     leadingIcon: ImageVector,
     actions: List<AppBarAction>,
 ) {
-    SequoCard(shape = RoundedCornerShape(28.dp)) {
+    SequoCard(shape = RoundedCornerShape(18.dp)) {
         Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SequoIconMark(leadingIcon, MaterialTheme.colorScheme.primary, Modifier.size(46.dp))
+            SequoIconMark(leadingIcon, MaterialTheme.colorScheme.primary, Modifier.size(38.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             actions.forEach { action ->
@@ -90,19 +181,19 @@ internal fun AppBarIconButton(action: AppBarAction) {
     Box {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (action.emphasized) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f))
-                .border(1.dp, accent.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
+                .size(38.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (action.emphasized) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest)
+                .border(1.dp, accent.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
                 .clickable { }
-                .padding(10.dp),
+                .padding(11.dp),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = action.icon,
                 contentDescription = action.contentDescription,
                 tint = accent,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
             )
         }
         action.badge?.let { badge ->
@@ -132,16 +223,16 @@ internal fun SequoStatusStrip(
     tag: String,
 ) {
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.56f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SequoIconMark(icon, MaterialTheme.colorScheme.primary, Modifier.size(34.dp))
+            SequoIconMark(icon, MaterialTheme.colorScheme.primary, Modifier.size(30.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -155,11 +246,11 @@ internal fun SequoStatusStrip(
 internal fun SequoIconMark(icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(17.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(color.copy(alpha = 0.13f))
-            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(17.dp)),
+            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(21.dp))
+        Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(17.dp))
     }
 }
