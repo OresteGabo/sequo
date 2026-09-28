@@ -39,57 +39,27 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun CartHeader() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "Cart",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Black,
-        )
-        Surface(
-            modifier = Modifier.size(52.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Filled.MoreHoriz,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 internal fun CartItemsPanel(extraBasketItems: Int) {
-    SequoCard(shape = RoundedCornerShape(34.dp)) {
+    SequoCard(shape = RoundedCornerShape(22.dp)) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CartCheckMark()
+                CartCheckMark(checked = true)
                 Text(
                     "Select all",
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                 )
-                Icon(Icons.Filled.IosShare, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
-                Icon(Icons.Filled.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                CartToolButton(Icons.Filled.IosShare)
+                CartToolButton(Icons.Filled.Edit)
             }
             sequoBasket.forEachIndexed { index, entry ->
                 BasketLine(entry)
@@ -109,28 +79,19 @@ internal fun BasketLine(entry: BasketEntry) {
     val shop = entry.shop
     val product = entry.product
     Row(
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        CartCheckMark()
-        Surface(
-            modifier = Modifier.size(74.dp),
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = productVisualIcon(product),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f),
-                    modifier = Modifier.size(34.dp),
-                )
-            }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CartCheckMark(checked = true, modifier = Modifier.padding(top = 16.dp))
+        ProductImage(product = product, modifier = Modifier.size(52.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(formatCfa(product.priceCfa * entry.quantity), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
             Text(shop.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(formatCfa(product.priceCfa * entry.quantity), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
+                Text("x${entry.quantity}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
         }
         QuantityStepper(entry.quantity)
     }
@@ -138,21 +99,25 @@ internal fun BasketLine(entry: BasketEntry) {
 
 @Composable
 internal fun BasketAddedLine(count: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-        CartCheckMark()
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        CartCheckMark(checked = true, modifier = Modifier.padding(top = 16.dp))
         Surface(
-            modifier = Modifier.size(74.dp),
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.size(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.ShoppingBasket, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), modifier = Modifier.size(34.dp))
+                Icon(Icons.Filled.ShoppingBasket, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(22.dp))
             }
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("Added while browsing", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Text(formatCfa(count * 3500), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
             Text("Temporary basket item", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(formatCfa(count * 3500), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
         }
         QuantityStepper(count)
     }
@@ -186,18 +151,22 @@ internal fun DeliveryAddressCard() {
 }
 
 @Composable
-internal fun CartCheckMark() {
+internal fun CartCheckMark(
+    checked: Boolean,
+    modifier: Modifier = Modifier,
+) {
     Surface(
-        modifier = Modifier.size(28.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.secondary,
+        modifier = modifier.size(20.dp),
+        shape = RoundedCornerShape(6.dp),
+        color = if (checked) MaterialTheme.colorScheme.primary else Color.Transparent,
+        border = if (checked) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Filled.Check,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(13.dp),
             )
         }
     }
@@ -205,13 +174,24 @@ internal fun CartCheckMark() {
 
 @Composable
 internal fun QuantityStepper(quantity: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         StepperButton(Icons.Filled.Remove)
         Text(
             quantity.toString(),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
+            modifier = Modifier.widthIn(min = 14.dp),
+            textAlign = TextAlign.Center,
         )
         StepperButton(Icons.Filled.Add)
     }
@@ -220,12 +200,26 @@ internal fun QuantityStepper(quantity: Int) {
 @Composable
 internal fun StepperButton(icon: ImageVector) {
     Surface(
-        modifier = Modifier.size(28.dp),
+        modifier = Modifier.size(22.dp),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = Color.Transparent,
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(17.dp))
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(15.dp))
+        }
+    }
+}
+
+@Composable
+internal fun CartToolButton(icon: ImageVector) {
+    Surface(
+        modifier = Modifier.size(34.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         }
     }
 }
