@@ -253,11 +253,6 @@ internal fun SequoCheckoutCard(
             PaymentChoice("Moov Africa", selectedPayment, onPaymentSelected, Modifier.weight(1f))
         }
         SequoPrimaryButton("Pay ${formatCfa(total)}", {}, Modifier.fillMaxWidth())
-        Text(
-            "Payment must be confirmed before the seller receives completion status.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
-        )
     }
 }
 
