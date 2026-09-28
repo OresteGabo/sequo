@@ -52,11 +52,6 @@ internal fun LomeRouteCard() {
                 RouteStop("Be", false, Modifier.weight(1f))
                 RouteStop("Akodessewa", false, Modifier.weight(1f))
             }
-            Text(
-                "Sequo groups eligible market goods on the same Lome pickup route, then keeps hot food in a separate seal.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f),
-            )
         }
     }
 }
@@ -145,7 +140,7 @@ internal fun SequoHeroCard(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MetaPill("400 CFA nearby", SequoPrimary)
-                    MetaPill("Live photos", SequoAccent)
+                    MetaPill("Product view", SequoAccent)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     SequoPrimaryButton(primaryLabel, onPrimary, Modifier.weight(1f))
@@ -182,7 +177,7 @@ internal fun MetricCard(value: String, label: String, modifier: Modifier = Modif
 @Composable
 internal fun HomeSignalRow() {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        HomeSignalPill(Icons.Filled.PhotoCamera, "Live photo", SequoPrimary, Modifier.weight(1f))
+        HomeSignalPill(Icons.Filled.PhotoCamera, "Product view", SequoPrimary, Modifier.weight(1f))
         HomeSignalPill(Icons.Filled.Payments, "Yas/Moov", SequoSecondary, Modifier.weight(1f))
         HomeSignalPill(Icons.Filled.CheckCircle, "72h relai", SequoAccent, Modifier.weight(1f))
     }
@@ -210,7 +205,7 @@ internal fun HomeSignalPill(icon: ImageVector, label: String, color: Color, modi
 @Composable
 internal fun FlashSaleSection(
     title: String,
-    countdown: String,
+    badge: String?,
     products: List<Pair<SequoShop, SequoProduct>>,
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
@@ -230,14 +225,18 @@ internal fun FlashSaleSection(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primary) {
-                    Text(
-                        countdown,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold,
-                    )
+                if (badge != null) {
+                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primary) {
+                        Text(
+                            badge,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
             Surface(onClick = onSeeAll, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
@@ -284,17 +283,18 @@ internal fun FlashProductCard(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)),
         ) {
             Box(Modifier.fillMaxSize()) {
-                Icon(
-                    imageVector = productVisualIcon(product),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-                    modifier = Modifier.align(Alignment.Center).size(62.dp),
+                Image(
+                    painter = painterResource(productImageResource(product)),
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
                 )
+                Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.32f)))))
                 Surface(
                     modifier = Modifier.align(Alignment.TopEnd).padding(9.dp).size(36.dp),
                     shape = CircleShape,
-                    color = Color.White,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.24f)),
+                    color = Color.White.copy(alpha = 0.92f),
+                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.08f)),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -384,7 +384,9 @@ internal fun SequoIntroCard(eyebrow: String, title: String, subtitle: String) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(eyebrow, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f))
+                if (subtitle.isNotBlank()) {
+                    Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f))
+                }
             }
         }
     }
