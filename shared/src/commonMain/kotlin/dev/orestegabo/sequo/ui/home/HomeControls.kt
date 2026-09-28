@@ -2,6 +2,9 @@ package dev.orestegabo.sequo.ui.home
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
@@ -39,166 +42,189 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun MarketplaceHeader(
-    address: String,
-    onProfile: () -> Unit,
-    onNotifications: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            onClick = onProfile,
-            modifier = Modifier.size(56.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Filled.LocalOffer,
-                    contentDescription = "Sequo profile",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                "Delivery address",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                address,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Box {
-            Surface(
-                onClick = onNotifications,
-                modifier = Modifier.size(56.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Notifications",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(23.dp),
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-3).dp, y = 3.dp)
-                    .size(12.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondary),
-            )
-        }
-    }
-}
-
-@Composable
-internal fun SequoSearchCard() {
+internal fun SequoSearchCard(onClose: () -> Unit) {
+    var query by remember { mutableStateOf("") }
     Surface(
-        modifier = Modifier.fillMaxWidth().height(60.dp),
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().height(52.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.54f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Filled.Search,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(25.dp),
+                modifier = Modifier.size(21.dp),
             )
-            Text(
-                "Search the entire shop",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            BasicTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                decorationBox = { innerTextField ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (query.isBlank()) {
+                            Text(
+                                "Search products or shops",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
             )
+            IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Close search",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }
 
 @Composable
-internal fun DeliveryDealBanner(
-    title: String,
-    deal: String,
-    detail: String,
-    note: String,
+internal fun ProductPromoCarousel(
+    promos: List<SequoPromo>,
+    onAddProduct: () -> Unit,
+    onSeeAll: () -> Unit,
+) {
+    val campaignPromos = promos.take(5)
+    val pagerState = rememberPagerState(pageCount = { campaignPromos.size.coerceAtLeast(1) })
+
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        HorizontalPager(
+            state = pagerState,
+            pageSpacing = 12.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) { page ->
+            val promo = campaignPromos.getOrNull(page) ?: return@HorizontalPager
+            ProductPromoCard(
+                promo = promo,
+                onAddProduct = onAddProduct,
+                onSeeAll = onSeeAll,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            campaignPromos.indices.forEach { index ->
+                val selected = index == pagerState.currentPage
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(width = if (selected) 20.dp else 7.dp, height = 7.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(
+                            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductPromoCard(
+    promo: SequoPromo,
+    onAddProduct: () -> Unit,
+    onSeeAll: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth().height(84.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth().height(126.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.36f),
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.22f),
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+        Box(Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(productImageResource(promo.product)),
+                contentDescription = promo.product.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = 0.72f),
+                                Color.Black.copy(alpha = 0.38f),
+                                Color.Transparent,
+                            ),
                         ),
                     ),
-                )
-                .padding(horizontal = 18.dp, vertical = 12.dp),
-        ) {
-            Row(
-                modifier = Modifier.align(Alignment.CenterStart),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = 210.dp)
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Surface(shape = RoundedCornerShape(11.dp), color = Color.White) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        deal,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        promo.headline,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.82f),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        promo.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        "${promo.product.name} / ${formatCfa(promo.product.priceCfa)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.78f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        promo.subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.70f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text(detail, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SequoTinyButton("Add", onAddProduct)
+                    Surface(
+                        onClick = onSeeAll,
+                        shape = RoundedCornerShape(999.dp),
+                        color = Color.White.copy(alpha = 0.18f),
+                    ) {
+                        Text(
+                            "View",
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
             }
-            Text(
-                note,
-                modifier = Modifier.align(Alignment.BottomStart),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.56f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Icon(
-                imageVector = Icons.Filled.LocalShipping,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
-                modifier = Modifier.align(Alignment.CenterEnd).size(64.dp),
-            )
         }
     }
 }
@@ -226,11 +252,11 @@ internal fun MarketplaceCategorySection(
     onSeeAll: () -> Unit,
     action: String? = "See all",
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(title = "Categories", action = action, onAction = onSeeAll)
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             types.forEach { type ->
                 MarketplaceCategoryBubble(
@@ -250,24 +276,30 @@ internal fun MarketplaceCategoryBubble(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val containerColor = if (selected) {
+        type.accent
+    } else {
+        type.accent.copy(alpha = 0.14f)
+    }
+    val iconColor = if (selected) Color.White else type.accent
     Column(
-        modifier = Modifier.width(74.dp),
+        modifier = Modifier.width(64.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(9.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Surface(
             onClick = onClick,
-            modifier = Modifier.size(66.dp),
-            shape = CircleShape,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)),
+            modifier = Modifier.size(54.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = containerColor,
+            border = if (selected) null else BorderStroke(1.dp, type.accent.copy(alpha = 0.34f)),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = type.icon,
                     contentDescription = null,
-                    tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(27.dp),
+                    tint = iconColor,
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -296,9 +328,9 @@ internal fun MarketplaceSectionHeader(
     ) {
         Text(
             title,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -320,16 +352,16 @@ internal fun MarketplaceSectionHeader(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Surface(
-                        modifier = Modifier.size(32.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.size(28.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(18.dp),
                             )
                         }
                     }
