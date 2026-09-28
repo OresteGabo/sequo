@@ -115,7 +115,7 @@ private val SequoSection.appBarTitle: String
     get() = when (this) {
         SequoSection.Home -> "Tokoin Gbadago"
         SequoSection.Markets -> "Markets"
-        SequoSection.Basket -> "Basket"
+        SequoSection.Basket -> "Cart"
         SequoSection.Orders -> "Orders"
         SequoSection.Account -> "Account"
     }
