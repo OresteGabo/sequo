@@ -190,27 +190,27 @@ internal fun String.extractClockTime(): String? {
 
 internal fun orderTimelineDetail(order: SequoOrder, state: SequoOrderState, isCurrent: Boolean): String =
     if (isCurrent) {
-        "${order.dateLine}. ${order.note}"
+        order.dateLine
     } else {
         when (state) {
-            SequoOrderState.Ordered -> "Order was created for ${sellerSummary(order)}."
-            SequoOrderState.PaymentPending -> "Payment validation was requested through ${order.paymentMethod}."
-            SequoOrderState.Paid -> "Payment was validated with ${order.paymentMethod} before merchant fulfillment."
-            SequoOrderState.MerchantAccepted -> "${order.sellers.first()} confirmed product availability."
-            SequoOrderState.MerchantDeclined -> "Merchant could not provide every requested product."
-            SequoOrderState.Preparing -> "Merchant prepared the order and submitted required live camera checks."
-            SequoOrderState.ReadyForPickup -> "Package was sealed and made ready for rider pickup."
-            SequoOrderState.PickedUp -> "Rider validated pickup and collected the package."
-            SequoOrderState.InDelivery -> "Package moved onto the customer delivery route."
-            SequoOrderState.DeliveryAttempted -> "Rider attempted delivery and needed customer action."
-            SequoOrderState.Delivered -> "Order was handed over at the delivery address."
-            SequoOrderState.ReturnRequested -> "Customer return was dropped at a Point de Relai."
-            SequoOrderState.ReturnInInspection -> "Sequo inspection started for the returned product."
-            SequoOrderState.RefundIssued -> "Refund was released to the original mobile money method."
-            SequoOrderState.ReturnRejected -> "Return was rejected after inspection."
-            SequoOrderState.CancelledByCustomer -> "Customer cancelled before fulfillment completed."
-            SequoOrderState.CancelledByMerchant -> "Merchant cancelled because fulfillment was not possible."
-            SequoOrderState.CancelledBySequo -> "Sequo stopped the order before pickup could be completed."
+            SequoOrderState.Ordered -> sellerSummary(order)
+            SequoOrderState.PaymentPending -> order.paymentMethod
+            SequoOrderState.Paid -> "Paid"
+            SequoOrderState.MerchantAccepted -> order.sellers.first()
+            SequoOrderState.MerchantDeclined -> "Unavailable"
+            SequoOrderState.Preparing -> "Preparing"
+            SequoOrderState.ReadyForPickup -> "Ready"
+            SequoOrderState.PickedUp -> "Picked up"
+            SequoOrderState.InDelivery -> "On route"
+            SequoOrderState.DeliveryAttempted -> "Action needed"
+            SequoOrderState.Delivered -> "Delivered"
+            SequoOrderState.ReturnRequested -> "Relay"
+            SequoOrderState.ReturnInInspection -> "Inspection"
+            SequoOrderState.RefundIssued -> "Refunded"
+            SequoOrderState.ReturnRejected -> "Rejected"
+            SequoOrderState.CancelledByCustomer -> "Closed"
+            SequoOrderState.CancelledByMerchant -> "Closed"
+            SequoOrderState.CancelledBySequo -> "Closed"
         }
     }
 
@@ -243,7 +243,7 @@ internal fun orderNextStepTag(state: SequoOrderState): String =
         SequoOrderState.Paid -> "paid"
         SequoOrderState.MerchantAccepted -> "accepted"
         SequoOrderState.MerchantDeclined -> "declined"
-        SequoOrderState.Preparing -> "photo"
+        SequoOrderState.Preparing -> "check"
         SequoOrderState.ReadyForPickup -> "ready"
         SequoOrderState.PickedUp -> "pickup"
         SequoOrderState.InDelivery -> "route"
@@ -265,7 +265,7 @@ internal fun orderNextStepTitle(state: SequoOrderState): String =
         SequoOrderState.Paid -> "Merchant checks availability"
         SequoOrderState.MerchantAccepted -> "Prepare the package"
         SequoOrderState.MerchantDeclined -> "Payment reversal"
-        SequoOrderState.Preparing -> "Live photo check"
+        SequoOrderState.Preparing -> "Item check"
         SequoOrderState.ReadyForPickup -> "Assign a rider"
         SequoOrderState.PickedUp -> "Route consolidation"
         SequoOrderState.InDelivery -> "Follow the rider"
@@ -282,24 +282,24 @@ internal fun orderNextStepTitle(state: SequoOrderState): String =
 
 internal fun orderNextStepDetail(state: SequoOrderState): String =
     when (state) {
-        SequoOrderState.Ordered -> "Choose Yas Togo or Moov Africa and validate payment before the merchant receives the order."
-        SequoOrderState.PaymentPending -> "Complete Yas Togo or Moov Africa validation before Sequo finishes the order."
-        SequoOrderState.Paid -> "Sequo asks the merchant to confirm product availability before preparation begins."
-        SequoOrderState.MerchantAccepted -> "The merchant starts preparation and uploads required real-time camera photos."
-        SequoOrderState.MerchantDeclined -> "Sequo reverses or adjusts the payment because the merchant cannot fulfill the order."
-        SequoOrderState.Preparing -> "Sequo waits for the required real-time seller camera photo before releasing the rider."
-        SequoOrderState.ReadyForPickup -> "A rider is assigned and must enter the pickup code when arriving at the merchant."
-        SequoOrderState.PickedUp -> "Sequo can consolidate eligible grouped-seller orders before sending the rider to you."
-        SequoOrderState.InDelivery -> "Keep the app open for route updates while the rider moves toward your delivery address."
-        SequoOrderState.DeliveryAttempted -> "Confirm address details or contact support so the rider can complete or reschedule delivery."
-        SequoOrderState.Delivered -> "Eligible non-food products can be dropped at a Point de Relai within 72 hours."
-        SequoOrderState.ReturnRequested -> "The Point de Relai has received your return and Sequo will start inspection."
-        SequoOrderState.ReturnInInspection -> "Sequo inspects the returned product; refund starts automatically if accepted."
-        SequoOrderState.RefundIssued -> "The refund has been released to the original mobile money payment method."
-        SequoOrderState.ReturnRejected -> "Review the inspection reason and contact support if something looks wrong."
-        SequoOrderState.CancelledByCustomer -> "No pickup code is active; any eligible reversal follows the original payment method."
-        SequoOrderState.CancelledByMerchant -> "No pickup code is active; Sequo reverses or adjusts the payment after merchant cancellation."
-        SequoOrderState.CancelledBySequo -> "No pickup code is active; any eligible reversal follows the original payment method."
+        SequoOrderState.Ordered -> "Yas / Moov"
+        SequoOrderState.PaymentPending -> "Validate"
+        SequoOrderState.Paid -> "Merchant check"
+        SequoOrderState.MerchantAccepted -> "Pack"
+        SequoOrderState.MerchantDeclined -> "Reverse"
+        SequoOrderState.Preparing -> "Photo"
+        SequoOrderState.ReadyForPickup -> "Pickup code"
+        SequoOrderState.PickedUp -> "Group route"
+        SequoOrderState.InDelivery -> "Track"
+        SequoOrderState.DeliveryAttempted -> "Contact"
+        SequoOrderState.Delivered -> "72 hours"
+        SequoOrderState.ReturnRequested -> "Relay"
+        SequoOrderState.ReturnInInspection -> "Inspect"
+        SequoOrderState.RefundIssued -> "Done"
+        SequoOrderState.ReturnRejected -> "Support"
+        SequoOrderState.CancelledByCustomer -> "Closed"
+        SequoOrderState.CancelledByMerchant -> "Closed"
+        SequoOrderState.CancelledBySequo -> "Closed"
     }
 
 internal fun pickupCodeFor(orderId: String): String {
