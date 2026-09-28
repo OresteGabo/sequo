@@ -39,13 +39,24 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun MarketsContent(onAddProduct: () -> Unit) {
-    var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
+internal fun MarketsContent(
+    selectedTypeKey: String,
+    onAddProduct: () -> Unit,
+) {
     var selectedArea by remember { mutableStateOf("All Lome") }
     var selectedSubcategory by remember { mutableStateOf("All") }
     var selectedSort by remember { mutableStateOf("Nearby") }
     var areaFiltersExpanded by remember { mutableStateOf(false) }
     var subcategoryFiltersExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTypeKey) {
+        selectedSubcategory = "All"
+        selectedArea = "All Lome"
+        selectedSort = "Nearby"
+        areaFiltersExpanded = false
+        subcategoryFiltersExpanded = false
+    }
+
     val selectedType = shopTypeFor(selectedTypeKey)
     val shopsByType = shopsForType(selectedTypeKey)
     val subcategories = listOf("All") + productSubcategoriesFor(shopsByType)
@@ -68,18 +79,6 @@ internal fun MarketsContent(onAddProduct: () -> Unit) {
         else -> filteredShops.sortedBy { it.distanceKm }
     }
 
-    ShopTypeRail(
-        types = sequoShopTypes,
-        selectedTypeKey = selectedTypeKey,
-        onTypeSelected = {
-            selectedTypeKey = it
-            selectedSubcategory = "All"
-            selectedArea = "All Lome"
-            selectedSort = "Nearby"
-            areaFiltersExpanded = false
-            subcategoryFiltersExpanded = false
-        },
-    )
     MarketSortBar(
         selectedType = selectedType,
         visibleCount = visibleShops.size,
