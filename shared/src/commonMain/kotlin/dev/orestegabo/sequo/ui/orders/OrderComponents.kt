@@ -121,7 +121,7 @@ internal fun PickupCodePanel(order: SequoOrder) {
             SequoIconMark(Icons.Filled.Lock, MaterialTheme.colorScheme.primary, Modifier.size(46.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(order.pickupCode, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
-                Text("Rider enters this 6-character code at the seller before pickup is validated.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
+                Text("Seller pickup code", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
             }
         }
     }
