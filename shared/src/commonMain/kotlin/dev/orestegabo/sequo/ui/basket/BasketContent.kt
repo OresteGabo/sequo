@@ -47,11 +47,11 @@ internal fun BasketContent(extraBasketItems: Int) {
     CartItemsPanel(extraBasketItems)
     SequoSectionCard(title = "Food options", action = "custom seal") {
         RuleRow("Attieke poisson braise", sequoShops[0].products[0].optionHint)
-        RuleRow("No mixing with goods", "Hot food travels in a separate sealed bag inside the Sequo package.")
+        RuleRow("Separate bag", "Thermal seal")
     }
     SequoSectionCard(title = "Consolidation", action = "Sequo route") {
-        RuleRow("Assigame + Akodessewa", "Eligible for one Sequo package after inspection at pickup.")
-        RuleRow("Food exception", "Tokoin hot meal keeps its own thermal seal and pickup timing.")
+        RuleRow("Assigame + Akodessewa", "One package")
+        RuleRow("Tokoin meal", "Own seal")
     }
     SequoCheckoutCard(extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
 }
