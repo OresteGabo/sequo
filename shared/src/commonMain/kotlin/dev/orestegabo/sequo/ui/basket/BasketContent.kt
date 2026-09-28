@@ -42,7 +42,6 @@ import sequo.shared.generated.resources.*
 internal fun BasketContent(extraBasketItems: Int) {
     var selectedPayment by remember { mutableStateOf("Yas Togo") }
 
-    CartHeader()
     DeliveryAddressCard()
     CartItemsPanel(extraBasketItems)
     SequoSectionCard(title = "Food options", action = "custom seal") {
