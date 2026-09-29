@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
@@ -209,16 +210,25 @@ internal fun FlashSaleSection(
     products: List<Pair<SequoShop, SequoProduct>>,
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
+    onNegotiateClick: (SequoProduct) -> Unit = {},
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Section Header Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f) // Prevents title text overflow bugs
+            ) {
                 Text(
-                    title,
+                    text = title,
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Black,
@@ -226,9 +236,12 @@ internal fun FlashSaleSection(
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (badge != null) {
-                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primary) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    ) {
                         Text(
-                            badge,
+                            text = badge,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -239,24 +252,38 @@ internal fun FlashSaleSection(
                     }
                 }
             }
-            Surface(onClick = onSeeAll, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
-                Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+
+            Surface(
+                onClick = onSeeAll,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Box(
+                    modifier = Modifier.size(34.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
+                        contentDescription = "See all flash products",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(21.dp),
                     )
                 }
             }
         }
+
+        // Product Grid Rows
         products.chunked(2).forEach { rowProducts ->
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 rowProducts.forEach { (shop, product) ->
                     FlashProductCard(
                         shop = shop,
                         product = product,
                         onAddProduct = onAddProduct,
+                        onNegotiateClick = { onNegotiateClick(product) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -273,88 +300,124 @@ internal fun FlashProductCard(
     shop: SequoShop,
     product: SequoProduct,
     onAddProduct: () -> Unit,
+    onNegotiateClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Surface(
-            modifier = Modifier.fillMaxWidth().height(166.dp),
-            shape = RoundedCornerShape(22.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)),
-        ) {
-            Box(Modifier.fillMaxSize()) {
-                Image(
-                    painter = painterResource(productImageResource(product)),
-                    contentDescription = product.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.32f)))))
-                Surface(
-                    modifier = Modifier.align(Alignment.TopEnd).padding(9.dp).size(36.dp),
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.92f),
-                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.08f)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Filled.FavoriteBorder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-                if (product.bargainNote != null) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(150.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+            ) {
+                Box(Modifier.fillMaxSize()) {
+                    Image(
+                        painter = painterResource(productImageResource(product)),
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.32f)))))
+
                     Surface(
-                        modifier = Modifier.align(Alignment.BottomStart).padding(9.dp),
-                        shape = RoundedCornerShape(999.dp),
-                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(34.dp),
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.92f),
+                        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.08f)),
                     ) {
-                        Text(
-                            "Negotiate",
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.FavoriteBorder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                    }
+
+                    if (product.isNegotiable || product.hasDiscount) {
+                        Row(
+                            modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (product.isNegotiable) {
+                                Surface(
+                                    onClick = onNegotiateClick,
+                                    modifier = Modifier.size(30.dp),
+                                    shape = CircleShape,
+                                    color = Color.White.copy(alpha = 0.90f),
+                                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.08f)),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Filled.LocalOffer,
+                                            contentDescription = "Make an offer",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                    }
+                                }
+                            }
+                            ProductDiscountBadge(product = product, compact = false, onDark = true)
+                        }
                     }
                 }
             }
-        }
-        Text(
-            product.name,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            shop.area,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+
             Text(
-                formatCfa(product.priceCfa),
-                style = MaterialTheme.typography.titleMedium,
+                product.name,
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Black,
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                formatCfa(product.priceCfa + 800),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    shop.area,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)),
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NegotiablePrice(
+                        product = product,
+                        onNegotiateClick = onNegotiateClick,
+                        compact = true,
+                    )
+                    ProductDiscountBadge(product = product, compact = true)
+                }
+                SequoTinyButton("Add", onAddProduct)
+            }
         }
-        SequoTinyButton("Add", onAddProduct)
     }
 }
 
