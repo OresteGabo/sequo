@@ -48,6 +48,7 @@ private enum class NotificationFilter(val label: String) {
     Returns("Returns"),
     Promos("Promos"),
     Security("Security"),
+    Archived("Archived"),
 }
 
 private data class SequoNotificationItem(
@@ -77,11 +78,12 @@ internal fun NotificationsContent(
     val notifications = remember { demoNotifications() }
     val archivedIds = remember { mutableStateListOf<String>() }
     val activeNotifications = notifications.filterNot { it.id in archivedIds }
+    val archivedNotifications = notifications.filter { it.id in archivedIds }
     val urgentItems = activeNotifications.filter { it.urgent }
-    val visibleItems = if (selectedFilter == NotificationFilter.All) {
-        activeNotifications.filterNot { it.urgent }
-    } else {
-        activeNotifications.filter { it.filter == selectedFilter }
+    val visibleItems = when (selectedFilter) {
+        NotificationFilter.All -> activeNotifications.filterNot { it.urgent }
+        NotificationFilter.Archived -> archivedNotifications
+        else -> activeNotifications.filter { it.filter == selectedFilter }
     }
     val unreadCount = activeNotifications.count { it.unread }
 
@@ -102,13 +104,33 @@ internal fun NotificationsContent(
         )
     }
     NotificationListHeader(
-        title = if (selectedFilter == NotificationFilter.All) "Recent updates" else selectedFilter.label,
+        title = when (selectedFilter) {
+            NotificationFilter.All -> "Recent updates"
+            NotificationFilter.Archived -> "Archived"
+            else -> selectedFilter.label
+        },
         action = "${visibleItems.size}",
     )
-    NotificationList(
-        items = visibleItems,
-        onArchive = { archivedIds.add(it) },
-    )
+    if (visibleItems.isEmpty()) {
+        NotificationEmptyState(
+            message = if (selectedFilter == NotificationFilter.Archived) {
+                "No archived notifications yet"
+            } else {
+                "No notifications here"
+            },
+        )
+    } else {
+        NotificationList(
+            items = visibleItems,
+            archived = selectedFilter == NotificationFilter.Archived,
+            onArchive = { id ->
+                if (id !in archivedIds) {
+                    archivedIds.add(id)
+                }
+            },
+            onRestore = { archivedIds.remove(it) },
+        )
+    }
     NotificationQuickActions(
         onOpenOrders = onOpenOrders,
         onOpenCart = onOpenCart,
@@ -178,14 +200,18 @@ private fun NotificationListHeader(title: String, action: String) {
 @Composable
 private fun NotificationList(
     items: List<SequoNotificationItem>,
+    archived: Boolean = false,
     onArchive: (String) -> Unit,
+    onRestore: (String) -> Unit = {},
 ) {
     Column {
         items.forEachIndexed { index, item ->
             key(item.id) {
                 NotificationRow(
                     item = item,
+                    archived = archived,
                     onArchive = { onArchive(item.id) },
+                    onRestore = { onRestore(item.id) },
                 )
                 if (index != items.lastIndex) {
                     HorizontalDivider(
@@ -195,6 +221,28 @@ private fun NotificationList(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NotificationEmptyState(message: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.NotificationsNone,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -274,13 +322,19 @@ private fun NotificationFilters(
 @Composable
 private fun NotificationRow(
     item: SequoNotificationItem,
+    archived: Boolean = false,
     onArchive: () -> Unit,
+    onRestore: () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
     var cancelled by remember { mutableStateOf(false) }
     val secureCodeVisible = remember { mutableStateOf(false) }
     val hasExpandedActions = item.primaryAction != null || item.secondaryAction != null || item.secureCode != null
-    val rowAlpha = if (cancelled) 0.52f else 1f
+    val rowAlpha = when {
+        cancelled -> 0.52f
+        archived -> 0.72f
+        else -> 1f
+    }
     var dragOffset by remember { mutableStateOf(0f) }
     var archivePending by remember { mutableStateOf(false) }
     val maxRevealPx = with(LocalDensity.current) { 112.dp.toPx() }
@@ -304,7 +358,7 @@ private fun NotificationRow(
         Box(modifier = Modifier.fillMaxWidth()) {
             SwipeArchiveBackground(
                 modifier = Modifier.matchParentSize(),
-                visible = dragOffset < -8f,
+                visible = dragOffset < -8f && !archived,
             )
             Column(
                 modifier = Modifier
@@ -313,14 +367,14 @@ private fun NotificationRow(
                     .pointerInput(item.id) {
                         detectHorizontalDragGestures(
                             onDragEnd = {
-                                if (-dragOffset >= archiveThresholdPx) {
+                                if (!archived && -dragOffset >= archiveThresholdPx) {
                                     archivePending = true
                                 }
                                 dragOffset = 0f
                             },
                             onDragCancel = { dragOffset = 0f },
                         ) { _, dragAmount ->
-                            if (!archivePending) {
+                            if (!archivePending && !archived) {
                                 dragOffset = (dragOffset + dragAmount).coerceIn(-maxRevealPx, 0f)
                             }
                         }
@@ -350,7 +404,7 @@ private fun NotificationRow(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            if (item.unread && !cancelled) {
+                            if (item.unread && !cancelled && !archived) {
                                 Box(
                                     modifier = Modifier
                                         .padding(start = 8.dp)
@@ -379,6 +433,11 @@ private fun NotificationRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = rowAlpha),
                         )
                         when {
+                            archived -> NotificationActionPill(
+                                label = "Restore",
+                                accent = item.accent,
+                                onClick = onRestore,
+                            )
                             item.secureCode != null && !cancelled -> NotificationActionPill(
                                 label = item.action ?: "Show",
                                 accent = item.accent,
