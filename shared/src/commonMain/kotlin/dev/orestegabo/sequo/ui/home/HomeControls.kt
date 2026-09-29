@@ -314,11 +314,23 @@ internal fun MarketplaceCategorySection(
     types: List<SequoShopType>,
     selectedTypeKey: String,
     onTypeSelected: (String) -> Unit,
-    onSeeAll: () -> Unit,
+    onSeeAll: () -> Unit = {},
     action: String? = "See all",
+    pinnedCategoryKeys: List<String> = emptyList(),
+    onTogglePinned: (String) -> Unit = {},
 ) {
+    var expanded by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        MarketplaceSectionHeader(title = "Categories", action = action, onAction = onSeeAll)
+        MarketplaceSectionHeader(
+            title = "Categories",
+            action = action?.let { if (expanded) "Less" else it },
+            onAction = {
+                expanded = !expanded
+                if (expanded) {
+                    onSeeAll()
+                }
+            },
+        )
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -327,10 +339,33 @@ internal fun MarketplaceCategorySection(
                 MarketplaceCategoryBubble(
                     type = type,
                     selected = type.key == selectedTypeKey,
+                    pinned = type.key in pinnedCategoryKeys,
                     onClick = { onTypeSelected(type.key) },
+                    onTogglePinned = { onTogglePinned(type.key) },
                 )
             }
             Spacer(Modifier.width(2.dp))
+        }
+        if (expanded) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                types.chunked(3).forEach { rowTypes ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        rowTypes.forEach { type ->
+                            MarketplaceCategoryBubble(
+                                type = type,
+                                selected = type.key == selectedTypeKey,
+                                pinned = type.key in pinnedCategoryKeys,
+                                onClick = { onTypeSelected(type.key) },
+                                onTogglePinned = { onTogglePinned(type.key) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        repeat(3 - rowTypes.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -339,7 +374,10 @@ internal fun MarketplaceCategorySection(
 internal fun MarketplaceCategoryBubble(
     type: SequoShopType,
     selected: Boolean,
+    pinned: Boolean = false,
     onClick: () -> Unit,
+    onTogglePinned: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     val containerColor = if (selected) {
         type.accent
@@ -347,24 +385,103 @@ internal fun MarketplaceCategoryBubble(
         type.accent.copy(alpha = 0.14f)
     }
     val iconColor = if (selected) Color.White else type.accent
+    val hangerColor = if (selected) {
+        type.accent.copy(alpha = 0.72f)
+    } else {
+        type.accent.copy(alpha = 0.56f)
+    }
+    val nailColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f)
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Column(
-        modifier = Modifier.width(64.dp),
+        modifier = modifier.widthIn(min = 64.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
-        Surface(
-            onClick = onClick,
-            modifier = Modifier.size(54.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = containerColor,
-            border = if (selected) null else BorderStroke(1.dp, type.accent.copy(alpha = 0.34f)),
+        Box(
+            modifier = Modifier
+                .size(width = 54.dp, height = 64.dp)
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = { menuExpanded = true },
+                ),
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = type.icon,
-                    contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(22.dp),
+            if (pinned) {
+                Canvas(modifier = Modifier.matchParentSize()) {
+                    val centerX = size.width / 2f
+                    drawLine(
+                        color = hangerColor,
+                        start = Offset(centerX, 9.dp.toPx()),
+                        end = Offset(centerX, 18.dp.toPx()),
+                        strokeWidth = 1.5.dp.toPx(),
+                    )
+                    drawCircle(
+                        color = nailColor,
+                        radius = 3.2.dp.toPx(),
+                        center = Offset(centerX, 6.dp.toPx()),
+                    )
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.72f),
+                        radius = 1.dp.toPx(),
+                        center = Offset(centerX - 1.dp.toPx(), 5.dp.toPx()),
+                    )
+                }
+            }
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .size(54.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = containerColor,
+                border = if (selected) null else BorderStroke(1.dp, type.accent.copy(alpha = 0.34f)),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = type.icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
+            if (pinned) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = 14.dp)
+                        .size(width = 16.dp, height = 4.dp),
+                    shape = CircleShape,
+                    color = hangerColor.copy(alpha = 0.18f),
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 9.dp, height = 1.dp)
+                                .clip(CircleShape)
+                                .background(hangerColor.copy(alpha = 0.48f)),
+                        )
+                    }
+                }
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(if (pinned) "Unpin category" else "Pin category") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.Bookmark,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onTogglePinned()
+                    },
                 )
             }
         }
@@ -378,6 +495,20 @@ internal fun MarketplaceCategoryBubble(
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+internal fun personalizedShopTypes(
+    types: List<SequoShopType>,
+    usage: Map<String, Int>,
+    pinnedKeys: List<String>,
+): List<SequoShopType> {
+    val originalIndex = types.mapIndexed { index, type -> type.key to index }.toMap()
+    return types.sortedWith(
+        compareByDescending<SequoShopType> { type -> type.key in pinnedKeys }
+            .thenBy { type -> pinnedKeys.indexOf(type.key).takeIf { it >= 0 } ?: Int.MAX_VALUE }
+            .thenByDescending { type -> usage[type.key] ?: 0 }
+            .thenBy { type -> originalIndex[type.key] ?: Int.MAX_VALUE },
+    )
 }
 
 @Composable
