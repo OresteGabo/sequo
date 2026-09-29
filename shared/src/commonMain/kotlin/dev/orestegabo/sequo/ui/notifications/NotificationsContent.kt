@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -15,12 +16,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.AssignmentReturn
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,6 +39,9 @@ import dev.orestegabo.sequo.theme.SequoSecondary
 import dev.orestegabo.sequo.ui.chrome.SequoIconMark
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.painterResource
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.sequohub_logo_mark
 
 private enum class NotificationFilter(val label: String) {
     All("All"),
@@ -113,11 +117,9 @@ internal fun NotificationsContent(
     )
     if (visibleItems.isEmpty()) {
         NotificationEmptyState(
-            message = if (selectedFilter == NotificationFilter.Archived) {
-                "No archived notifications yet"
-            } else {
-                "No notifications here"
-            },
+            filter = selectedFilter,
+            onOpenOrders = onOpenOrders,
+            onOpenCart = onOpenCart,
         )
     } else {
         NotificationList(
@@ -131,10 +133,6 @@ internal fun NotificationsContent(
             onRestore = { archivedIds.remove(it) },
         )
     }
-    NotificationQuickActions(
-        onOpenOrders = onOpenOrders,
-        onOpenCart = onOpenCart,
-    )
 }
 
 @Composable
@@ -225,79 +223,180 @@ private fun NotificationList(
 }
 
 @Composable
-private fun NotificationEmptyState(message: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.Filled.NotificationsNone,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun NotificationQuickActions(
+private fun NotificationEmptyState(
+    filter: NotificationFilter,
     onOpenOrders: () -> Unit,
     onOpenCart: () -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        NotificationActionButton(
-            icon = Icons.AutoMirrored.Filled.ReceiptLong,
-            label = "Orders",
-            onClick = onOpenOrders,
-            modifier = Modifier.weight(1f),
-        )
-        NotificationActionButton(
-            icon = Icons.Filled.ShoppingBasket,
-            label = "Cart",
-            onClick = onOpenCart,
-            modifier = Modifier.weight(1f),
-        )
-        NotificationActionButton(
-            icon = Icons.Filled.DoneAll,
-            label = "Read",
-            onClick = {},
-            modifier = Modifier.weight(1f),
-        )
+    val content = emptyStateContent(filter)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.48f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)),
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Image(
+                painter = painterResource(Res.drawable.sequohub_logo_mark),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 12.dp)
+                    .size(118.dp)
+                    .alpha(0.055f),
+            )
+            Column(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = content.accent.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, content.accent.copy(alpha = 0.18f)),
+                ) {
+                    Icon(
+                        imageVector = content.icon,
+                        contentDescription = null,
+                        tint = content.accent,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+                Text(
+                    content.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                Text(
+                    content.detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                content.actionLabel?.let { label ->
+                    NotificationEmptyAction(
+                        label = label,
+                        accent = content.accent,
+                        onClick = when (filter) {
+                            NotificationFilter.Orders,
+                            NotificationFilter.Payments,
+                            NotificationFilter.Returns -> onOpenOrders
+                            NotificationFilter.Delivery -> onOpenCart
+                            else -> ({})
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun NotificationActionButton(
-    icon: ImageVector,
+private fun NotificationEmptyAction(
     label: String,
+    accent: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.24f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            modifier = Modifier.padding(start = 13.dp, top = 8.dp, end = 11.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(7.dp))
-            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                color = accent,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
+
+private data class NotificationEmptyContent(
+    val icon: ImageVector,
+    val title: String,
+    val detail: String,
+    val accent: Color,
+    val actionLabel: String? = null,
+)
+
+@Composable
+private fun emptyStateContent(filter: NotificationFilter): NotificationEmptyContent =
+    when (filter) {
+        NotificationFilter.All -> NotificationEmptyContent(
+            icon = Icons.Filled.NotificationsNone,
+            title = "You are all caught up",
+            detail = "Order alerts, offer replies, pickup codes, and payment updates will appear here when they need attention.",
+            accent = SequoPrimary,
+        )
+        NotificationFilter.Orders -> NotificationEmptyContent(
+            icon = Icons.Filled.LocalShipping,
+            title = "No order alerts",
+            detail = "Active tracking, pickup codes, seller acceptance, and delivery attempts will show up here.",
+            accent = SequoPrimary,
+            actionLabel = "View orders",
+        )
+        NotificationFilter.Bargains -> NotificationEmptyContent(
+            icon = Icons.Filled.Handshake,
+            title = "No offer updates",
+            detail = "Seller counters, accepted offers, refusals, and expiring bargain threads will collect here.",
+            accent = SequoSecondary,
+        )
+        NotificationFilter.Delivery -> NotificationEmptyContent(
+            icon = Icons.Filled.Inventory2,
+            title = "No package updates",
+            detail = "When products are grouped into packages or delivery fees change, you will see it here.",
+            accent = Color(0xFF5F7C44),
+            actionLabel = "Review cart",
+        )
+        NotificationFilter.Payments -> NotificationEmptyContent(
+            icon = Icons.Filled.Payments,
+            title = "No payment notices",
+            detail = "Receipts, failed payments, refunds, and wallet confirmations will appear here.",
+            accent = Color(0xFF3C6E91),
+            actionLabel = "View orders",
+        )
+        NotificationFilter.Returns -> NotificationEmptyContent(
+            icon = Icons.AutoMirrored.Filled.AssignmentReturn,
+            title = "No return updates",
+            detail = "Return windows, inspection results, and refund progress will stay easy to find here.",
+            accent = Color(0xFF8A6A3F),
+            actionLabel = "View orders",
+        )
+        NotificationFilter.Promos -> NotificationEmptyContent(
+            icon = Icons.Filled.LocalOffer,
+            title = "No promos right now",
+            detail = "Useful price drops and seasonal product alerts will appear here without crowding your inbox.",
+            accent = Color(0xFF8F5576),
+        )
+        NotificationFilter.Security -> NotificationEmptyContent(
+            icon = Icons.Filled.Security,
+            title = "No security alerts",
+            detail = "Account checks and important sign-in notices will show here when something needs review.",
+            accent = Color(0xFF607D8B),
+        )
+        NotificationFilter.Archived -> NotificationEmptyContent(
+            icon = Icons.Filled.Archive,
+            title = "Nothing archived yet",
+            detail = "Swipe a notification left to archive it. Archived notifications can be restored here until cleanup removes them from this inbox.",
+            accent = MaterialTheme.colorScheme.primary,
+        )
+    }
 
 @Composable
 private fun NotificationFilters(
