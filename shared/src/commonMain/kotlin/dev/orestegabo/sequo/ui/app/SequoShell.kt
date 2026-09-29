@@ -33,6 +33,7 @@ import dev.orestegabo.sequo.ui.chrome.*
 import dev.orestegabo.sequo.ui.components.*
 import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
+import dev.orestegabo.sequo.ui.notifications.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -101,7 +102,11 @@ internal fun SequoShell() {
                 currentDestination = currentDestination,
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onSearchClick = { searchVisible = !searchVisible },
-                onNotificationsClick = { currentDestination = SequoSection.Orders },
+                onNotificationsClick = {
+                    currentDestination = SequoSection.Notifications
+                    searchVisible = false
+                    selectedProductListing = null
+                },
                 productListing = selectedProductListing,
                 onBackClick = {
                     selectedProductListing = null
@@ -172,6 +177,10 @@ internal fun SequoContentStage(
                 )
                 SequoSection.Basket -> BasketContent(extraBasketItems)
                 SequoSection.Orders -> OrdersContent()
+                SequoSection.Notifications -> NotificationsContent(
+                    onOpenOrders = { onDestinationSelected(SequoSection.Orders) },
+                    onOpenCart = { onDestinationSelected(SequoSection.Basket) },
+                )
                 SequoSection.Account -> AccountContent()
             }
         }
