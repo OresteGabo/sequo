@@ -43,6 +43,7 @@ internal enum class SequoSection(val label: String, val icon: ImageVector) {
     Basket("Cart", Icons.Filled.ShoppingBasket),
     Home("Sequo", Icons.Filled.Home),
     Orders("Orders", Icons.AutoMirrored.Filled.ReceiptLong),
+    Notifications("Notifications", Icons.Filled.Notifications),
     Account("Account", Icons.Filled.Person),
 }
 
