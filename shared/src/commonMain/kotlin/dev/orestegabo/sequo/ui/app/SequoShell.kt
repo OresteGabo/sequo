@@ -90,7 +90,7 @@ internal fun SequoShell() {
                 onToggleCategoryPinned = { typeKey ->
                     if (typeKey in pinnedCategoryKeys) {
                         pinnedCategoryKeys.remove(typeKey)
-                    } else {
+                    } else if (pinnedCategoryKeys.size < 3) {
                         pinnedCategoryKeys.add(typeKey)
                     }
                 },
