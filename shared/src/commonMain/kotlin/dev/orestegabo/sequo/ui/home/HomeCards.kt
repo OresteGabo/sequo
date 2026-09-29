@@ -332,6 +332,12 @@ internal fun FlashProductCard(
                         contentScale = ContentScale.Crop,
                     )
                     Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.32f)))))
+                    PhotoAuthenticityBadge(
+                        product = product,
+                        compact = true,
+                        onDark = true,
+                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                    )
 
                     Surface(
                         modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(34.dp),
