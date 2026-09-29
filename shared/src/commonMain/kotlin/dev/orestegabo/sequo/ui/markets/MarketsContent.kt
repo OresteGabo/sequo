@@ -42,6 +42,7 @@ import sequo.shared.generated.resources.*
 internal fun MarketsContent(
     selectedTypeKey: String,
     onAddProduct: () -> Unit,
+    onProductSelected: (SequoProductListing) -> Unit,
 ) {
     var selectedArea by remember { mutableStateOf("All Lome") }
     var selectedSubcategory by remember { mutableStateOf("All") }
@@ -120,6 +121,7 @@ internal fun MarketsContent(
             shop = shop,
             selectedSubcategory = selectedSubcategory.takeUnless { it == "All" },
             onAddProduct = onAddProduct,
+            onProductSelected = { product -> onProductSelected(SequoProductListing(shop, product)) },
         )
     }
 }
