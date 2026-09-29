@@ -81,6 +81,7 @@ internal fun ProductDetailContent(
         )
         ProductSellerCard(shop = shop)
         ProductSuggestionsSection(
+            current = listing,
             suggestions = suggestions,
             onAddProduct = onAddProduct,
             onProductSelected = onProductSelected,
@@ -518,24 +519,82 @@ private fun SequoProduct.storageSuggestion(): String {
 
 @Composable
 private fun ProductSuggestionsSection(
+    current: SequoProductListing,
     suggestions: List<SequoProductListing>,
     onAddProduct: () -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
 ) {
+    var selectedTab by remember(current) { mutableStateOf(ProductSuggestionTab.SameShop) }
+    val sameShopOptions = remember(current) { sameShopProductListings(current) }
+    val otherShopOptions = remember(current, suggestions) {
+        suggestions.filterNot { it.shop.name == current.shop.name }
+    }
+    val visibleSuggestions = when (selectedTab) {
+        ProductSuggestionTab.SameShop -> sameShopOptions
+        ProductSuggestionTab.OtherShops -> otherShopOptions
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(
-            title = "Similar options",
-            action = "${suggestions.size} found",
+            title = "More buying options",
+            action = when (selectedTab) {
+                ProductSuggestionTab.SameShop -> "One delivery"
+                ProductSuggestionTab.OtherShops -> "Compare"
+            },
             onAction = {},
         )
-        if (suggestions.isEmpty()) {
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+        ) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab.ordinal,
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.primary,
+            ) {
+                ProductSuggestionTab.entries.forEach { tab ->
+                    val count = when (tab) {
+                        ProductSuggestionTab.SameShop -> sameShopOptions.size
+                        ProductSuggestionTab.OtherShops -> otherShopOptions.size
+                    }
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                Text(tab.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    "$count items",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (selectedTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        }
+        Text(
+            when (selectedTab) {
+                ProductSuggestionTab.SameShop -> "Add from ${current.shop.name} to keep delivery simpler."
+                ProductSuggestionTab.OtherShops -> "Compare similar products from different sellers."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (visibleSuggestions.isEmpty()) {
             Text(
-                "No close alternatives yet.",
+                when (selectedTab) {
+                    ProductSuggestionTab.SameShop -> "No other products from this seller yet."
+                    ProductSuggestionTab.OtherShops -> "No close alternatives from other shops yet."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            suggestions.forEach { suggestion ->
+            visibleSuggestions.forEach { suggestion ->
                 CompactProductCard(
                     shop = suggestion.shop,
                     product = suggestion.product,
@@ -545,6 +604,17 @@ private fun ProductSuggestionsSection(
             }
         }
     }
+}
+
+private enum class ProductSuggestionTab {
+    SameShop,
+    OtherShops;
+
+    val label: String
+        get() = when (this) {
+            SameShop -> "Same shop"
+            OtherShops -> "Other shops"
+        }
 }
 
 @Composable
@@ -584,6 +654,21 @@ private fun similarProductListings(current: SequoProductListing): List<SequoProd
                 listing.product.label == current.product.label ||
                 listing.shop.kind == current.shop.kind
         }
+        .take(6)
+}
+
+private fun sameShopProductListings(current: SequoProductListing): List<SequoProductListing> {
+    val currentSubcategory = productSubcategory(current.product)
+    return current.shop.products
+        .filterNot { it.name == current.product.name }
+        .sortedByDescending { product ->
+            when {
+                productSubcategory(product) == currentSubcategory -> 3
+                product.label == current.product.label -> 2
+                else -> 1
+            }
+        }
+        .map { product -> SequoProductListing(current.shop, product) }
         .take(6)
 }
 
