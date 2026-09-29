@@ -44,6 +44,7 @@ internal fun SequoShopCard(
     shop: SequoShop,
     selectedSubcategory: String? = null,
     onAddProduct: () -> Unit,
+    onNegotiateClick: (SequoProduct) -> Unit = {},
 ) {
     val visibleProducts = if (selectedSubcategory == null) {
         shop.products
@@ -70,7 +71,11 @@ internal fun SequoShopCard(
             }
             RuleRow(shop.photoStatus, shop.consolidation)
             displayProducts.forEach { product ->
-                ProductLine(product = product, onAddProduct = onAddProduct)
+                ProductLine(
+                    product = product,
+                    onAddProduct = onAddProduct,
+                    onNegotiateClick = { onNegotiateClick(product) },
+                )
             }
             if (remainingProductCount > 0) {
                 Text(
@@ -125,7 +130,11 @@ internal fun ShopStatusDot() {
 }
 
 @Composable
-internal fun ProductLine(product: SequoProduct, onAddProduct: () -> Unit) {
+internal fun ProductLine(
+    product: SequoProduct,
+    onAddProduct: () -> Unit,
+    onNegotiateClick: () -> Unit = {},
+) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
@@ -138,22 +147,36 @@ internal fun ProductLine(product: SequoProduct, onAddProduct: () -> Unit) {
                     Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(productSubcategory(product), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Text(formatCfa(product.priceCfa), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                MetaPill(productSubcategory(product), if (product.bargainNote == null) SequoAccent else SequoSecondary)
+                MetaPill(productSubcategory(product), if (product.isNegotiable) SequoSecondary else SequoAccent)
                 Text(product.optionHint, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                SequoTinyButton("Add", onAddProduct)
             }
-            product.bargainNote?.let { note ->
-                RuleRow("Negotiation", note)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NegotiablePrice(
+                        product = product,
+                        onNegotiateClick = onNegotiateClick,
+                    )
+                    ProductDiscountBadge(product = product)
+                }
+                SequoTinyButton("Add", onAddProduct)
             }
         }
     }
 }
 
 @Composable
-internal fun CompactProductCard(shop: SequoShop, product: SequoProduct, onAddProduct: () -> Unit) {
+internal fun CompactProductCard(
+    shop: SequoShop,
+    product: SequoProduct,
+    onAddProduct: () -> Unit,
+    onNegotiateClick: () -> Unit = {},
+) {
     Surface(
         shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.26f),
@@ -167,9 +190,107 @@ internal fun CompactProductCard(shop: SequoShop, product: SequoProduct, onAddPro
             ProductImage(product = product, modifier = Modifier.size(52.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${shop.area} / ${formatCfa(product.priceCfa)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        shop.area,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        NegotiablePrice(
+                            product = product,
+                            onNegotiateClick = onNegotiateClick,
+                            compact = true,
+                        )
+                        ProductDiscountBadge(product = product, compact = true)
+                    }
+                    SequoTinyButton("Add", onAddProduct)
+                }
             }
-            SequoTinyButton("Add", onAddProduct)
+        }
+    }
+}
+
+@Composable
+internal fun NegotiablePrice(
+    product: SequoProduct,
+    onNegotiateClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+) {
+    if (product.isNegotiable) {
+        Surface(
+            onClick = onNegotiateClick,
+            modifier = modifier,
+            shape = RoundedCornerShape(999.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = if (compact) 0.10f else 0.12f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = if (compact) 7.dp else 9.dp, vertical = if (compact) 4.dp else 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocalOffer,
+                    contentDescription = "Make an offer",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(if (compact) 13.dp else 15.dp),
+                )
+                Text(
+                    formatCompactCfa(product.priceCfa),
+                    style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    } else {
+        Text(
+            formatCompactCfa(product.priceCfa),
+            modifier = modifier,
+            style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.labelLarge,
+            color = if (compact) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f) else MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+@Composable
+internal fun ProductDiscountBadge(
+    product: SequoProduct,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    onDark: Boolean = false,
+) {
+    if (!product.hasDiscount) return
+
+    val badgeColor = if (onDark) Color.White else SequoSecondary
+    Surface(
+        modifier = modifier.size(if (compact) 22.dp else 26.dp),
+        shape = CircleShape,
+        color = badgeColor.copy(alpha = if (onDark) 0.18f else 0.12f),
+        border = BorderStroke(1.dp, badgeColor.copy(alpha = if (onDark) 0.24f else 0.20f)),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Filled.Percent,
+                contentDescription = "Discount",
+                tint = badgeColor,
+                modifier = Modifier.size(if (compact) 13.dp else 15.dp),
+            )
         }
     }
 }
