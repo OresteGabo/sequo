@@ -176,6 +176,12 @@ private fun ProductPromoCard(
                         ),
                     ),
             )
+            PhotoAuthenticityBadge(
+                product = promo.product,
+                compact = true,
+                onDark = true,
+                modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
+            )
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
