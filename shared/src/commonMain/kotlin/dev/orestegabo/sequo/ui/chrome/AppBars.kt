@@ -44,13 +44,16 @@ internal fun SequoTopAppBar(
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
+    productListing: SequoProductListing? = null,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val productMode = productListing != null
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+        color = if (productMode) MaterialTheme.colorScheme.surface.copy(alpha = 0.94f) else MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
         tonalElevation = 3.dp,
-        shadowElevation = 0.dp,
+        shadowElevation = if (productMode) 2.dp else 0.dp,
     ) {
         Row(
             modifier = Modifier
@@ -61,10 +64,10 @@ internal fun SequoTopAppBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onMenuClick) {
+            IconButton(onClick = if (!productMode) onMenuClick else onBackClick) {
                 Icon(
-                    imageVector = Icons.Filled.Menu,
-                    contentDescription = "Open menu",
+                    imageVector = if (!productMode) Icons.Filled.Menu else Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = if (!productMode) "Open menu" else "Back",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp),
                 )
@@ -74,7 +77,7 @@ internal fun SequoTopAppBar(
                 verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 Text(
-                    text = currentDestination.appBarTitle,
+                    text = productListing?.product?.name ?: currentDestination.appBarTitle,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
@@ -82,38 +85,40 @@ internal fun SequoTopAppBar(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = currentDestination.appBarSubtitle,
+                    text = productListing?.let { "${it.shop.name} / ${it.shop.area}" } ?: currentDestination.appBarSubtitle,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            IconButton(onClick = onSearchClick) {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-            IconButton(onClick = onNotificationsClick) {
-                BadgedBox(
-                    badge = {
-                        Badge(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ) {
-                            Text("2")
-                        }
-                    },
-                ) {
+            if (!productMode) {
+                IconButton(onClick = onSearchClick) {
                     Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Notifications",
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "Search",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(24.dp),
                     )
+                }
+                IconButton(onClick = onNotificationsClick) {
+                    BadgedBox(
+                        badge = {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            ) {
+                                Text("2")
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
             }
         }
