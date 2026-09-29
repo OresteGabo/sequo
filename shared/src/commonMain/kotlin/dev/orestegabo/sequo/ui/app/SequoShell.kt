@@ -179,7 +179,6 @@ internal fun SequoContentStage(
                 SequoSection.Orders -> OrdersContent()
                 SequoSection.Notifications -> NotificationsContent(
                     onOpenOrders = { onDestinationSelected(SequoSection.Orders) },
-                    onOpenCart = { onDestinationSelected(SequoSection.Basket) },
                 )
                 SequoSection.Account -> AccountContent()
             }
