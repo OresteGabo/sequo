@@ -100,6 +100,7 @@ internal fun ProductPromoCarousel(
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
     onNegotiateClick: (SequoProduct) -> Unit = {},
+    onProductSelected: (SequoProductListing) -> Unit = {},
 ) {
     val campaignPromos = promos.take(5)
     val pagerState = rememberPagerState(pageCount = { campaignPromos.size.coerceAtLeast(1) })
@@ -116,6 +117,7 @@ internal fun ProductPromoCarousel(
                 onAddProduct = onAddProduct,
                 onSeeAll = onSeeAll,
                 onNegotiateClick = { onNegotiateClick(promo.product) },
+                onProductClick = { onProductSelected(SequoProductListing(promo.shop, promo.product)) },
             )
         }
         Row(
@@ -145,9 +147,11 @@ private fun ProductPromoCard(
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
     onNegotiateClick: () -> Unit,
+    onProductClick: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth().height(126.dp),
+        onClick = onProductClick,
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
