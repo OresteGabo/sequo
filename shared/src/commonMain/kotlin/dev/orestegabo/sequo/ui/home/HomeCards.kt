@@ -211,6 +211,7 @@ internal fun FlashSaleSection(
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
     onNegotiateClick: (SequoProduct) -> Unit = {},
+    onProductSelected: (SequoShop, SequoProduct) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -284,6 +285,7 @@ internal fun FlashSaleSection(
                         product = product,
                         onAddProduct = onAddProduct,
                         onNegotiateClick = { onNegotiateClick(product) },
+                        onProductClick = { onProductSelected(shop, product) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -301,6 +303,7 @@ internal fun FlashProductCard(
     product: SequoProduct,
     onAddProduct: () -> Unit,
     onNegotiateClick: () -> Unit = {},
+    onProductClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -313,7 +316,10 @@ internal fun FlashProductCard(
     ) {
         Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Surface(
-                modifier = Modifier.fillMaxWidth().height(150.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                onClick = onProductClick,
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
@@ -375,6 +381,7 @@ internal fun FlashProductCard(
 
             Text(
                 product.name,
+                modifier = Modifier.clickable(onClick = onProductClick),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
