@@ -61,8 +61,13 @@ internal data class SequoProduct(
     val label: String,
     val optionHint: String,
     val bargainNote: String? = null,
+    val isNegotiable: Boolean = bargainNote != null,
     val subcategory: String = "",
-)
+    val originalPriceCfa: Int? = null,
+) {
+    val hasDiscount: Boolean
+        get() = originalPriceCfa != null && originalPriceCfa > priceCfa
+}
 
 internal data class SequoShop(
     val name: String,
