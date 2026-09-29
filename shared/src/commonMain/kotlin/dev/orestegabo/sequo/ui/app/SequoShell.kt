@@ -46,6 +46,8 @@ internal fun SequoShell() {
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
     var selectedProductListing by remember { mutableStateOf<SequoProductListing?>(null) }
+    val categoryUsage = remember { mutableStateMapOf<String, Int>() }
+    val pinnedCategoryKeys = remember { mutableStateListOf("food") }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val basketCount = sequoBasket.sumOf { it.quantity } + extraBasketItems
@@ -56,6 +58,7 @@ internal fun SequoShell() {
             SequoNavigationDrawer(
                 selectedMarketTypeKey = selectedMarketTypeKey,
                 onMarketTypeSelected = { typeKey ->
+                    categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
                     selectedMarketTypeKey = typeKey
                     currentDestination = SequoSection.Markets
                     searchVisible = false
@@ -79,6 +82,18 @@ internal fun SequoShell() {
                 searchVisible = searchVisible,
                 onCloseSearch = { searchVisible = false },
                 selectedMarketTypeKey = selectedMarketTypeKey,
+                categoryUsage = categoryUsage,
+                pinnedCategoryKeys = pinnedCategoryKeys,
+                onCategoryUsed = { typeKey ->
+                    categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
+                },
+                onToggleCategoryPinned = { typeKey ->
+                    if (typeKey in pinnedCategoryKeys) {
+                        pinnedCategoryKeys.remove(typeKey)
+                    } else {
+                        pinnedCategoryKeys.add(typeKey)
+                    }
+                },
                 onAddProduct = { extraBasketItems += 1 },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -119,6 +134,10 @@ internal fun SequoContentStage(
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
     selectedMarketTypeKey: String,
+    categoryUsage: Map<String, Int>,
+    pinnedCategoryKeys: List<String>,
+    onCategoryUsed: (String) -> Unit,
+    onToggleCategoryPinned: (String) -> Unit,
     onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -141,6 +160,10 @@ internal fun SequoContentStage(
                     onDestinationSelected = onDestinationSelected,
                     onAddProduct = onAddProduct,
                     onProductSelected = onProductSelected,
+                    categoryUsage = categoryUsage,
+                    pinnedCategoryKeys = pinnedCategoryKeys,
+                    onCategoryUsed = onCategoryUsed,
+                    onToggleCategoryPinned = onToggleCategoryPinned,
                 )
                 SequoSection.Markets -> MarketsContent(
                     selectedTypeKey = selectedMarketTypeKey,
@@ -225,7 +248,6 @@ private fun SequoNavigationDrawer(
                             Text(type.title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             when (type.key) {
                                 "food" -> Text("Now", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                "bargains" -> Text("Deals", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     },
