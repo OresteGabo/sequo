@@ -43,8 +43,13 @@ internal fun HomeContent(
     onDestinationSelected: (SequoSection) -> Unit,
     onAddProduct: () -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
+    categoryUsage: Map<String, Int>,
+    pinnedCategoryKeys: List<String>,
+    onCategoryUsed: (String) -> Unit,
+    onToggleCategoryPinned: (String) -> Unit,
 ) {
     var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
+    val orderedTypes = personalizedShopTypes(sequoShopTypes, categoryUsage, pinnedCategoryKeys)
     val selectedType = shopTypeFor(selectedTypeKey)
     val selectedShops = shopsForType(selectedTypeKey)
     val featuredProducts = featuredProductsFor(selectedTypeKey)
@@ -56,10 +61,14 @@ internal fun HomeContent(
         onProductSelected = onProductSelected,
     )
     MarketplaceCategorySection(
-        types = sequoShopTypes,
+        types = orderedTypes,
         selectedTypeKey = selectedTypeKey,
-        onTypeSelected = { selectedTypeKey = it },
-        onSeeAll = { onDestinationSelected(SequoSection.Markets) },
+        pinnedCategoryKeys = pinnedCategoryKeys,
+        onTypeSelected = {
+            selectedTypeKey = it
+            onCategoryUsed(it)
+        },
+        onTogglePinned = onToggleCategoryPinned,
     )
     FlashSaleSection(
         title = "Popular picks",
