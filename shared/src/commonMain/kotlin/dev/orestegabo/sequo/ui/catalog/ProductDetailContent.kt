@@ -48,14 +48,32 @@ internal fun ProductDetailContent(
     val product = listing.product
     val shop = listing.shop
     val suggestions = remember(listing) { similarProductListings(listing) }
+    var galleryExpanded by remember(listing) { mutableStateOf(false) }
+    var selectedPhotoIndex by remember(listing) { mutableStateOf(0) }
+    val galleryProducts = remember(product, suggestions) { productGalleryProducts(product, suggestions) }
 
-    ProductDetailHero(product = product)
+    ProductDetailHero(
+        product = product,
+        galleryProducts = galleryProducts,
+        selectedPhotoIndex = selectedPhotoIndex,
+        galleryExpanded = galleryExpanded,
+        onNextPhoto = { selectedPhotoIndex = (selectedPhotoIndex + 1) % galleryProducts.size },
+        onOpenGallery = { galleryExpanded = true },
+    )
     Column(
         modifier = Modifier
             .offset(y = (-28).dp)
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (galleryExpanded) {
+            ProductPhotoStack(
+                galleryProducts = galleryProducts,
+                selectedPhotoIndex = selectedPhotoIndex,
+                onPhotoSelected = { selectedPhotoIndex = it },
+                onClose = { galleryExpanded = false },
+            )
+        }
         ProductDetailInfoCard(
             listing = listing,
             onAddProduct = onAddProduct,
@@ -71,11 +89,122 @@ internal fun ProductDetailContent(
 }
 
 @Composable
-private fun ProductDetailHero(product: SequoProduct) {
+private fun ProductPhotoStack(
+    galleryProducts: List<SequoProduct>,
+    selectedPhotoIndex: Int,
+    onPhotoSelected: (Int) -> Unit,
+    onClose: () -> Unit,
+) {
+    val selectedProduct = galleryProducts[selectedPhotoIndex]
+    val stackedProducts = galleryProducts
+        .filterIndexed { index, _ -> index != selectedPhotoIndex }
+        .take(3)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(246.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        stackedProducts.reversed().forEachIndexed { index, galleryProduct ->
+            val visualIndex = 2 - index
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.74f)
+                    .height(184.dp)
+                    .offset(x = ((visualIndex - 1) * 20).dp, y = ((visualIndex + 1) * 8).dp)
+                    .rotate((visualIndex - 1) * 5f),
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.62f)),
+                shadowElevation = 4.dp,
+            ) {
+                Image(
+                    painter = painterResource(productImageResource(galleryProduct)),
+                    contentDescription = galleryProduct.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+        }
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.82f)
+                .height(214.dp)
+                .clickable {
+                    onPhotoSelected((selectedPhotoIndex + 1) % galleryProducts.size)
+                },
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+            shadowElevation = 8.dp,
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                Image(
+                    painter = painterResource(productImageResource(selectedProduct)),
+                    contentDescription = selectedProduct.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                Surface(
+                    onClick = onClose,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).size(34.dp),
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.52f),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Close photos",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DetailChip(Icons.Filled.PhotoLibrary, "${selectedPhotoIndex + 1}/${galleryProducts.size}")
+                    DetailChip(Icons.Filled.TouchApp, "Tap next")
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            galleryProducts.indices.forEach { index ->
+                Box(
+                    modifier = Modifier
+                        .size(width = if (index == selectedPhotoIndex) 18.dp else 7.dp, height = 7.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (index == selectedPhotoIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                        .clickable { onPhotoSelected(index) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductDetailHero(
+    product: SequoProduct,
+    galleryProducts: List<SequoProduct>,
+    selectedPhotoIndex: Int,
+    galleryExpanded: Boolean,
+    onNextPhoto: () -> Unit,
+    onOpenGallery: () -> Unit,
+) {
+    val selectedProduct = galleryProducts[selectedPhotoIndex]
     Box(modifier = Modifier.fillMaxWidth().height(348.dp)) {
         Image(
-            painter = painterResource(productImageResource(product)),
-            contentDescription = product.name,
+            painter = painterResource(productImageResource(selectedProduct)),
+            contentDescription = selectedProduct.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
         )
@@ -103,6 +232,86 @@ private fun ProductDetailHero(product: SequoProduct) {
             }
             if (product.hasDiscount) {
                 DetailChip(Icons.Filled.Percent, "Discount")
+            }
+        }
+        if (!galleryExpanded) {
+            MiniPhotoStack(
+                galleryProducts = galleryProducts,
+                selectedPhotoIndex = selectedPhotoIndex,
+                onNextPhoto = onNextPhoto,
+                onOpenGallery = onOpenGallery,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 34.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiniPhotoStack(
+    galleryProducts: List<SequoProduct>,
+    selectedPhotoIndex: Int,
+    onNextPhoto: () -> Unit,
+    onOpenGallery: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selectedProduct = galleryProducts[selectedPhotoIndex]
+    val stackedProducts = galleryProducts
+        .filterIndexed { index, _ -> index != selectedPhotoIndex }
+        .take(3)
+
+    Box(
+        modifier = modifier
+            .size(width = 106.dp, height = 92.dp)
+            .clickable(onClick = onNextPhoto),
+        contentAlignment = Alignment.Center,
+    ) {
+        stackedProducts.reversed().forEachIndexed { index, galleryProduct ->
+            val visualIndex = 2 - index
+            Surface(
+                modifier = Modifier
+                    .size(width = 72.dp, height = 62.dp)
+                    .offset(x = ((visualIndex - 1) * 7).dp, y = ((visualIndex + 1) * 3).dp)
+                    .rotate((visualIndex - 1) * 5f),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.70f)),
+                shadowElevation = 3.dp,
+            ) {
+                Image(
+                    painter = painterResource(productImageResource(galleryProduct)),
+                    contentDescription = galleryProduct.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+        }
+        Surface(
+            modifier = Modifier.size(width = 82.dp, height = 72.dp),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.78f)),
+            shadowElevation = 6.dp,
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                Image(
+                    painter = painterResource(productImageResource(selectedProduct)),
+                    contentDescription = selectedProduct.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                Surface(
+                    onClick = onOpenGallery,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(5.dp),
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.52f),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PhotoLibrary,
+                        contentDescription = "Open photos",
+                        tint = Color.White,
+                        modifier = Modifier.padding(5.dp).size(14.dp),
+                    )
+                }
             }
         }
     }
@@ -350,3 +559,18 @@ private fun similarProductListings(current: SequoProductListing): List<SequoProd
         }
         .take(6)
 }
+
+private fun productGalleryProducts(
+    product: SequoProduct,
+    suggestions: List<SequoProductListing>,
+): List<SequoProduct> =
+    buildList {
+        add(product)
+        suggestions
+            .map { it.product }
+            .filterNot { it.name == product.name }
+            .forEach { add(it) }
+        while (size < 4) {
+            add(product)
+        }
+    }.take(4)
