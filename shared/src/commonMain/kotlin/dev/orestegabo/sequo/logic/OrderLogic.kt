@@ -344,3 +344,17 @@ internal fun formatDistance(km: Double): String {
 
 internal fun formatCfa(amount: Int): String =
     amount.toString().reversed().chunked(3).joinToString(" ").reversed() + " CFA"
+
+internal fun formatCompactCfa(amount: Int): String {
+    fun compact(value: Double, suffix: String): String {
+        val tenths = (value * 10).roundToInt()
+        val valueText = if (tenths % 10 == 0) "${tenths / 10}$suffix" else "${tenths / 10}.${tenths % 10}$suffix"
+        return "$valueText F"
+    }
+
+    return when {
+        amount >= 1_000_000 -> compact(amount / 1_000_000.0, "M")
+        amount >= 1_000 -> compact(amount / 1_000.0, "k")
+        else -> "$amount F"
+    }
+}
