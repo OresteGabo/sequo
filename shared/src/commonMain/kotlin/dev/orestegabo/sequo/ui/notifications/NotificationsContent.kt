@@ -2,6 +2,7 @@ package dev.orestegabo.sequo.ui.notifications
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -44,7 +45,11 @@ private data class SequoNotificationItem(
     val title: String,
     val detail: String,
     val time: String,
-    val action: String,
+    val action: String? = null,
+    val expandedTitle: String? = null,
+    val expandedDetail: String? = null,
+    val primaryAction: String? = null,
+    val secondaryAction: String? = null,
     val icon: ImageVector,
     val accent: Color,
     val unread: Boolean = false,
@@ -241,52 +246,193 @@ private fun NotificationFilters(
 private fun NotificationRow(
     item: SequoNotificationItem,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        SequoIconMark(item.icon, item.accent, Modifier.size(38.dp))
-        Column(
-            modifier = Modifier.weight(1f).padding(bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+    var expanded by remember { mutableStateOf(false) }
+    var cancelled by remember { mutableStateOf(false) }
+    val hasExpandedActions = item.primaryAction != null || item.secondaryAction != null
+    val rowAlpha = if (cancelled) 0.52f else 1f
+
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .clickable(enabled = hasExpandedActions && !cancelled) { expanded = !expanded }
+                .padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            SequoIconMark(item.icon, item.accent.copy(alpha = rowAlpha), Modifier.size(38.dp))
+            Column(
+                modifier = Modifier.weight(1f).padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (cancelled) "${item.title} cancelled" else item.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = if (item.unread && !cancelled) FontWeight.Bold else FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = rowAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (item.unread && !cancelled) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(item.accent),
+                        )
+                    }
+                }
                 Text(
-                    item.title,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = if (item.unread) FontWeight.Bold else FontWeight.SemiBold,
-                    maxLines = 1,
+                    if (cancelled) "The seller offer was refused and removed from checkout." else item.detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = rowAlpha),
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+            Column(
+                modifier = Modifier.padding(bottom = 12.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text(
                     item.time,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = rowAlpha),
                 )
-                if (item.unread) {
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(item.accent),
+                when {
+                    hasExpandedActions && !cancelled -> ExpandHint(expanded = expanded, accent = item.accent)
+                    item.action != null && !cancelled -> NotificationActionPill(
+                        label = item.action,
+                        accent = item.accent,
                     )
                 }
             }
+        }
+        if (expanded && hasExpandedActions && !cancelled) {
+            NotificationExpandedActions(
+                item = item,
+                onAccept = { expanded = false },
+                onRefuse = {
+                    cancelled = true
+                    expanded = false
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandHint(expanded: Boolean, accent: Color) {
+    Surface(
+        shape = CircleShape,
+        color = accent.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
+    ) {
+        Icon(
+            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = accent,
+            modifier = Modifier.padding(5.dp).size(18.dp),
+        )
+    }
+}
+
+@Composable
+private fun NotificationExpandedActions(
+    item: SequoNotificationItem,
+    onAccept: () -> Unit,
+    onRefuse: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .padding(start = 50.dp, end = 0.dp, bottom = 12.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(item.accent.copy(alpha = 0.08f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item.expandedTitle?.let {
             Text(
-                item.detail,
+                it,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        item.expandedDetail?.let {
+            Text(
+                it,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            item.secondaryAction?.let { label ->
+                Surface(
+                    onClick = onRefuse,
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+            item.primaryAction?.let { label ->
+                Surface(
+                    onClick = onAccept,
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = item.accent,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationActionPill(label: String, accent: Color) {
+    Surface(
+        onClick = {},
+        shape = RoundedCornerShape(999.dp),
+        color = accent.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 10.dp, top = 6.dp, end = 8.dp, bottom = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = accent,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                item.action,
-                style = MaterialTheme.typography.labelSmall,
-                color = item.accent,
-                fontWeight = FontWeight.SemiBold,
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(14.dp),
             )
         }
     }
@@ -328,7 +474,10 @@ private fun demoNotifications(): List<SequoNotificationItem> {
             title = "Seller countered your offer",
             detail = "Hedzranawoe Electronics replied: ${formatCfa(145000)} for Dell Latitude. Offer expires tonight.",
             time = "4 min",
-            action = "Review offer",
+            expandedTitle = "Final price: ${formatCfa(145000)}",
+            expandedDetail = "Accepting locks this price for checkout. Refusing cancels this bargain thread and removes the offer.",
+            primaryAction = "Accept",
+            secondaryAction = "Refuse",
             icon = Icons.Filled.Handshake,
             accent = SequoSecondary,
             unread = true,
@@ -339,7 +488,6 @@ private fun demoNotifications(): List<SequoNotificationItem> {
             title = "Package B joined Package A",
             detail = "Two nearby sellers can be delivered together. Estimated delivery fee dropped by ${formatCfa(700)}.",
             time = "12 min",
-            action = "View packages",
             icon = Icons.Filled.Inventory2,
             accent = Color(0xFF5F7C44),
             unread = true,
@@ -349,7 +497,6 @@ private fun demoNotifications(): List<SequoNotificationItem> {
             title = "Payment confirmed",
             detail = "Yas Togo confirmed ${formatCfa(activeOrder.amountCfa)} for ${activeOrder.id}. Receipt is ready.",
             time = "18 min",
-            action = "Open receipt",
             icon = Icons.Filled.Payments,
             accent = Color(0xFF3C6E91),
         ),
@@ -367,7 +514,6 @@ private fun demoNotifications(): List<SequoNotificationItem> {
             title = "Fresh grocery price drop",
             detail = "Green pepper and fresh milk are trending near Tokoin with verified shop photos today.",
             time = "2 h",
-            action = "Shop grocery",
             icon = Icons.Filled.LocalOffer,
             accent = Color(0xFF8F5576),
         ),
@@ -396,7 +542,6 @@ private fun demoNotifications(): List<SequoNotificationItem> {
             title = "Offer expired",
             detail = "Your last offer for black running shoes expired. The listed price is still available.",
             time = "Yesterday",
-            action = "Make new offer",
             icon = Icons.Filled.TimerOff,
             accent = Color(0xFF795548),
         ),
