@@ -99,6 +99,7 @@ internal fun ProductPromoCarousel(
     promos: List<SequoPromo>,
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
+    onNegotiateClick: (SequoProduct) -> Unit = {},
 ) {
     val campaignPromos = promos.take(5)
     val pagerState = rememberPagerState(pageCount = { campaignPromos.size.coerceAtLeast(1) })
@@ -114,6 +115,7 @@ internal fun ProductPromoCarousel(
                 promo = promo,
                 onAddProduct = onAddProduct,
                 onSeeAll = onSeeAll,
+                onNegotiateClick = { onNegotiateClick(promo.product) },
             )
         }
         Row(
@@ -142,6 +144,7 @@ private fun ProductPromoCard(
     promo: SequoPromo,
     onAddProduct: () -> Unit,
     onSeeAll: () -> Unit,
+    onNegotiateClick: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth().height(126.dp),
@@ -193,13 +196,21 @@ private fun ProductPromoCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
-                        "${promo.product.name} / ${formatCfa(promo.product.priceCfa)}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.78f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            promo.product.name,
+                            modifier = Modifier.weight(1f, fill = false),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White.copy(alpha = 0.78f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        PromoPrice(
+                            product = promo.product,
+                            onNegotiateClick = onNegotiateClick,
+                        )
+                        ProductDiscountBadge(product = promo.product, compact = true, onDark = true)
+                    }
                     Text(
                         promo.subtitle,
                         style = MaterialTheme.typography.labelSmall,
@@ -226,6 +237,50 @@ private fun ProductPromoCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PromoPrice(
+    product: SequoProduct,
+    onNegotiateClick: () -> Unit,
+) {
+    if (product.isNegotiable) {
+        Surface(
+            onClick = onNegotiateClick,
+            shape = RoundedCornerShape(999.dp),
+            color = Color.White.copy(alpha = 0.18f),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocalOffer,
+                    contentDescription = "Make an offer",
+                    tint = Color.White,
+                    modifier = Modifier.size(13.dp),
+                )
+                Text(
+                    formatCompactCfa(product.priceCfa),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    } else {
+        Text(
+            formatCompactCfa(product.priceCfa),
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.78f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
