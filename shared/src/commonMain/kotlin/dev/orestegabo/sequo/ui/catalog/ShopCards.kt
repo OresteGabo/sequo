@@ -357,6 +357,47 @@ internal fun ProductDiscountBadge(
 }
 
 @Composable
+internal fun PhotoAuthenticityBadge(
+    product: SequoProduct,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    onDark: Boolean = false,
+) {
+    if (!product.isCameraVerified) return
+
+    val badgeColor = if (onDark) Color.White else MaterialTheme.colorScheme.primary
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(999.dp),
+        color = if (onDark) Color.Black.copy(alpha = 0.52f) else badgeColor.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, badgeColor.copy(alpha = if (onDark) 0.42f else 0.20f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = if (compact) 6.dp else 8.dp, vertical = if (compact) 4.dp else 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Verified,
+                contentDescription = "Sequo verified photo",
+                tint = badgeColor,
+                modifier = Modifier.size(if (compact) 12.dp else 14.dp),
+            )
+            if (!compact) {
+                Text(
+                    "Sequo verified",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = badgeColor,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 internal fun ProductImage(
     product: SequoProduct,
     modifier: Modifier = Modifier,
@@ -367,12 +408,20 @@ internal fun ProductImage(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
     ) {
-        Image(
-            painter = painterResource(productImageResource(product)),
-            contentDescription = product.name,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-        )
+        Box(Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(productImageResource(product)),
+                contentDescription = product.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+            PhotoAuthenticityBadge(
+                product = product,
+                compact = true,
+                onDark = true,
+                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+            )
+        }
     }
 }
 
