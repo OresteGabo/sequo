@@ -131,6 +131,7 @@ private val SequoSection.appBarTitle: String
         SequoSection.Markets -> "Markets"
         SequoSection.Basket -> "Cart"
         SequoSection.Orders -> "Orders"
+        SequoSection.Notifications -> "Notifications"
         SequoSection.Account -> "Account"
     }
 
@@ -140,6 +141,7 @@ private val SequoSection.appBarSubtitle: String
         SequoSection.Markets -> "Verified Lome sellers"
         SequoSection.Basket -> "Review and checkout"
         SequoSection.Orders -> "Track every handoff"
+        SequoSection.Notifications -> "What needs your attention"
         SequoSection.Account -> "Addresses, payment, and support"
     }
 
