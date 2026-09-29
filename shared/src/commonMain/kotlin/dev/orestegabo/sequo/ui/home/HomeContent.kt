@@ -42,6 +42,7 @@ import sequo.shared.generated.resources.*
 internal fun HomeContent(
     onDestinationSelected: (SequoSection) -> Unit,
     onAddProduct: () -> Unit,
+    onProductSelected: (SequoProductListing) -> Unit,
 ) {
     var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
     val selectedType = shopTypeFor(selectedTypeKey)
@@ -52,6 +53,7 @@ internal fun HomeContent(
         promos = sequoPromos,
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
+        onProductSelected = onProductSelected,
     )
     MarketplaceCategorySection(
         types = sequoShopTypes,
@@ -65,6 +67,7 @@ internal fun HomeContent(
         products = featuredProducts,
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
+        onProductSelected = { shop, product -> onProductSelected(SequoProductListing(shop, product)) },
     )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(
