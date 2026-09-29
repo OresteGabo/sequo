@@ -44,14 +44,9 @@ import sequo.shared.generated.resources.Res
 import sequo.shared.generated.resources.sequohub_logo_mark
 
 private enum class NotificationFilter(val label: String) {
-    All("All"),
-    Orders("Orders"),
-    Bargains("Offers"),
-    Delivery("Delivery"),
-    Payments("Payments"),
-    Returns("Returns"),
+    Today("Today"),
+    Attention("Attention"),
     Promos("Promos"),
-    Security("Security"),
     Archived("Archived"),
 }
 
@@ -76,18 +71,18 @@ private data class SequoNotificationItem(
 @Composable
 internal fun NotificationsContent(
     onOpenOrders: () -> Unit,
-    onOpenCart: () -> Unit,
 ) {
-    var selectedFilter by remember { mutableStateOf(NotificationFilter.All) }
+    var selectedFilter by remember { mutableStateOf(NotificationFilter.Today) }
     val notifications = remember { demoNotifications() }
     val archivedIds = remember { mutableStateListOf<String>() }
     val activeNotifications = notifications.filterNot { it.id in archivedIds }
     val archivedNotifications = notifications.filter { it.id in archivedIds }
     val urgentItems = activeNotifications.filter { it.urgent }
     val visibleItems = when (selectedFilter) {
-        NotificationFilter.All -> activeNotifications.filterNot { it.urgent }
+        NotificationFilter.Today -> activeNotifications.filter { it.filter != NotificationFilter.Promos }
+        NotificationFilter.Attention -> urgentItems
+        NotificationFilter.Promos -> activeNotifications.filter { it.filter == NotificationFilter.Promos }
         NotificationFilter.Archived -> archivedNotifications
-        else -> activeNotifications.filter { it.filter == selectedFilter }
     }
     val unreadCount = activeNotifications.count { it.unread }
 
@@ -100,18 +95,12 @@ internal fun NotificationsContent(
         selectedFilter = selectedFilter,
         onFilterSelected = { selectedFilter = it },
     )
-    if (urgentItems.isNotEmpty() && selectedFilter == NotificationFilter.All) {
-        NotificationListHeader("Needs attention", "${urgentItems.size} now")
-        NotificationList(
-            items = urgentItems,
-            onArchive = { archivedIds.add(it) },
-        )
-    }
     NotificationListHeader(
         title = when (selectedFilter) {
-            NotificationFilter.All -> "Recent updates"
+            NotificationFilter.Today -> "Today"
+            NotificationFilter.Attention -> "Needs attention"
+            NotificationFilter.Promos -> "Promos"
             NotificationFilter.Archived -> "Archived"
-            else -> selectedFilter.label
         },
         action = "${visibleItems.size}",
     )
@@ -119,7 +108,6 @@ internal fun NotificationsContent(
         NotificationEmptyState(
             filter = selectedFilter,
             onOpenOrders = onOpenOrders,
-            onOpenCart = onOpenCart,
         )
     } else {
         NotificationList(
@@ -226,7 +214,6 @@ private fun NotificationList(
 private fun NotificationEmptyState(
     filter: NotificationFilter,
     onOpenOrders: () -> Unit,
-    onOpenCart: () -> Unit,
 ) {
     val content = emptyStateContent(filter)
     Surface(
@@ -281,10 +268,7 @@ private fun NotificationEmptyState(
                         label = label,
                         accent = content.accent,
                         onClick = when (filter) {
-                            NotificationFilter.Orders,
-                            NotificationFilter.Payments,
-                            NotificationFilter.Returns -> onOpenOrders
-                            NotificationFilter.Delivery -> onOpenCart
+                            NotificationFilter.Attention -> onOpenOrders
                             else -> ({})
                         },
                     )
@@ -338,57 +322,24 @@ private data class NotificationEmptyContent(
 @Composable
 private fun emptyStateContent(filter: NotificationFilter): NotificationEmptyContent =
     when (filter) {
-        NotificationFilter.All -> NotificationEmptyContent(
+        NotificationFilter.Today -> NotificationEmptyContent(
             icon = Icons.Filled.NotificationsNone,
             title = "You are all caught up",
-            detail = "Order alerts, offer replies, pickup codes, and payment updates will appear here when they need attention.",
+            detail = "Today’s order alerts, offer replies, pickup codes, payment updates, and security notices will appear here.",
             accent = SequoPrimary,
         )
-        NotificationFilter.Orders -> NotificationEmptyContent(
-            icon = Icons.Filled.LocalShipping,
-            title = "No order alerts",
-            detail = "Active tracking, pickup codes, seller acceptance, and delivery attempts will show up here.",
+        NotificationFilter.Attention -> NotificationEmptyContent(
+            icon = Icons.Filled.PriorityHigh,
+            title = "Nothing urgent",
+            detail = "Time-sensitive pickup codes, expiring seller offers, failed payments, and delivery problems will be grouped here.",
             accent = SequoPrimary,
-            actionLabel = "View orders",
-        )
-        NotificationFilter.Bargains -> NotificationEmptyContent(
-            icon = Icons.Filled.Handshake,
-            title = "No offer updates",
-            detail = "Seller counters, accepted offers, refusals, and expiring bargain threads will collect here.",
-            accent = SequoSecondary,
-        )
-        NotificationFilter.Delivery -> NotificationEmptyContent(
-            icon = Icons.Filled.Inventory2,
-            title = "No package updates",
-            detail = "When products are grouped into packages or delivery fees change, you will see it here.",
-            accent = Color(0xFF5F7C44),
-            actionLabel = "Review cart",
-        )
-        NotificationFilter.Payments -> NotificationEmptyContent(
-            icon = Icons.Filled.Payments,
-            title = "No payment notices",
-            detail = "Receipts, failed payments, refunds, and wallet confirmations will appear here.",
-            accent = Color(0xFF3C6E91),
-            actionLabel = "View orders",
-        )
-        NotificationFilter.Returns -> NotificationEmptyContent(
-            icon = Icons.AutoMirrored.Filled.AssignmentReturn,
-            title = "No return updates",
-            detail = "Return windows, inspection results, and refund progress will stay easy to find here.",
-            accent = Color(0xFF8A6A3F),
             actionLabel = "View orders",
         )
         NotificationFilter.Promos -> NotificationEmptyContent(
             icon = Icons.Filled.LocalOffer,
             title = "No promos right now",
-            detail = "Useful price drops and seasonal product alerts will appear here without crowding your inbox.",
+            detail = "Useful price drops, seasonal product alerts, and campaign messages stay here instead of crowding urgent updates.",
             accent = Color(0xFF8F5576),
-        )
-        NotificationFilter.Security -> NotificationEmptyContent(
-            icon = Icons.Filled.Security,
-            title = "No security alerts",
-            detail = "Account checks and important sign-in notices will show here when something needs review.",
-            accent = Color(0xFF607D8B),
         )
         NotificationFilter.Archived -> NotificationEmptyContent(
             icon = Icons.Filled.Archive,
@@ -411,12 +362,27 @@ private fun NotificationFilters(
             FilterChip(
                 selected = selectedFilter == filter,
                 onClick = { onFilterSelected(filter) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = filter.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(17.dp),
+                    )
+                },
                 label = { Text(filter.label) },
             )
         }
         Spacer(Modifier.width(2.dp))
     }
 }
+
+private val NotificationFilter.icon: ImageVector
+    get() = when (this) {
+        NotificationFilter.Today -> Icons.Filled.Today
+        NotificationFilter.Attention -> Icons.Filled.NotificationsActive
+        NotificationFilter.Promos -> Icons.Filled.LocalOffer
+        NotificationFilter.Archived -> Icons.Filled.Archive
+    }
 
 @Composable
 private fun NotificationRow(
@@ -771,7 +737,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
     return listOf(
         SequoNotificationItem(
             id = "order-arriving-${activeOrder.id}",
-            filter = NotificationFilter.Orders,
+            filter = NotificationFilter.Today,
             title = "${activeOrder.id} arriving soon",
             detail = "${orderTitle(activeOrder)} is on the way. Keep your phone nearby for handoff.",
             time = "Now",
@@ -783,7 +749,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "bargain-counter-dell",
-            filter = NotificationFilter.Bargains,
+            filter = NotificationFilter.Today,
             title = "Seller countered your offer",
             detail = "Hedzranawoe Electronics replied: ${formatCfa(145000)} for Dell Latitude. Offer expires tonight.",
             time = "4 min",
@@ -798,7 +764,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "delivery-packages-joined",
-            filter = NotificationFilter.Delivery,
+            filter = NotificationFilter.Today,
             title = "Package B joined Package A",
             detail = "Two nearby sellers can be delivered together. Estimated delivery fee dropped by ${formatCfa(700)}.",
             time = "12 min",
@@ -808,7 +774,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "payment-confirmed-${activeOrder.id}",
-            filter = NotificationFilter.Payments,
+            filter = NotificationFilter.Today,
             title = "Payment confirmed",
             detail = "Yas Togo confirmed ${formatCfa(activeOrder.amountCfa)} for ${activeOrder.id}. Receipt is ready.",
             time = "18 min",
@@ -817,7 +783,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "return-window-sq-2415",
-            filter = NotificationFilter.Returns,
+            filter = NotificationFilter.Today,
             title = "Return window reminder",
             detail = "SQ-2415 remains eligible for standard return review until tomorrow evening.",
             time = "1 h",
@@ -836,7 +802,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "pickup-code-${recentOrders[2].id}",
-            filter = NotificationFilter.Orders,
+            filter = NotificationFilter.Today,
             title = "Pickup code ready",
             detail = "Grand Marche Assigame is ready. Code is hidden until you choose to show it.",
             time = "Today",
@@ -851,7 +817,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "security-signin",
-            filter = NotificationFilter.Security,
+            filter = NotificationFilter.Today,
             title = "New sign-in protected",
             detail = "A sign-in was checked for your account. No action needed if this was you.",
             time = "Yesterday",
@@ -861,7 +827,7 @@ private fun demoNotifications(): List<SequoNotificationItem> {
         ),
         SequoNotificationItem(
             id = "bargain-expired-shoes",
-            filter = NotificationFilter.Bargains,
+            filter = NotificationFilter.Today,
             title = "Offer expired",
             detail = "Your last offer for black running shoes expired. The listed price is still available.",
             time = "Yesterday",
