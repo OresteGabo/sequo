@@ -125,6 +125,12 @@ private fun ProductPhotoStack(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
+                PhotoAuthenticityBadge(
+                    product = galleryProduct,
+                    compact = true,
+                    onDark = true,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                )
             }
         }
         Surface(
@@ -145,6 +151,11 @@ private fun ProductPhotoStack(
                     contentDescription = selectedProduct.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
+                )
+                PhotoAuthenticityBadge(
+                    product = selectedProduct,
+                    onDark = true,
+                    modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                 )
                 Surface(
                     onClick = onClose,
@@ -207,6 +218,11 @@ private fun ProductDetailHero(
             contentDescription = selectedProduct.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
+        )
+        PhotoAuthenticityBadge(
+            product = selectedProduct,
+            onDark = true,
+            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 66.dp, end = 20.dp),
         )
         Box(
             Modifier
@@ -283,6 +299,12 @@ private fun MiniPhotoStack(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
+                PhotoAuthenticityBadge(
+                    product = galleryProduct,
+                    compact = true,
+                    onDark = true,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                )
             }
         }
         Surface(
@@ -298,6 +320,12 @@ private fun MiniPhotoStack(
                     contentDescription = selectedProduct.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
+                )
+                PhotoAuthenticityBadge(
+                    product = selectedProduct,
+                    compact = true,
+                    onDark = true,
+                    modifier = Modifier.align(Alignment.TopStart).padding(5.dp),
                 )
                 Surface(
                     onClick = onOpenGallery,
@@ -370,7 +398,6 @@ private fun ProductDetailInfoCard(
         }
     }
 }
-
 @Composable
 private fun ProductConcernPanel(product: SequoProduct) {
     val isFood = product.isFoodOrGrocery()
