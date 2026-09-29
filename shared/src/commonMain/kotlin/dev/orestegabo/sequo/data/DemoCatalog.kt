@@ -582,7 +582,7 @@ internal val sequoShops = listOf(
         products = listOf(
             SequoProduct("Huile de colza 1L", "Cooking oil bottle", 3200, "Grocery", "1L / colza"),
             SequoProduct("Huile bio colza", "Organic cooking oil", 4800, "Grocery", "75cl / bio"),
-            SequoProduct("Lait frais 1L", "Fresh milk bottle", 1900, "Grocery", "1L / chilled"),
+            SequoProduct("Lait frais 1L", "Fresh milk bottle", 1900, "Grocery", "1L / chilled", originalPriceCfa = 2300),
             SequoProduct("Farine de ble 1kg", "Wheat flour bag", 1600, "Grocery", "1kg / T45"),
             SequoProduct("Farine artisanale", "Artisan flour bag", 2200, "Grocery", "1kg / bakery"),
             SequoProduct("Farine de manioc", "Cassava flour pouch", 1800, "Grocery", "250g / bio"),
@@ -653,10 +653,10 @@ internal val sequoShops = listOf(
             SequoProduct("Papier toilette soft", "Soft toilet paper pack", 8900, "Home", "24 rolls / soft"),
             SequoProduct("Papier bambou", "Bamboo toilet paper", 3200, "Home", "4 rolls / bamboo"),
             SequoProduct("Pampers new baby", "Newborn diapers", 7800, "Baby", "Size 2 / 31 pieces"),
-            SequoProduct("Pampers active baby", "Active baby diapers", 13500, "Baby", "Size 6 / 56 pieces"),
+            SequoProduct("Pampers active baby", "Active baby diapers", 13500, "Baby", "Size 6 / 56 pieces", originalPriceCfa = 15800),
             SequoProduct("Mir vaisselle pomme", "Dish soap bottle", 1800, "Soap", "675ml / apple", subcategory = "Soaps"),
             SequoProduct("OMO washing liquid", "Laundry liquid", 6200, "Soap", "3L / white laundry", subcategory = "Soaps"),
-            SequoProduct("Ajax lavender floor", "Floor cleaner", 2600, "Soap", "1.25L / lavender", subcategory = "Cleaners"),
+            SequoProduct("Ajax lavender floor", "Floor cleaner", 2600, "Soap", "1.25L / lavender", subcategory = "Cleaners", originalPriceCfa = 3100),
             SequoProduct("Sanytol disinfectant", "Multi-surface cleaner", 3200, "Soap", "1L / disinfectant", subcategory = "Cleaners"),
             SequoProduct("Ajax window cleaner", "Glass cleaner refill", 1900, "Soap", "750ml / blue", subcategory = "Cleaners"),
             SequoProduct("Sanytol bathroom spray", "Bathroom cleaner", 2800, "Soap", "500ml / spray", subcategory = "Cleaners"),
@@ -820,14 +820,14 @@ internal fun shopsForType(typeKey: String): List<SequoShop> =
                 it.kind.contains("essentials", ignoreCase = true) ||
                 it.kind.contains("cleaning", ignoreCase = true)
         }
-        "bargains" -> sequoShops.filter { shop -> shop.products.any { it.bargainNote != null } }
+        "bargains" -> sequoShops.filter { shop -> shop.products.any { it.isNegotiable } }
         else -> sequoShops
     }
 
 internal fun featuredProductsFor(typeKey: String): List<Pair<SequoShop, SequoProduct>> {
     val pairs = if (typeKey == "bargains") {
         sequoShops.flatMap { shop ->
-            shop.products.filter { it.bargainNote != null }.map { product -> shop to product }
+            shop.products.filter { it.isNegotiable }.map { product -> shop to product }
         }
     } else {
         shopsForType(typeKey).flatMap { shop ->
