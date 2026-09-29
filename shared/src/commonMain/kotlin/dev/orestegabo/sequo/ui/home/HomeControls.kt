@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
@@ -336,10 +338,12 @@ internal fun MarketplaceCategorySection(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             types.forEach { type ->
+                val pinned = type.key in pinnedCategoryKeys
                 MarketplaceCategoryBubble(
                     type = type,
                     selected = type.key == selectedTypeKey,
-                    pinned = type.key in pinnedCategoryKeys,
+                    pinned = pinned,
+                    canTogglePinned = pinned || pinnedCategoryKeys.size < 3,
                     onClick = { onTypeSelected(type.key) },
                     onTogglePinned = { onTogglePinned(type.key) },
                 )
@@ -351,10 +355,12 @@ internal fun MarketplaceCategorySection(
                 types.chunked(3).forEach { rowTypes ->
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         rowTypes.forEach { type ->
+                            val pinned = type.key in pinnedCategoryKeys
                             MarketplaceCategoryBubble(
                                 type = type,
                                 selected = type.key == selectedTypeKey,
-                                pinned = type.key in pinnedCategoryKeys,
+                                pinned = pinned,
+                                canTogglePinned = pinned || pinnedCategoryKeys.size < 3,
                                 onClick = { onTypeSelected(type.key) },
                                 onTogglePinned = { onTogglePinned(type.key) },
                                 modifier = Modifier.weight(1f),
@@ -375,6 +381,7 @@ internal fun MarketplaceCategoryBubble(
     type: SequoShopType,
     selected: Boolean,
     pinned: Boolean = false,
+    canTogglePinned: Boolean = true,
     onClick: () -> Unit,
     onTogglePinned: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -385,12 +392,10 @@ internal fun MarketplaceCategoryBubble(
         type.accent.copy(alpha = 0.14f)
     }
     val iconColor = if (selected) Color.White else type.accent
-    val hangerColor = if (selected) {
-        type.accent.copy(alpha = 0.72f)
-    } else {
-        type.accent.copy(alpha = 0.56f)
-    }
-    val nailColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f)
+    val hangerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.46f)
+    val hangerShadowColor = Color.Black.copy(alpha = 0.12f)
+    val nailColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.84f)
+    val nailHighlightColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.76f)
     var menuExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -421,7 +426,7 @@ internal fun MarketplaceCategoryBubble(
                         center = Offset(centerX, 6.dp.toPx()),
                     )
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.72f),
+                        color = nailHighlightColor,
                         radius = 1.dp.toPx(),
                         center = Offset(centerX - 1.dp.toPx(), 5.dp.toPx()),
                     )
@@ -451,7 +456,7 @@ internal fun MarketplaceCategoryBubble(
                         .offset(y = 14.dp)
                         .size(width = 16.dp, height = 4.dp),
                     shape = CircleShape,
-                    color = hangerColor.copy(alpha = 0.18f),
+                    color = hangerShadowColor,
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -469,15 +474,22 @@ internal fun MarketplaceCategoryBubble(
             DropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
+                offset = DpOffset(x = 0.dp, y = (-104).dp),
             ) {
                 DropdownMenuItem(
-                    text = { Text(if (pinned) "Unpin category" else "Pin category") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Bookmark,
-                            contentDescription = null,
+                    text = {
+                        Text(
+                            when {
+                                pinned -> "Unpin category"
+                                canTogglePinned -> "Pin category"
+                                else -> "3 pinned max"
+                            },
                         )
                     },
+                    leadingIcon = {
+                        PushPinActionIcon(showAdd = !pinned, enabled = canTogglePinned)
+                    },
+                    enabled = canTogglePinned,
                     onClick = {
                         menuExpanded = false
                         onTogglePinned()
@@ -494,6 +506,47 @@ internal fun MarketplaceCategoryBubble(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun PushPinActionIcon(showAdd: Boolean, enabled: Boolean) {
+    val contentColor = if (enabled) {
+        LocalContentColor.current
+    } else {
+        LocalContentColor.current.copy(alpha = 0.38f)
+    }
+    Box(modifier = Modifier.size(24.dp)) {
+        Icon(
+            imageVector = Icons.Outlined.PushPin,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(21.dp),
+        )
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(12.dp),
+            shape = CircleShape,
+            color = if (showAdd) {
+                MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 1f else 0.38f)
+            } else {
+                MaterialTheme.colorScheme.errorContainer
+            },
+        ) {
+            Icon(
+                imageVector = if (showAdd) Icons.Outlined.Add else Icons.Outlined.Remove,
+                contentDescription = null,
+                tint = if (showAdd) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onErrorContainer
+                },
+                modifier = Modifier.padding(1.5.dp),
+            )
+        }
     }
 }
 
