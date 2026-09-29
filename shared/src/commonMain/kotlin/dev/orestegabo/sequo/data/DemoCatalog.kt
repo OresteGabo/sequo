@@ -47,7 +47,6 @@ internal val sequoShopTypes = listOf(
     SequoShopType("tires", "Tires & auto", "Car care", Icons.Filled.Build, Color(0xFF805E48)),
     SequoShopType("pharmacy", "Pharmacy", "Care items", Icons.Filled.MedicalServices, Color(0xFF6C7E51)),
     SequoShopType("home", "Home & baby", "Daily basics", Icons.Filled.ShoppingBasket, Color(0xFFA77A41)),
-    SequoShopType("bargains", "Bargains", "Negotiate", Icons.Filled.LocalOffer, Color(0xFF9A5A68)),
 )
 
 internal val sequoShops = listOf(
