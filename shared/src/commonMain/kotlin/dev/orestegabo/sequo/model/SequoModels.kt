@@ -82,6 +82,11 @@ internal data class SequoShop(
     val products: List<SequoProduct>,
 )
 
+internal data class SequoProductListing(
+    val shop: SequoShop,
+    val product: SequoProduct,
+)
+
 internal data class SequoShopType(
     val key: String,
     val title: String,
