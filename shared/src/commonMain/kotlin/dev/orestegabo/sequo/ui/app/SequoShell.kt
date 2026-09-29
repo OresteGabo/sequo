@@ -45,6 +45,7 @@ internal fun SequoShell() {
     var extraBasketItems by remember { mutableStateOf(0) }
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
+    var selectedProductListing by remember { mutableStateOf<SequoProductListing?>(null) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val basketCount = sequoBasket.sumOf { it.quantity } + extraBasketItems
@@ -68,6 +69,12 @@ internal fun SequoShell() {
             SequoContentStage(
                 currentDestination = currentDestination,
                 onDestinationSelected = { currentDestination = it },
+                selectedProductListing = selectedProductListing,
+                onProductSelected = { listing ->
+                    selectedProductListing = listing
+                    searchVisible = false
+                },
+                onCloseProduct = { selectedProductListing = null },
                 extraBasketItems = extraBasketItems,
                 searchVisible = searchVisible,
                 onCloseSearch = { searchVisible = false },
@@ -80,6 +87,11 @@ internal fun SequoShell() {
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onSearchClick = { searchVisible = !searchVisible },
                 onNotificationsClick = { currentDestination = SequoSection.Orders },
+                productListing = selectedProductListing,
+                onBackClick = {
+                    selectedProductListing = null
+                    searchVisible = false
+                },
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             SequoBottomBar(
@@ -87,6 +99,7 @@ internal fun SequoShell() {
                 onDestinationSelected = {
                     currentDestination = it
                     searchVisible = false
+                    selectedProductListing = null
                 },
                 pendingBasketCount = basketCount,
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -99,6 +112,9 @@ internal fun SequoShell() {
 internal fun SequoContentStage(
     currentDestination: SequoSection,
     onDestinationSelected: (SequoSection) -> Unit,
+    selectedProductListing: SequoProductListing?,
+    onProductSelected: (SequoProductListing) -> Unit,
+    onCloseProduct: () -> Unit,
     extraBasketItems: Int,
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
@@ -106,19 +122,35 @@ internal fun SequoContentStage(
     onAddProduct: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SequoScreenColumn(modifier = modifier) {
-        if (searchVisible) {
-            SequoSearchCard(onClose = onCloseSearch)
-        }
-        when (currentDestination) {
-            SequoSection.Home -> HomeContent(onDestinationSelected, onAddProduct)
-            SequoSection.Markets -> MarketsContent(
-                selectedTypeKey = selectedMarketTypeKey,
+    if (selectedProductListing != null) {
+        ProductDetailScreenColumn(modifier = modifier) {
+            ProductDetailContent(
+                listing = selectedProductListing,
                 onAddProduct = onAddProduct,
+                onProductSelected = onProductSelected,
+                onNegotiateClick = {},
             )
-            SequoSection.Basket -> BasketContent(extraBasketItems)
-            SequoSection.Orders -> OrdersContent()
-            SequoSection.Account -> AccountContent()
+        }
+    } else {
+        SequoScreenColumn(modifier = modifier) {
+            if (searchVisible) {
+                SequoSearchCard(onClose = onCloseSearch)
+            }
+            when (currentDestination) {
+                SequoSection.Home -> HomeContent(
+                    onDestinationSelected = onDestinationSelected,
+                    onAddProduct = onAddProduct,
+                    onProductSelected = onProductSelected,
+                )
+                SequoSection.Markets -> MarketsContent(
+                    selectedTypeKey = selectedMarketTypeKey,
+                    onAddProduct = onAddProduct,
+                    onProductSelected = onProductSelected,
+                )
+                SequoSection.Basket -> BasketContent(extraBasketItems)
+                SequoSection.Orders -> OrdersContent()
+                SequoSection.Account -> AccountContent()
+            }
         }
     }
 }
@@ -133,6 +165,20 @@ internal fun SequoScreenColumn(
             .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, top = 104.dp, end = 20.dp, bottom = 126.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        content = content,
+    )
+}
+
+@Composable
+internal fun ProductDetailScreenColumn(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 126.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
         content = content,
     )
 }
