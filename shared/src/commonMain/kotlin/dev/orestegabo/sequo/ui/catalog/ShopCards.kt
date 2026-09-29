@@ -45,6 +45,7 @@ internal fun SequoShopCard(
     selectedSubcategory: String? = null,
     onAddProduct: () -> Unit,
     onNegotiateClick: (SequoProduct) -> Unit = {},
+    onProductSelected: (SequoProduct) -> Unit = {},
 ) {
     val visibleProducts = if (selectedSubcategory == null) {
         shop.products
@@ -75,6 +76,7 @@ internal fun SequoShopCard(
                     product = product,
                     onAddProduct = onAddProduct,
                     onNegotiateClick = { onNegotiateClick(product) },
+                    onProductClick = { onProductSelected(product) },
                 )
             }
             if (remainingProductCount > 0) {
@@ -179,6 +181,7 @@ internal fun ProductLine(
     product: SequoProduct,
     onAddProduct: () -> Unit,
     onNegotiateClick: () -> Unit = {},
+    onProductClick: () -> Unit = {},
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -187,8 +190,17 @@ internal fun ProductLine(
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                ProductImage(product = product, modifier = Modifier.size(58.dp))
-                Column(Modifier.weight(1f)) {
+                ProductImage(
+                    product = product,
+                    modifier = Modifier
+                        .size(58.dp)
+                        .clickable(onClick = onProductClick),
+                )
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clickable(onClick = onProductClick),
+                ) {
                     Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(productSubcategory(product), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -221,6 +233,7 @@ internal fun CompactProductCard(
     product: SequoProduct,
     onAddProduct: () -> Unit,
     onNegotiateClick: () -> Unit = {},
+    onProductClick: () -> Unit = {},
 ) {
     Surface(
         shape = RoundedCornerShape(22.dp),
@@ -228,7 +241,10 @@ internal fun CompactProductCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)),
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(12.dp),
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onProductClick)
+                .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
