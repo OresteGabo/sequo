@@ -64,6 +64,8 @@ internal data class SequoProduct(
     val isNegotiable: Boolean = bargainNote != null,
     val subcategory: String = "",
     val originalPriceCfa: Int? = null,
+    val isCameraVerified: Boolean = false,
+    val capturedAtLabel: String? = null,
 ) {
     val hasDiscount: Boolean
         get() = originalPriceCfa != null && originalPriceCfa > priceCfa
