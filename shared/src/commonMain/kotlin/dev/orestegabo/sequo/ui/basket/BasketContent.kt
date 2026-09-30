@@ -41,9 +41,10 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun BasketContent(extraBasketItems: Int) {
     var selectedPayment by remember { mutableStateOf("Yas Togo") }
+    val basketEntries = emptyList<BasketEntry>()
 
-    DeliveryAddressCard(packageCount = sequoBasket.groupBy { it.shop.area }.size)
-    CartItemsPanel(extraBasketItems)
-    CartDeliveryPackagesCard()
-    SequoCheckoutCard(extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
+    DeliveryAddressCard(packageCount = basketEntries.groupBy { it.shop.area }.size)
+    CartItemsPanel(basketEntries, extraBasketItems)
+    CartDeliveryPackagesCard(basketEntries)
+    SequoCheckoutCard(basketEntries, extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
 }
