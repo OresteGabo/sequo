@@ -39,7 +39,7 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun CartItemsPanel(extraBasketItems: Int) {
+internal fun CartItemsPanel(entries: List<BasketEntry>, extraBasketItems: Int) {
     SequoCard(shape = RoundedCornerShape(22.dp)) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -64,15 +64,15 @@ internal fun CartItemsPanel(extraBasketItems: Int) {
                     )
                 }
                 Text(
-                    "${sequoBasket.size + extraBasketItems} items",
+                    "${entries.size + extraBasketItems} items",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            sequoBasket.forEachIndexed { index, entry ->
-                BasketLine(entry)
-                if (index != sequoBasket.lastIndex || extraBasketItems > 0) {
+            entries.forEachIndexed { index, entry ->
+                BasketLine(entry, entries)
+                if (index != entries.lastIndex || extraBasketItems > 0) {
                     Spacer(Modifier.height(2.dp))
                 }
             }
@@ -84,10 +84,10 @@ internal fun CartItemsPanel(extraBasketItems: Int) {
 }
 
 @Composable
-internal fun BasketLine(entry: BasketEntry) {
+internal fun BasketLine(entry: BasketEntry, entries: List<BasketEntry>) {
     val shop = entry.shop
     val product = entry.product
-    val packageLabel = packageLabelForArea(shop.area)
+    val packageLabel = packageLabelForArea(shop.area, entries)
     CartItemTile(
         image = {
             ProductImage(
@@ -135,8 +135,8 @@ internal fun BasketLine(entry: BasketEntry) {
     )
 }
 
-private fun packageLabelForArea(area: String): String {
-    val areas = sequoBasket.map { it.shop.area }.distinct()
+private fun packageLabelForArea(area: String, entries: List<BasketEntry>): String {
+    val areas = entries.map { it.shop.area }.distinct()
     val index = areas.indexOf(area).coerceAtLeast(0)
     return ('A'.code + index).toChar().toString()
 }
@@ -278,10 +278,10 @@ internal fun DeliveryAddressCard(packageCount: Int) {
 }
 
 @Composable
-internal fun CartDeliveryPackagesCard() {
+internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
     var expanded by remember { mutableStateOf(false) }
-    val packages = sequoBasket.groupBy { it.shop.area }.values.toList()
-    val totalDelivery = cartPackageDeliveryFees().sum()
+    val packages = entries.groupBy { it.shop.area }.values.toList()
+    val totalDelivery = cartPackageDeliveryFees(entries).sum()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -420,8 +420,8 @@ private fun isFoodBasketEntry(entry: BasketEntry): Boolean =
         entry.product.label.contains("food", ignoreCase = true) ||
         entry.product.label.contains("hot", ignoreCase = true)
 
-private fun cartPackageDeliveryFees(): List<Int> =
-    sequoBasket
+private fun cartPackageDeliveryFees(entries: List<BasketEntry>): List<Int> =
+    entries
         .groupBy { it.shop.area }
         .values
         .map { entries -> baseDelivery(entries.first().shop.distanceKm) }
@@ -466,12 +466,13 @@ internal fun StepperButton(icon: ImageVector) {
 
 @Composable
 internal fun SequoCheckoutCard(
+    entries: List<BasketEntry>,
     extraBasketItems: Int,
     selectedPayment: String,
     onPaymentSelected: (String) -> Unit,
 ) {
-    val subtotal = sequoBasket.sumOf { it.product.priceCfa * it.quantity } + (extraBasketItems * 3500)
-    val packageDelivery = cartPackageDeliveryFees().sum()
+    val subtotal = entries.sumOf { it.product.priceCfa * it.quantity } + (extraBasketItems * 3500)
+    val packageDelivery = cartPackageDeliveryFees(entries).sum()
     val subscriptionDiscount = (packageDelivery * 15) / 100
     val deliveryAfterSubscription = packageDelivery - subscriptionDiscount
     val referralCredit = 500.coerceAtMost(deliveryAfterSubscription)
