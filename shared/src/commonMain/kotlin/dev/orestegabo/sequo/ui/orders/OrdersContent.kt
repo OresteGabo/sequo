@@ -42,8 +42,8 @@ import sequo.shared.generated.resources.*
 internal fun OrdersContent() {
     var selectedOrder by remember { mutableStateOf<SequoOrder?>(null) }
     var selectedTab by remember { mutableStateOf(OrdersTab.Current) }
-    val currentOrders = remember { recentOrders.filter { it.belongsInCurrentOrders } }
-    val pastOrders = remember { recentOrders.filterNot { it.belongsInCurrentOrders } }
+    val currentOrders = remember { emptyList<SequoOrder>() }
+    val pastOrders = remember { emptyList<SequoOrder>() }
     val visibleOrders = if (selectedTab == OrdersTab.Current) currentOrders else pastOrders
     val returnableCount = currentOrders.count { it.isInsideReturnWindow }
     val orderForDetail = selectedOrder
@@ -72,7 +72,7 @@ internal fun OrdersContent() {
             SequoErrorPanel(
                 kind = SequoErrorKind.OrderSync,
                 onRetry = {},
-                technicalNote = "No ${selectedTab.label.lowercase()} orders found in this demo inbox.",
+                technicalNote = "No ${selectedTab.label.lowercase()} orders returned by the API yet. Orders require an authenticated customer session.",
             )
         } else {
             when (selectedTab) {
@@ -475,17 +475,13 @@ private fun OrderStatusLabel(state: SequoOrderState) {
 
 private fun SequoOrder.previewProduct(): SequoProduct? {
     val mainItemName = items.firstOrNull()?.name ?: return null
-    return sequoShops
-        .asSequence()
-        .flatMap { it.products.asSequence() }
-        .firstOrNull { product -> product.name.equals(mainItemName, ignoreCase = true) }
-        ?: SequoProduct(
-            name = mainItemName,
-            detail = sellers.firstOrNull().orEmpty(),
-            priceCfa = amountCfa,
-            label = "Order",
-            optionHint = note,
-        )
+    return SequoProduct(
+        name = mainItemName,
+        detail = sellers.firstOrNull().orEmpty(),
+        priceCfa = amountCfa,
+        label = "Order",
+        optionHint = note,
+    )
 }
 
 private fun SequoOrder.cardTitle(): String {
