@@ -97,9 +97,15 @@ internal fun NotificationsContent(
         NotificationFilter.Archived -> archivedNotifications
     }
     val unreadCount = activeNotifications.count { it.unread }
+    val inboxIsEmpty = notifications.isEmpty()
 
     LaunchedEffect(unreadCount) {
         onUnreadCountChanged(unreadCount)
+    }
+
+    if (inboxIsEmpty) {
+        NotificationEmptyState(filter = NotificationFilter.Today)
+        return
     }
 
     NotificationCompactSummary(
@@ -125,14 +131,14 @@ internal fun NotificationsContent(
             filter = selectedFilter,
         )
     } else {
-                NotificationList(
-                    items = visibleItems,
-                    archived = selectedFilter == NotificationFilter.Archived,
-                    onOpenPrivacy = onOpenPrivacy,
-                    onOpenTerms = onOpenTerms,
-                    onArchive = { id ->
-                        if (id !in archivedIds) {
-                            archivedIds.add(id)
+        NotificationList(
+            items = visibleItems,
+            archived = selectedFilter == NotificationFilter.Archived,
+            onOpenPrivacy = onOpenPrivacy,
+            onOpenTerms = onOpenTerms,
+            onArchive = { id ->
+                if (id !in archivedIds) {
+                    archivedIds.add(id)
                 }
             },
             onRestore = { archivedIds.remove(it) },
