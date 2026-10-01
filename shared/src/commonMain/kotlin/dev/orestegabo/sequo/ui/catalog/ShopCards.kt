@@ -231,10 +231,17 @@ internal fun ProductLine(
 internal fun CompactProductCard(
     shop: SequoShop,
     product: SequoProduct,
+    comparisonPriceCfa: Int? = null,
+    relationLabel: String? = null,
     onAddProduct: () -> Unit,
     onNegotiateClick: () -> Unit = {},
     onProductClick: () -> Unit = {},
 ) {
+    val comparisonContext = listOfNotNull(
+        relationLabel?.let { "Similar $it" },
+        priceComparisonLabel(product.priceCfa, comparisonPriceCfa),
+    ).joinToString(" / ")
+
     Surface(
         shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.26f),
@@ -253,10 +260,19 @@ internal fun CompactProductCard(
                 Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        shop.area,
+                        "${shop.name} / ${shop.area}",
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (comparisonContext.isNotBlank()) {
+                    Text(
+                        comparisonContext,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -278,6 +294,16 @@ internal fun CompactProductCard(
                 }
             }
         }
+    }
+}
+
+private fun priceComparisonLabel(productPriceCfa: Int, comparisonPriceCfa: Int?): String? {
+    comparisonPriceCfa ?: return null
+    val delta = productPriceCfa - comparisonPriceCfa
+    return when {
+        delta < 0 -> "${formatCompactCfa(-delta)} cheaper"
+        delta > 0 -> "${formatCompactCfa(delta)} more"
+        else -> "Same price"
     }
 }
 
