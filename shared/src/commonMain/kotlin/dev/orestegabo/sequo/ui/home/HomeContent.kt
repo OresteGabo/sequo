@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -40,6 +41,7 @@ import sequo.shared.generated.resources.*
 
 @Composable
 internal fun HomeContent(
+    catalog: CatalogSnapshot,
     onDestinationSelected: (SequoSection) -> Unit,
     onAddProduct: () -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
@@ -48,14 +50,14 @@ internal fun HomeContent(
     onCategoryUsed: (String) -> Unit,
     onToggleCategoryPinned: (String) -> Unit,
 ) {
-    var selectedTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
-    val orderedTypes = personalizedShopTypes(sequoShopTypes, categoryUsage, pinnedCategoryKeys)
-    val selectedType = shopTypeFor(selectedTypeKey)
-    val selectedShops = shopsForType(selectedTypeKey)
-    val featuredProducts = featuredProductsFor(selectedTypeKey)
+    var selectedTypeKey by remember(catalog.defaultCategoryKey) { mutableStateOf(catalog.defaultCategoryKey) }
+    val orderedTypes = personalizedShopTypes(catalog.categories, categoryUsage, pinnedCategoryKeys)
+    val selectedType = catalog.categoryFor(selectedTypeKey)
+    val selectedShops = catalog.shopsForCategory(selectedTypeKey)
+    val featuredProducts = catalog.featuredProductsFor(selectedTypeKey)
 
     ProductPromoCarousel(
-        promos = sequoPromos,
+        promos = catalog.promotions,
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
         onProductSelected = onProductSelected,
