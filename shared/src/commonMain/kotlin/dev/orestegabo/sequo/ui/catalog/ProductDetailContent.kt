@@ -34,6 +34,7 @@ import dev.orestegabo.sequo.ui.components.*
 import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.orders.*
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
@@ -624,10 +625,7 @@ private fun ProductSuggestionsSection(
             }
         }
         Text(
-            when (selectedTab) {
-                ProductSuggestionTab.SameShop -> "Add from ${current.shop.name} to keep delivery simpler."
-                ProductSuggestionTab.OtherShops -> "Compare similar products from different sellers."
-            },
+            suggestionExplainer(selectedTab, current),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -645,6 +643,8 @@ private fun ProductSuggestionsSection(
                 CompactProductCard(
                     shop = suggestion.shop,
                     product = suggestion.product,
+                    comparisonPriceCfa = current.product.priceCfa,
+                    relationLabel = productRelationLabel(current.product),
                     onAddProduct = onAddProduct,
                     onProductClick = { onProductSelected(suggestion) },
                 )
@@ -683,42 +683,104 @@ private fun DetailChip(icon: ImageVector, label: String) {
 }
 
 private fun similarProductListings(current: SequoProductListing, allShops: List<SequoShop>): List<SequoProductListing> {
-    val currentSubcategory = productSubcategory(current.product)
+    val currentRelationKey = productRelationKey(current.product)
+    val currentSubcategory = normalizedProductSubcategory(current.product)
     return allShops
         .flatMap { shop -> shop.products.map { product -> SequoProductListing(shop, product) } }
         .filterNot { it.shop.name == current.shop.name && it.product.name == current.product.name }
-        .sortedByDescending { listing ->
-            val product = listing.product
-            when {
-                productSubcategory(product) == currentSubcategory -> 3
-                product.label == current.product.label -> 2
-                listing.shop.kind == current.shop.kind -> 1
-                else -> 0
-            }
-        }
         .filter { listing ->
-            productSubcategory(listing.product) == currentSubcategory ||
-                listing.product.label == current.product.label ||
+            val product = listing.product
+            productRelationKey(product) == currentRelationKey ||
+                normalizedProductSubcategory(product) == currentSubcategory ||
+                product.label == current.product.label ||
                 listing.shop.kind == current.shop.kind
         }
+        .sortedWith(
+            compareByDescending<SequoProductListing> { listing ->
+                when {
+                    productRelationKey(listing.product) == currentRelationKey -> 4
+                    normalizedProductSubcategory(listing.product) == currentSubcategory -> 3
+                    listing.product.label == current.product.label -> 2
+                    listing.shop.kind == current.shop.kind -> 1
+                    else -> 0
+                }
+            }.thenBy { listing ->
+                abs(listing.product.priceCfa - current.product.priceCfa)
+            }.thenBy { listing ->
+                listing.shop.distanceKm
+            },
+        )
         .take(6)
 }
 
 private fun sameShopProductListings(current: SequoProductListing, allShops: List<SequoShop>): List<SequoProductListing> {
-    val currentSubcategory = productSubcategory(current.product)
+    val currentRelationKey = productRelationKey(current.product)
+    val currentSubcategory = normalizedProductSubcategory(current.product)
     val currentShop = allShops.firstOrNull { it.name == current.shop.name } ?: current.shop
     return currentShop.products
         .filterNot { it.name == current.product.name }
-        .sortedByDescending { product ->
-            when {
-                productSubcategory(product) == currentSubcategory -> 3
-                product.label == current.product.label -> 2
-                else -> 1
-            }
-        }
+        .sortedWith(
+            compareByDescending<SequoProduct> { product ->
+                when {
+                    productRelationKey(product) == currentRelationKey -> 4
+                    normalizedProductSubcategory(product) == currentSubcategory -> 3
+                    product.label == current.product.label -> 2
+                    else -> 1
+                }
+            }.thenBy { product ->
+                abs(product.priceCfa - current.product.priceCfa)
+            },
+        )
         .map { product -> SequoProductListing(current.shop, product) }
         .take(6)
 }
+
+private fun suggestionExplainer(tab: ProductSuggestionTab, current: SequoProductListing): String {
+    val relation = productRelationLabel(current.product).lowercase()
+    return when (tab) {
+        ProductSuggestionTab.SameShop -> "More from ${current.shop.name}; closest $relation alternatives stay first."
+        ProductSuggestionTab.OtherShops -> "Similar $relation options from other sellers, sorted by closest match and price."
+    }
+}
+
+private fun productRelationLabel(product: SequoProduct): String =
+    when (productRelationKey(product)) {
+        "smartphones" -> "smartphone"
+        "laptops" -> "laptop"
+        "jollof-rice" -> "jollof plate"
+        "attieke-fish" -> "attieke fish plate"
+        "grilled-food" -> "grilled food"
+        "rice-bag" -> "rice bag"
+        "cooking-oil" -> "cooking oil"
+        "power-bank" -> "power bank"
+        "earbuds" -> "earbuds"
+        "t-shirt" -> "T-shirt"
+        "sanitizer" -> "sanitizer"
+        "pastry" -> "pastry"
+        else -> productSubcategory(product)
+    }
+
+private fun productRelationKey(product: SequoProduct): String {
+    val text = "${product.name} ${product.detail} ${product.label} ${product.subcategory} ${product.optionHint}".lowercase()
+    return when {
+        "iphone" in text || "smartphone" in text || "poco" in text -> "smartphones"
+        ("laptop" in text || "ordinateur" in text) && "sleeve" !in text -> "laptops"
+        "jollof" in text || "riz gras" in text -> "jollof-rice"
+        "attieke" in text && ("fish" in text || "tilapia" in text || "poisson" in text) -> "attieke-fish"
+        "grill" in text || "brochette" in text || "shawarma" in text || "kebab" in text -> "grilled-food"
+        "rice bag" in text || "local rice" in text -> "rice-bag"
+        "vegetable oil" in text || "palm oil" in text || "huile" in text -> "cooking-oil"
+        "power bank" in text -> "power-bank"
+        "earbuds" in text || "headset" in text -> "earbuds"
+        "tee" in text || "t-shirt" in text -> "t-shirt"
+        "sanitizer" in text -> "sanitizer"
+        "croissant" in text || "pastry" in text || "pain au lait" in text -> "pastry"
+        else -> normalizedProductSubcategory(product)
+    }
+}
+
+private fun normalizedProductSubcategory(product: SequoProduct): String =
+    productSubcategory(product).lowercase().trim()
 
 private fun productGalleryProducts(
     product: SequoProduct,
