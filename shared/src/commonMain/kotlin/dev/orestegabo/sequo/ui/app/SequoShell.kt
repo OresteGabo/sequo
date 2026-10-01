@@ -20,8 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.catalog.CatalogApiClient
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
+import dev.orestegabo.sequo.feature.legal.LegalInitialTab
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -43,13 +45,22 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun SequoShell() {
+internal fun SequoShell(
+    currentUser: CurrentUser?,
+    isGuest: Boolean,
+    onOpenLegal: (LegalInitialTab) -> Unit,
+    onHomeEntered: () -> Unit,
+    openNotificationsRequest: Int,
+    onSignInRequested: () -> Unit,
+    onLogout: () -> Unit,
+) {
     var currentDestination by remember { mutableStateOf(SequoSection.Home) }
     var extraBasketItems by remember { mutableStateOf(0) }
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf("") }
     var selectedProductListing by remember { mutableStateOf<SequoProductListing?>(null) }
     var catalogState by remember { mutableStateOf<CatalogUiState>(CatalogUiState.Loading) }
+    var notificationUnreadCount by remember { mutableStateOf(defaultNotificationUnreadCount()) }
     val catalogClient = remember { CatalogApiClient() }
     val categoryUsage = remember { mutableStateMapOf<String, Int>() }
     val pinnedCategoryKeys = remember { mutableStateListOf("food") }
@@ -75,10 +86,26 @@ internal fun SequoShell() {
         reloadCatalog()
     }
 
+    LaunchedEffect(currentDestination, selectedProductListing) {
+        if (currentDestination == SequoSection.Home && selectedProductListing == null) {
+            onHomeEntered()
+        }
+    }
+
+    LaunchedEffect(openNotificationsRequest) {
+        if (openNotificationsRequest > 0) {
+            currentDestination = SequoSection.Notifications
+            searchVisible = false
+            selectedProductListing = null
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             SequoNavigationDrawer(
+                currentUser = currentUser,
+                isGuest = isGuest,
                 selectedMarketTypeKey = selectedMarketTypeKey,
                 shopTypes = (catalogState as? CatalogUiState.Ready)?.snapshot?.categories.orEmpty(),
                 onMarketTypeSelected = { typeKey ->
@@ -121,6 +148,12 @@ internal fun SequoShell() {
                 onAddProduct = { extraBasketItems += 1 },
                 catalogState = catalogState,
                 onReloadCatalog = ::reloadCatalog,
+                currentUser = currentUser,
+                isGuest = isGuest,
+                onNotificationUnreadCountChanged = { notificationUnreadCount = it },
+                onOpenLegal = onOpenLegal,
+                onSignInRequested = onSignInRequested,
+                onLogout = onLogout,
                 modifier = Modifier.fillMaxSize(),
             )
             SequoTopAppBar(
@@ -132,6 +165,7 @@ internal fun SequoShell() {
                     searchVisible = false
                     selectedProductListing = null
                 },
+                notificationUnreadCount = notificationUnreadCount,
                 productListing = selectedProductListing,
                 onBackClick = {
                     selectedProductListing = null
@@ -147,6 +181,7 @@ internal fun SequoShell() {
                     selectedProductListing = null
                 },
                 pendingBasketCount = basketCount,
+                notificationUnreadCount = notificationUnreadCount,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -171,6 +206,12 @@ internal fun SequoContentStage(
     onAddProduct: () -> Unit,
     catalogState: CatalogUiState,
     onReloadCatalog: () -> Unit,
+    currentUser: CurrentUser?,
+    isGuest: Boolean,
+    onNotificationUnreadCountChanged: (Int) -> Unit,
+    onOpenLegal: (LegalInitialTab) -> Unit,
+    onSignInRequested: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val catalog = (catalogState as? CatalogUiState.Ready)?.snapshot
@@ -218,12 +259,105 @@ internal fun SequoContentStage(
                     onAddProduct = onAddProduct,
                     onProductSelected = onProductSelected,
                 )
-                SequoSection.Basket -> BasketContent(extraBasketItems)
-                SequoSection.Orders -> OrdersContent()
+                SequoSection.Basket -> if (isGuest) {
+                    GuestSignInPanel(
+                        title = "Sign in to build your basket",
+                        detail = "You can inspect products and menus first. Saving cart items, choosing an address, and checkout require an account.",
+                        onSignIn = onSignInRequested,
+                        onBrowse = { onDestinationSelected(SequoSection.Markets) },
+                    )
+                } else {
+                    BasketContent(extraBasketItems)
+                }
+                SequoSection.Orders -> if (isGuest) {
+                    GuestSignInPanel(
+                        title = "Sign in to track orders",
+                        detail = "You can browse products as a guest. Orders, delivery status, pickup codes, returns, and receipts stay behind your account.",
+                        onSignIn = onSignInRequested,
+                        onBrowse = { onDestinationSelected(SequoSection.Home) },
+                    )
+                } else {
+                    OrdersContent()
+                }
                 SequoSection.Notifications -> NotificationsContent(
                     onOpenOrders = { onDestinationSelected(SequoSection.Orders) },
+                    onOpenPrivacy = { onOpenLegal(LegalInitialTab.Privacy) },
+                    onOpenTerms = { onOpenLegal(LegalInitialTab.Terms) },
+                    onUnreadCountChanged = onNotificationUnreadCountChanged,
                 )
-                SequoSection.Account -> AccountContent()
+                SequoSection.Account -> AccountContent(
+                    currentUser = currentUser,
+                    isGuest = isGuest,
+                    onSignInRequested = onSignInRequested,
+                    onLogout = onLogout,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuestSignInPanel(
+    title: String,
+    detail: String,
+    onSignIn: () -> Unit,
+    onBrowse: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.58f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Surface(
+                modifier = Modifier.size(56.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(14.dp),
+                )
+            }
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                detail,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onBrowse,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text("Browse")
+                }
+                Button(
+                    onClick = onSignIn,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text("Sign in")
+                }
             }
         }
     }
@@ -259,6 +393,8 @@ internal fun ProductDetailScreenColumn(
 
 @Composable
 private fun SequoNavigationDrawer(
+    currentUser: CurrentUser?,
+    isGuest: Boolean,
     selectedMarketTypeKey: String,
     shopTypes: List<SequoShopType>,
     onMarketTypeSelected: (String) -> Unit,
@@ -281,8 +417,24 @@ private fun SequoNavigationDrawer(
             ) {
                 SequoIconMark(Icons.Filled.Storefront, MaterialTheme.colorScheme.primary, Modifier.size(40.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Sequo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
-                    Text("Browse faster", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        currentUser?.displayName ?: "Sequo customer",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        when {
+                            isGuest -> "Guest browsing"
+                            currentUser?.email != null -> currentUser.email
+                            else -> "Signed in"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
