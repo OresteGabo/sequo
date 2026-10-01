@@ -44,6 +44,7 @@ internal fun SequoTopAppBar(
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
+    notificationUnreadCount: Int = 0,
     productListing: SequoProductListing? = null,
     onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -104,11 +105,13 @@ internal fun SequoTopAppBar(
                 IconButton(onClick = onNotificationsClick) {
                     BadgedBox(
                         badge = {
-                            Badge(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            ) {
-                                Text("2")
+                            if (notificationUnreadCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                ) {
+                                    Text(notificationUnreadCount.coerceAtMost(9).toString())
+                                }
                             }
                         },
                     ) {
@@ -154,7 +157,6 @@ internal fun HomeAppBar() {
             leadingIcon = Icons.Filled.Place,
             actions = listOf(
                 AppBarAction(Icons.Filled.Payments, "Yas payment ready", emphasized = true),
-                AppBarAction(Icons.Filled.Notifications, "Notifications", badge = "2"),
             ),
         )
         SequoStatusStrip(
