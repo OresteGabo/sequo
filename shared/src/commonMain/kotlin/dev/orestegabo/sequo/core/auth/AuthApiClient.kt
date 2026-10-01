@@ -8,6 +8,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -41,6 +43,52 @@ class AuthApiClient(
         return response.toAuthApiResponse()
     }
 
+    suspend fun signUpWithEmail(email: String, password: String, name: String?): AuthApiResponse {
+        val response = try {
+            httpClient.post("${baseUrl.trimEnd('/')}/api/auth/signup") {
+                headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(EmailSignUpRequest(email = email, password = password, name = name?.takeIf { it.isNotBlank() }))
+            }
+        } catch (error: SequoApiException) {
+            throw AuthApiException(
+                statusCode = error.statusCode,
+                safeMessage = emailAuthFailureMessage(error.statusCode, error.responseBody),
+                cause = error,
+            )
+        }
+        return response.toAuthApiResponse()
+    }
+
+    suspend fun loginWithEmail(email: String, password: String): AuthApiResponse {
+        val response = try {
+            httpClient.post("${baseUrl.trimEnd('/')}/api/auth/login") {
+                headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(EmailLoginRequest(email = email, password = password))
+            }
+        } catch (error: SequoApiException) {
+            throw AuthApiException(
+                statusCode = error.statusCode,
+                safeMessage = emailAuthFailureMessage(error.statusCode, error.responseBody),
+                cause = error,
+            )
+        }
+        return response.toAuthApiResponse()
+    }
+
+    suspend fun currentUser(accessToken: String): CurrentUser {
+        return try {
+            httpClient.get("${baseUrl.trimEnd('/')}/api/auth/me") {
+                bearerAuth(accessToken)
+            }.body()
+        } catch (error: SequoApiException) {
+            throw AuthApiException(
+                statusCode = error.statusCode,
+                safeMessage = "Could not load the authenticated user profile.",
+                cause = error,
+            )
+        }
+    }
+
     fun close() {
         httpClient.close()
     }
@@ -58,6 +106,20 @@ class AuthApiClient(
             statusCode = statusCode,
             session = body(),
         )
+    }
+}
+
+private fun emailAuthFailureMessage(statusCode: Int, responseBody: String?): String {
+    val error = responseBody
+        ?.takeIf { it.isNotBlank() }
+        ?.let { body -> runCatching { defaultNetworkJson.decodeFromString<AuthErrorResponse>(body) }.getOrNull() }
+
+    return when (statusCode) {
+        400 -> error?.message ?: "Check the email and password format."
+        401 -> "Email or password is incorrect."
+        409 -> error?.message ?: "This account must be opened with another sign-in method."
+        429 -> error?.message ?: "Too many attempts. Please wait before trying again."
+        else -> error?.message ?: "Authentication failed with HTTP $statusCode."
     }
 }
 
@@ -94,6 +156,18 @@ data class AuthApiResponse(
     val session: AuthSession,
 )
 
+@Serializable
+data class CurrentUser(
+    val id: String,
+    val email: String,
+    val name: String? = null,
+    val provider: String,
+    val status: String,
+) {
+    val displayName: String
+        get() = name?.takeIf { it.isNotBlank() } ?: email.substringBefore("@").replaceFirstChar { it.uppercase() }
+}
+
 class AuthApiException(
     val statusCode: Int,
     val safeMessage: String,
@@ -111,6 +185,26 @@ data class AuthSession(
 private data class SocialLoginRequest(
     val provider: SocialLoginProvider,
     val token: String,
+)
+
+@Serializable
+private data class EmailSignUpRequest(
+    val email: String,
+    val password: String,
+    val name: String? = null,
+)
+
+@Serializable
+private data class EmailLoginRequest(
+    val email: String,
+    val password: String,
+)
+
+@Serializable
+private data class AuthErrorResponse(
+    val code: String? = null,
+    val message: String? = null,
+    val requiredProvider: String? = null,
 )
 
 @Serializable
