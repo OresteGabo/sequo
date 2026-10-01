@@ -46,10 +46,13 @@ internal fun SequoTopAppBar(
     onNotificationsClick: () -> Unit,
     notificationUnreadCount: Int = 0,
     productListing: SequoProductListing? = null,
+    showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val productMode = productListing != null
+    val backMode = productMode || showBackButton
+    val searchAvailable = currentDestination != SequoSection.Notifications
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = if (productMode) MaterialTheme.colorScheme.surface.copy(alpha = 0.94f) else MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
@@ -65,10 +68,10 @@ internal fun SequoTopAppBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = if (!productMode) onMenuClick else onBackClick) {
+            IconButton(onClick = if (backMode) onBackClick else onMenuClick) {
                 Icon(
-                    imageVector = if (!productMode) Icons.Filled.Menu else Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = if (!productMode) "Open menu" else "Back",
+                    imageVector = if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
+                    contentDescription = if (backMode) "Back" else "Open menu",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp),
                 )
@@ -94,13 +97,15 @@ internal fun SequoTopAppBar(
                 )
             }
             if (!productMode) {
-                IconButton(onClick = onSearchClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp),
-                    )
+                if (searchAvailable) {
+                    IconButton(onClick = onSearchClick) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
                 IconButton(onClick = onNotificationsClick) {
                     BadgedBox(
@@ -270,5 +275,25 @@ internal fun SequoIconMark(icon: ImageVector, color: Color, modifier: Modifier =
         contentAlignment = Alignment.Center,
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(17.dp))
+    }
+}
+
+@Composable
+internal fun SequoShoppingMark(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.13f))
+            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+            .padding(5.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.sequo_shopping_icon),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
