@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.catalog.CatalogApiClient
@@ -235,7 +236,7 @@ internal fun SequoContentStage(
     val catalog = (catalogState as? CatalogUiState.Ready)?.snapshot
     if (catalogState is CatalogUiState.Loading) {
         SequoScreenColumn(modifier = modifier) {
-            SequoCatalogLoadingCard()
+            SequoCatalogLoadingSkeleton()
         }
     } else if (catalogState is CatalogUiState.Failed) {
         SequoScreenColumn(modifier = modifier) {
@@ -509,25 +510,178 @@ internal sealed interface CatalogUiState {
 }
 
 @Composable
-private fun SequoCatalogLoadingCard() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.50f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+private fun SequoCatalogLoadingSkeleton() {
+    val shimmer = rememberSequoShimmerBrush()
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        SequoSkeletonPromo(shimmer)
+        SequoSkeletonCategoryRow(shimmer)
+        SequoSkeletonProductSection(shimmer)
+        SequoSkeletonShopSection(shimmer)
+    }
+}
+
+@Composable
+private fun rememberSequoShimmerBrush(): Brush {
+    val transition = rememberInfiniteTransition(label = "catalogShimmer")
+    val shimmerOffset by transition.animateFloat(
+        initialValue = -420f,
+        targetValue = 920f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1250, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "catalogShimmerOffset",
+    )
+    val base = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+    val glow = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
+    val edge = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+    return Brush.linearGradient(
+        colors = listOf(base, glow, edge),
+        start = Offset(shimmerOffset, 0f),
+        end = Offset(shimmerOffset + 360f, 260f),
+    )
+}
+
+@Composable
+private fun SequoSkeletonPromo(shimmer: Brush) {
+    SequoCard(shape = RoundedCornerShape(30.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(168.dp)
+                .padding(18.dp),
         ) {
-            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Loading Sequo catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Products and shops are being fetched from the API.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier.align(Alignment.CenterStart).fillMaxWidth(0.58f),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                ShimmerBlock(shimmer, widthFraction = 0.38f, height = 14.dp, shape = RoundedCornerShape(999.dp))
+                ShimmerBlock(shimmer, widthFraction = 0.94f, height = 24.dp, shape = RoundedCornerShape(10.dp))
+                ShimmerBlock(shimmer, widthFraction = 0.72f, height = 14.dp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ShimmerBlock(shimmer, modifier = Modifier.width(78.dp), height = 32.dp, shape = RoundedCornerShape(999.dp))
+                    ShimmerBlock(shimmer, modifier = Modifier.width(58.dp), height = 32.dp, shape = RoundedCornerShape(999.dp))
+                }
+            }
+            ShimmerBlock(
+                shimmer = shimmer,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(118.dp),
+                shape = RoundedCornerShape(32.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SequoSkeletonCategoryRow(shimmer: Brush) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ShimmerBlock(shimmer, widthFraction = 0.34f, height = 18.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            repeat(4) { index ->
+                Surface(
+                    modifier = Modifier.weight(1f).height(74.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f)),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(10.dp),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        ShimmerBlock(shimmer, modifier = Modifier.size(28.dp), shape = RoundedCornerShape(10.dp))
+                        ShimmerBlock(shimmer, widthFraction = if (index % 2 == 0) 0.78f else 0.58f, height = 10.dp)
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun SequoSkeletonProductSection(shimmer: Brush) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ShimmerSectionHeader(shimmer)
+        repeat(2) {
+            SequoCard(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ShimmerBlock(shimmer, modifier = Modifier.size(74.dp), shape = RoundedCornerShape(18.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ShimmerBlock(shimmer, widthFraction = 0.88f, height = 14.dp)
+                        ShimmerBlock(shimmer, widthFraction = 0.56f, height = 11.dp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ShimmerBlock(shimmer, modifier = Modifier.width(68.dp), height = 24.dp, shape = RoundedCornerShape(999.dp))
+                            ShimmerBlock(shimmer, modifier = Modifier.width(48.dp), height = 24.dp, shape = RoundedCornerShape(999.dp))
+                        }
+                    }
+                    ShimmerBlock(shimmer, modifier = Modifier.size(34.dp), shape = RoundedCornerShape(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SequoSkeletonShopSection(shimmer: Brush) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ShimmerSectionHeader(shimmer)
+        repeat(2) {
+            SequoCard(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)) {
+                Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(11.dp), verticalAlignment = Alignment.CenterVertically) {
+                        ShimmerBlock(shimmer, modifier = Modifier.size(42.dp), shape = RoundedCornerShape(14.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                            ShimmerBlock(shimmer, widthFraction = 0.74f, height = 14.dp)
+                            ShimmerBlock(shimmer, widthFraction = 0.46f, height = 10.dp)
+                        }
+                        ShimmerBlock(shimmer, modifier = Modifier.width(42.dp), height = 22.dp, shape = RoundedCornerShape(999.dp))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ShimmerBlock(shimmer, modifier = Modifier.width(64.dp), height = 24.dp, shape = RoundedCornerShape(999.dp))
+                        ShimmerBlock(shimmer, modifier = Modifier.width(74.dp), height = 24.dp, shape = RoundedCornerShape(999.dp))
+                        ShimmerBlock(shimmer, modifier = Modifier.width(54.dp), height = 24.dp, shape = RoundedCornerShape(999.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShimmerSectionHeader(shimmer: Brush) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ShimmerBlock(shimmer, widthFraction = 0.36f, height = 18.dp)
+        ShimmerBlock(shimmer, modifier = Modifier.width(72.dp), height = 24.dp, shape = RoundedCornerShape(999.dp))
+    }
+}
+
+@Composable
+private fun ShimmerBlock(
+    shimmer: Brush,
+    modifier: Modifier = Modifier,
+    widthFraction: Float? = null,
+    height: Dp? = null,
+    shape: RoundedCornerShape = RoundedCornerShape(8.dp),
+) {
+    val sizedModifier = when {
+        widthFraction != null && height != null -> modifier.fillMaxWidth(widthFraction).height(height)
+        height != null -> modifier.height(height)
+        else -> modifier
+    }
+    Box(
+        modifier = sizedModifier
+            .clip(shape)
+            .background(shimmer),
+    )
 }
 
 @Composable
