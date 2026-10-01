@@ -1,6 +1,7 @@
 package dev.orestegabo.sequo.ui.chrome
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -23,12 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.designsystem.component.SequoShapes
 import dev.orestegabo.sequo.model.SequoSection
 import dev.orestegabo.sequo.model.sequoPrimaryDestinations
+import org.jetbrains.compose.resources.painterResource
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.sequo_icon_green
 
 @Composable
 internal fun SequoBottomBar(
@@ -139,12 +144,21 @@ private fun SequoBottomNavItem(
                         }
                     },
                 ) {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.label,
-                        tint = contentColor,
-                        modifier = Modifier.size(if (destination == SequoSection.Home) 24.dp else 20.dp),
-                    )
+                    if (destination == SequoSection.Home) {
+                        Image(
+                            painter = painterResource(Res.drawable.sequo_icon_green),
+                            contentDescription = destination.label,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.label,
+                            tint = contentColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
             Text(
