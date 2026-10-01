@@ -17,6 +17,23 @@ class AuthRepository(
         return response.session
     }
 
+    suspend fun signUpWithEmail(email: String, password: String, name: String?): AuthSession {
+        val response = authApiClient.signUpWithEmail(email = email, password = password, name = name)
+        sessionStore.save(response.session)
+        return response.session
+    }
+
+    suspend fun loginWithEmail(email: String, password: String): AuthSession {
+        val response = authApiClient.loginWithEmail(email = email, password = password)
+        sessionStore.save(response.session)
+        return response.session
+    }
+
+    suspend fun currentUser(): CurrentUser? {
+        val session = sessionStore.get() ?: return null
+        return authApiClient.currentUser(session.accessToken)
+    }
+
     suspend fun getSavedSession(): AuthSession? =
         sessionStore.get()
 
