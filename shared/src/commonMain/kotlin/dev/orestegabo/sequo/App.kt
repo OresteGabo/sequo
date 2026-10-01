@@ -52,7 +52,7 @@ private fun SequoApp(
     onHomeEntered: () -> Unit,
     openNotificationsRequest: Int,
 ) {
-    var showSplash by rememberSaveable { mutableStateOf(true) }
+    var showSplash by rememberSaveable { mutableStateOf(shouldShowInAppSplash) }
     var isAuthenticated by rememberSaveable { mutableStateOf(false) }
     var guestMode by rememberSaveable { mutableStateOf(false) }
     var legalScreenTab by rememberSaveable { mutableStateOf<LegalInitialTab?>(null) }
@@ -239,3 +239,5 @@ private fun SequoApp(
         },
     )
 }
+
+internal expect val shouldShowInAppSplash: Boolean
