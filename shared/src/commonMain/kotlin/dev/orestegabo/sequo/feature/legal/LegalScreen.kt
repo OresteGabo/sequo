@@ -42,8 +42,9 @@ import dev.orestegabo.sequo.core.platform.rememberLegalPdfDownloader
 @Composable
 fun LegalScreen(
     onBack: () -> Unit,
+    initialTab: LegalInitialTab = LegalInitialTab.Privacy,
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(LegalTab.Privacy) }
+    var selectedTab by rememberSaveable { mutableStateOf(initialTab.toLegalTab()) }
     var downloadMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedDocument = selectedTab.document
     val pdfDownloader = rememberLegalPdfDownloader()
@@ -231,6 +232,17 @@ private fun LegalSectionView(section: LegalSection) {
         }
     }
 }
+
+enum class LegalInitialTab {
+    Privacy,
+    Terms,
+}
+
+private fun LegalInitialTab.toLegalTab(): LegalTab =
+    when (this) {
+        LegalInitialTab.Privacy -> LegalTab.Privacy
+        LegalInitialTab.Terms -> LegalTab.Terms
+    }
 
 private enum class LegalTab(
     val label: String,
