@@ -36,6 +36,7 @@ internal fun SequoBottomBar(
     currentDestination: SequoSection,
     onDestinationSelected: (SequoSection) -> Unit,
     pendingBasketCount: Int = 0,
+    notificationUnreadCount: Int = 0,
     destinations: List<SequoSection> = sequoPrimaryDestinations,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -76,7 +77,11 @@ internal fun SequoBottomBar(
                         destination = destination,
                         selected = currentDestination == destination,
                         onClick = { onDestinationSelected(destination) },
-                        badgeCount = if (destination == SequoSection.Basket) pendingBasketCount else 0,
+                        badgeCount = when (destination) {
+                            SequoSection.Basket -> pendingBasketCount
+                            SequoSection.Notifications -> notificationUnreadCount
+                            else -> 0
+                        },
                     )
                 }
             }
