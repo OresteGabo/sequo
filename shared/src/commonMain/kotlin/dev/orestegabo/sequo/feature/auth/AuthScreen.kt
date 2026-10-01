@@ -86,8 +86,7 @@ import sequo.shared.generated.resources.auth_fingerprint
 import sequo.shared.generated.resources.onboarding_history
 import sequo.shared.generated.resources.onboarding_pickup_flow
 import sequo.shared.generated.resources.onboarding_scan_arrivals
-import sequo.shared.generated.resources.sequohub_logo_mark
-import sequo.shared.generated.resources.sequohub_logo_text
+import sequo.shared.generated.resources.sequo_icon_green
 
 @Composable
 fun AuthScreen(
@@ -996,13 +995,15 @@ private fun EmailHeader(
             Column(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                SequoWordmark(
-                    modifier = Modifier
-                        .width(138.dp)
-                        .height(30.dp),
+                Text(
+                    text = "Sequo",
+                    color = colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
                 )
                 Text(
-                    text = "Relay counter",
+                    text = "Shopping app",
                     color = colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -1143,23 +1144,9 @@ private fun BrandMark(
         ) {
             SequoMark(
                 modifier = Modifier
-                    .width(48.dp)
-                    .height(56.dp),
+                    .width(82.dp)
+                    .height(82.dp),
             )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                SequoWordmark(
-                    modifier = Modifier
-                        .width(146.dp)
-                        .height(32.dp),
-                )
-                Text(
-                    text = "Relay counter",
-                    color = colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
         }
         LanguageFlagSwitch(
             language = language,
@@ -1171,18 +1158,8 @@ private fun BrandMark(
 @Composable
 private fun SequoMark(modifier: Modifier = Modifier) {
     Image(
-        painter = painterResource(Res.drawable.sequohub_logo_mark),
+        painter = painterResource(Res.drawable.sequo_icon_green),
         contentDescription = null,
-        contentScale = ContentScale.Fit,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun SequoWordmark(modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(Res.drawable.sequohub_logo_text),
-        contentDescription = "Sequo",
         contentScale = ContentScale.Fit,
         modifier = modifier,
     )
