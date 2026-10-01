@@ -41,13 +41,14 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun ProductDetailContent(
     listing: SequoProductListing,
+    allShops: List<SequoShop>,
     onAddProduct: () -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
     onNegotiateClick: () -> Unit,
 ) {
     val product = listing.product
     val shop = listing.shop
-    val suggestions = remember(listing) { similarProductListings(listing) }
+    val suggestions = remember(listing, allShops) { similarProductListings(listing, allShops) }
     var galleryExpanded by remember(listing) { mutableStateOf(false) }
     var selectedPhotoIndex by remember(listing) { mutableStateOf(0) }
     val galleryProducts = remember(product, suggestions) { productGalleryProducts(product, suggestions) }
@@ -82,6 +83,7 @@ internal fun ProductDetailContent(
         ProductSellerCard(shop = shop)
         ProductSuggestionsSection(
             current = listing,
+            allShops = allShops,
             suggestions = suggestions,
             onAddProduct = onAddProduct,
             onProductSelected = onProductSelected,
@@ -520,12 +522,13 @@ private fun SequoProduct.storageSuggestion(): String {
 @Composable
 private fun ProductSuggestionsSection(
     current: SequoProductListing,
+    allShops: List<SequoShop>,
     suggestions: List<SequoProductListing>,
     onAddProduct: () -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
 ) {
     var selectedTab by remember(current) { mutableStateOf(ProductSuggestionTab.SameShop) }
-    val sameShopOptions = remember(current) { sameShopProductListings(current) }
+    val sameShopOptions = remember(current, allShops) { sameShopProductListings(current, allShops) }
     val otherShopOptions = remember(current, suggestions) {
         suggestions.filterNot { it.shop.name == current.shop.name }
     }
@@ -635,9 +638,9 @@ private fun DetailChip(icon: ImageVector, label: String) {
     }
 }
 
-private fun similarProductListings(current: SequoProductListing): List<SequoProductListing> {
+private fun similarProductListings(current: SequoProductListing, allShops: List<SequoShop>): List<SequoProductListing> {
     val currentSubcategory = productSubcategory(current.product)
-    return sequoShops
+    return allShops
         .flatMap { shop -> shop.products.map { product -> SequoProductListing(shop, product) } }
         .filterNot { it.shop.name == current.shop.name && it.product.name == current.product.name }
         .sortedByDescending { listing ->
@@ -657,9 +660,10 @@ private fun similarProductListings(current: SequoProductListing): List<SequoProd
         .take(6)
 }
 
-private fun sameShopProductListings(current: SequoProductListing): List<SequoProductListing> {
+private fun sameShopProductListings(current: SequoProductListing, allShops: List<SequoShop>): List<SequoProductListing> {
     val currentSubcategory = productSubcategory(current.product)
-    return current.shop.products
+    val currentShop = allShops.firstOrNull { it.name == current.shop.name } ?: current.shop
+    return currentShop.products
         .filterNot { it.name == current.product.name }
         .sortedByDescending { product ->
             when {
