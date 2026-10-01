@@ -31,9 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.sequo.data.recentOrders
-import dev.orestegabo.sequo.logic.formatCfa
-import dev.orestegabo.sequo.logic.orderTitle
 import dev.orestegabo.sequo.theme.SequoPrimary
 import dev.orestegabo.sequo.theme.SequoSecondary
 import dev.orestegabo.sequo.ui.chrome.SequoIconMark
@@ -732,107 +729,4 @@ private fun NotificationCountPill(count: String) {
     }
 }
 
-private fun demoNotifications(): List<SequoNotificationItem> {
-    val activeOrder = recentOrders.first()
-    return listOf(
-        SequoNotificationItem(
-            id = "order-arriving-${activeOrder.id}",
-            filter = NotificationFilter.Today,
-            title = "${activeOrder.id} arriving soon",
-            detail = "${orderTitle(activeOrder)} is on the way. Keep your phone nearby for handoff.",
-            time = "Now",
-            action = "Track order",
-            icon = Icons.Filled.LocalShipping,
-            accent = SequoPrimary,
-            unread = true,
-            urgent = true,
-        ),
-        SequoNotificationItem(
-            id = "bargain-counter-dell",
-            filter = NotificationFilter.Today,
-            title = "Seller countered your offer",
-            detail = "Hedzranawoe Electronics replied: ${formatCfa(145000)} for Dell Latitude. Offer expires tonight.",
-            time = "4 min",
-            expandedTitle = "Final price: ${formatCfa(145000)}",
-            expandedDetail = "Accepting locks this price for checkout. Refusing cancels this bargain thread and removes the offer.",
-            primaryAction = "Accept",
-            secondaryAction = "Refuse",
-            icon = Icons.Filled.Handshake,
-            accent = SequoSecondary,
-            unread = true,
-            urgent = true,
-        ),
-        SequoNotificationItem(
-            id = "delivery-packages-joined",
-            filter = NotificationFilter.Today,
-            title = "Package B joined Package A",
-            detail = "Two nearby sellers can be delivered together. Estimated delivery fee dropped by ${formatCfa(700)}.",
-            time = "12 min",
-            icon = Icons.Filled.Inventory2,
-            accent = Color(0xFF5F7C44),
-            unread = true,
-        ),
-        SequoNotificationItem(
-            id = "payment-confirmed-${activeOrder.id}",
-            filter = NotificationFilter.Today,
-            title = "Payment confirmed",
-            detail = "Yas Togo confirmed ${formatCfa(activeOrder.amountCfa)} for ${activeOrder.id}. Receipt is ready.",
-            time = "18 min",
-            icon = Icons.Filled.Payments,
-            accent = Color(0xFF3C6E91),
-        ),
-        SequoNotificationItem(
-            id = "return-window-sq-2415",
-            filter = NotificationFilter.Today,
-            title = "Return window reminder",
-            detail = "SQ-2415 remains eligible for standard return review until tomorrow evening.",
-            time = "1 h",
-            action = "Return hub",
-            icon = Icons.AutoMirrored.Filled.AssignmentReturn,
-            accent = Color(0xFF8A6A3F),
-        ),
-        SequoNotificationItem(
-            id = "promo-grocery-price-drop",
-            filter = NotificationFilter.Promos,
-            title = "Fresh grocery price drop",
-            detail = "Green pepper and fresh milk are trending near Tokoin with verified shop photos today.",
-            time = "2 h",
-            icon = Icons.Filled.LocalOffer,
-            accent = Color(0xFF8F5576),
-        ),
-        SequoNotificationItem(
-            id = "pickup-code-${recentOrders[2].id}",
-            filter = NotificationFilter.Today,
-            title = "Pickup code ready",
-            detail = "Grand Marche Assigame is ready. Code is hidden until you choose to show it.",
-            time = "Today",
-            action = "Show code",
-            expandedTitle = "Secure handoff",
-            expandedDetail = "Only reveal this code when the seller or rider is ready to validate pickup.",
-            secureCode = recentOrders[2].pickupCode,
-            icon = Icons.Filled.QrCode2,
-            accent = Color(0xFF6F5EA8),
-            unread = true,
-            urgent = true,
-        ),
-        SequoNotificationItem(
-            id = "security-signin",
-            filter = NotificationFilter.Today,
-            title = "New sign-in protected",
-            detail = "A sign-in was checked for your account. No action needed if this was you.",
-            time = "Yesterday",
-            action = "Account",
-            icon = Icons.Filled.Security,
-            accent = Color(0xFF607D8B),
-        ),
-        SequoNotificationItem(
-            id = "bargain-expired-shoes",
-            filter = NotificationFilter.Today,
-            title = "Offer expired",
-            detail = "Your last offer for black running shoes expired. The listed price is still available.",
-            time = "Yesterday",
-            icon = Icons.Filled.TimerOff,
-            accent = Color(0xFF795548),
-        ),
-    )
-}
+private fun demoNotifications(): List<SequoNotificationItem> = emptyList()
