@@ -56,6 +56,8 @@ internal val sequoPrimaryDestinations = listOf(
 )
 
 internal data class SequoProduct(
+    val id: String = "",
+    val merchantId: String? = null,
     val name: String,
     val detail: String,
     val priceCfa: Int,
