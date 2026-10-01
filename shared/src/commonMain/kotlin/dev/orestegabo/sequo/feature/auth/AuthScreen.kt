@@ -58,11 +58,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
@@ -218,11 +220,13 @@ private fun OnboardingPager() {
             title = "Riders keep it moving",
             subtitle = "Sequo riders handle pickup and delivery so your order gets from seller to you efficiently.",
             illustration = Res.drawable.sequo_rider_icon,
+            scene = OnboardingScene.Rider,
         ),
         OnboardingSlide(
             title = "Pick up at relay points",
             subtitle = "Send packages to a Sequo relay point when pickup nearby is easier than waiting at home.",
             illustration = Res.drawable.sequo_relay_icon,
+            scene = OnboardingScene.Relay,
         ),
         OnboardingSlide(
             title = "Catch better deals",
@@ -272,14 +276,7 @@ private fun OnboardingCard(slide: OnboardingSlide) {
             .padding(horizontal = 2.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Image(
-            painter = painterResource(slide.illustration),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(166.dp),
-            contentScale = ContentScale.Fit,
-        )
+        OnboardingIllustration(slide = slide)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = slide.title,
@@ -302,7 +299,207 @@ private data class OnboardingSlide(
     val title: String,
     val subtitle: String,
     val illustration: DrawableResource,
+    val scene: OnboardingScene = OnboardingScene.FullArt,
 )
+
+private enum class OnboardingScene {
+    FullArt,
+    Rider,
+    Relay,
+}
+
+@Composable
+private fun OnboardingIllustration(slide: OnboardingSlide) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(166.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (slide.scene != OnboardingScene.FullArt) {
+            OnboardingSceneDoodles(scene = slide.scene, modifier = Modifier.fillMaxSize())
+        }
+        Image(
+            painter = painterResource(slide.illustration),
+            contentDescription = null,
+            modifier = when (slide.scene) {
+                OnboardingScene.FullArt -> Modifier.fillMaxSize()
+                OnboardingScene.Rider,
+                OnboardingScene.Relay -> Modifier.size(width = 176.dp, height = 142.dp)
+            },
+            contentScale = ContentScale.Fit,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingSceneDoodles(scene: OnboardingScene, modifier: Modifier = Modifier) {
+    val colorScheme = MaterialTheme.colorScheme
+    Canvas(modifier = modifier) {
+        val primary = colorScheme.primary
+        val secondary = Color(0xFFE49B3A)
+        val violet = Color(0xFF7C6DE8)
+        val muted = colorScheme.surfaceVariant
+
+        drawCircle(
+            color = primary.copy(alpha = 0.10f),
+            radius = size.minDimension * 0.32f,
+            center = Offset(size.width * 0.50f, size.height * 0.52f),
+        )
+        drawCircle(
+            color = secondary.copy(alpha = 0.16f),
+            radius = size.minDimension * 0.15f,
+            center = Offset(size.width * 0.78f, size.height * 0.28f),
+        )
+        drawCircle(
+            color = violet.copy(alpha = 0.11f),
+            radius = size.minDimension * 0.13f,
+            center = Offset(size.width * 0.20f, size.height * 0.76f),
+        )
+
+        drawLine(
+            color = primary.copy(alpha = 0.34f),
+            start = Offset(size.width * 0.17f, size.height * 0.60f),
+            end = Offset(size.width * 0.82f, size.height * 0.35f),
+            strokeWidth = 2.5.dp.toPx(),
+        )
+        listOf(
+            Offset(size.width * 0.17f, size.height * 0.60f),
+            Offset(size.width * 0.32f, size.height * 0.54f),
+            Offset(size.width * 0.66f, size.height * 0.41f),
+            Offset(size.width * 0.82f, size.height * 0.35f),
+        ).forEachIndexed { index, point ->
+            drawCircle(
+                color = if (index == 0 || index == 3) secondary else Color.White,
+                radius = if (index == 0 || index == 3) 5.5.dp.toPx() else 4.dp.toPx(),
+                center = point,
+            )
+            drawCircle(
+                color = primary.copy(alpha = 0.42f),
+                radius = 6.5.dp.toPx(),
+                center = point,
+                style = Stroke(width = 1.3.dp.toPx()),
+            )
+        }
+
+        when (scene) {
+            OnboardingScene.Rider -> {
+                drawParcel(
+                    topLeft = Offset(size.width * 0.08f, size.height * 0.18f),
+                    parcelSize = Size(34.dp.toPx(), 25.dp.toPx()),
+                    color = secondary,
+                )
+                drawParcel(
+                    topLeft = Offset(size.width * 0.79f, size.height * 0.66f),
+                    parcelSize = Size(39.dp.toPx(), 27.dp.toPx()),
+                    color = primary,
+                )
+                drawSpeedLine(Offset(size.width * 0.08f, size.height * 0.78f), primary)
+                drawSpeedLine(Offset(size.width * 0.72f, size.height * 0.17f), secondary)
+            }
+            OnboardingScene.Relay -> {
+                drawPickupTile(
+                    topLeft = Offset(size.width * 0.09f, size.height * 0.26f),
+                    tileSize = Size(40.dp.toPx(), 34.dp.toPx()),
+                    color = primary,
+                )
+                drawPickupTile(
+                    topLeft = Offset(size.width * 0.76f, size.height * 0.57f),
+                    tileSize = Size(46.dp.toPx(), 36.dp.toPx()),
+                    color = secondary,
+                )
+                drawCircle(
+                    color = muted.copy(alpha = 0.62f),
+                    radius = 8.dp.toPx(),
+                    center = Offset(size.width * 0.22f, size.height * 0.19f),
+                    style = Stroke(width = 2.dp.toPx()),
+                )
+                drawCircle(
+                    color = violet.copy(alpha = 0.50f),
+                    radius = 7.dp.toPx(),
+                    center = Offset(size.width * 0.84f, size.height * 0.27f),
+                    style = Stroke(width = 2.dp.toPx()),
+                )
+            }
+            OnboardingScene.FullArt -> Unit
+        }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawParcel(
+    topLeft: Offset,
+    parcelSize: Size,
+    color: Color,
+) {
+    drawRoundRect(
+        color = color.copy(alpha = 0.22f),
+        topLeft = topLeft,
+        size = parcelSize,
+        cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx()),
+    )
+    drawRoundRect(
+        color = color.copy(alpha = 0.72f),
+        topLeft = topLeft,
+        size = parcelSize,
+        cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx()),
+        style = Stroke(width = 1.5.dp.toPx()),
+    )
+    drawLine(
+        color = Color.White.copy(alpha = 0.82f),
+        start = Offset(topLeft.x + parcelSize.width * 0.50f, topLeft.y + 2.dp.toPx()),
+        end = Offset(topLeft.x + parcelSize.width * 0.50f, topLeft.y + parcelSize.height - 2.dp.toPx()),
+        strokeWidth = 1.4.dp.toPx(),
+    )
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPickupTile(
+    topLeft: Offset,
+    tileSize: Size,
+    color: Color,
+) {
+    drawRoundRect(
+        color = Color.White.copy(alpha = 0.72f),
+        topLeft = topLeft,
+        size = tileSize,
+        cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx()),
+    )
+    drawRoundRect(
+        color = color.copy(alpha = 0.42f),
+        topLeft = topLeft,
+        size = tileSize,
+        cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx()),
+        style = Stroke(width = 1.6.dp.toPx()),
+    )
+    drawCircle(
+        color = color.copy(alpha = 0.76f),
+        radius = 4.dp.toPx(),
+        center = Offset(topLeft.x + tileSize.width * 0.50f, topLeft.y + tileSize.height * 0.42f),
+    )
+    drawLine(
+        color = color.copy(alpha = 0.76f),
+        start = Offset(topLeft.x + tileSize.width * 0.35f, topLeft.y + tileSize.height * 0.68f),
+        end = Offset(topLeft.x + tileSize.width * 0.65f, topLeft.y + tileSize.height * 0.68f),
+        strokeWidth = 2.dp.toPx(),
+    )
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpeedLine(
+    start: Offset,
+    color: Color,
+) {
+    drawLine(
+        color = color.copy(alpha = 0.46f),
+        start = start,
+        end = Offset(start.x + 32.dp.toPx(), start.y - 8.dp.toPx()),
+        strokeWidth = 2.dp.toPx(),
+    )
+    drawLine(
+        color = color.copy(alpha = 0.28f),
+        start = Offset(start.x + 8.dp.toPx(), start.y + 12.dp.toPx()),
+        end = Offset(start.x + 42.dp.toPx(), start.y + 3.dp.toPx()),
+        strokeWidth = 2.dp.toPx(),
+    )
+}
 
 @Composable
 private fun EmailFallbackPage(
