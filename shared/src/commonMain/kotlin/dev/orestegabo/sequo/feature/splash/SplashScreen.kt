@@ -40,7 +40,8 @@ import dev.orestegabo.sequo.theme.SequoTheme
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequohub_logo_full
+import sequo.shared.generated.resources.sequo_app_icon
+import sequo.shared.generated.resources.sequo_primary_dark
 import kotlin.math.max
 
 private const val SplashTimeoutMillis = 2_000L
@@ -79,14 +80,22 @@ fun SplashScreen(
                 .padding(horizontal = 34.dp),
         ) {
             Image(
-                painter = painterResource(Res.drawable.sequohub_logo_full),
+                painter = painterResource(Res.drawable.sequo_app_icon),
                 contentDescription = "Sequo",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .width(238.dp)
-                    .height(186.dp),
+                    .size(118.dp),
             )
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+            Image(
+                painter = painterResource(Res.drawable.sequo_primary_dark),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .width(210.dp)
+                    .height(74.dp),
+            )
+            Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = "Marketplace, ready.",
                 color = colorScheme.onSurfaceVariant,
