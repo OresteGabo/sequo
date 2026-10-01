@@ -215,43 +215,84 @@ private fun ProductDetailHero(
     onOpenGallery: () -> Unit,
 ) {
     val selectedProduct = galleryProducts[selectedPhotoIndex]
+    var heroSettled by remember(product.id) { mutableStateOf(false) }
+    LaunchedEffect(product.id) {
+        heroSettled = true
+    }
+    val heroHeight by animateDpAsState(
+        targetValue = if (heroSettled) 348.dp else 182.dp,
+        animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
+        label = "productHeroHeight",
+    )
+    val heroHorizontalPadding by animateDpAsState(
+        targetValue = if (heroSettled) 0.dp else 22.dp,
+        animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
+        label = "productHeroHorizontalPadding",
+    )
+    val heroCornerRadius by animateDpAsState(
+        targetValue = if (heroSettled) 0.dp else 24.dp,
+        animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
+        label = "productHeroCornerRadius",
+    )
+    val heroChromeAlpha by animateFloatAsState(
+        targetValue = if (heroSettled) 1f else 0f,
+        animationSpec = tween(durationMillis = 260, delayMillis = 180),
+        label = "productHeroChromeAlpha",
+    )
     Box(modifier = Modifier.fillMaxWidth().height(348.dp)) {
-        Image(
-            painter = painterResource(productImageResource(selectedProduct)),
-            contentDescription = selectedProduct.name,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-        )
-        PhotoAuthenticityBadge(
-            product = selectedProduct,
-            onDark = true,
-            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 66.dp, end = 20.dp),
-        )
-        Box(
-            Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Black.copy(alpha = 0.54f),
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.50f),
-                            MaterialTheme.colorScheme.background,
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(heroHeight)
+                .align(Alignment.TopCenter)
+                .padding(horizontal = heroHorizontalPadding),
+            shape = RoundedCornerShape(heroCornerRadius),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shadowElevation = if (heroSettled) 0.dp else 8.dp,
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                Image(
+                    painter = painterResource(productImageResource(selectedProduct)),
+                    contentDescription = selectedProduct.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                PhotoAuthenticityBadge(
+                    product = selectedProduct,
+                    onDark = true,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(top = 66.dp, end = 20.dp)
+                        .graphicsLayer { alpha = heroChromeAlpha },
+                )
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .graphicsLayer { alpha = heroChromeAlpha }
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Black.copy(alpha = 0.54f),
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.50f),
+                                    MaterialTheme.colorScheme.background,
+                                ),
+                            ),
                         ),
-                    ),
-                ),
-        )
+                )
+            }
+        }
         Row(
-            modifier = Modifier.align(Alignment.BottomStart).padding(start = 20.dp, end = 20.dp, bottom = 46.dp),
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 20.dp, end = 20.dp, bottom = 46.dp)
+                .graphicsLayer { alpha = heroChromeAlpha },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (product.isNegotiable) {
-                DetailChip(Icons.Filled.LocalOffer, "Offer")
-            }
-            if (product.hasDiscount) {
-                DetailChip(Icons.Filled.Percent, "Discount")
-            }
+            if (product.isNegotiable) DetailChip(Icons.Filled.LocalOffer, "Offer")
+            if (product.hasDiscount) DetailChip(Icons.Filled.Percent, "Discount")
         }
         if (!galleryExpanded) {
             MiniPhotoStack(
@@ -259,7 +300,10 @@ private fun ProductDetailHero(
                 selectedPhotoIndex = selectedPhotoIndex,
                 onNextPhoto = onNextPhoto,
                 onOpenGallery = onOpenGallery,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 34.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 34.dp)
+                    .graphicsLayer { alpha = heroChromeAlpha },
             )
         }
     }
