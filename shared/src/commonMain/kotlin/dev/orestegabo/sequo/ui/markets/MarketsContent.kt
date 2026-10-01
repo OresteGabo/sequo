@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -40,6 +41,7 @@ import sequo.shared.generated.resources.*
 
 @Composable
 internal fun MarketsContent(
+    catalog: CatalogSnapshot,
     selectedTypeKey: String,
     onAddProduct: () -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
@@ -58,8 +60,8 @@ internal fun MarketsContent(
         subcategoryFiltersExpanded = false
     }
 
-    val selectedType = shopTypeFor(selectedTypeKey)
-    val shopsByType = shopsForType(selectedTypeKey)
+    val selectedType = catalog.categoryFor(selectedTypeKey)
+    val shopsByType = catalog.shopsForCategory(selectedTypeKey)
     val subcategories = listOf("All") + productSubcategoriesFor(shopsByType)
     val areaShops = if (selectedArea == "All Lome") {
         shopsByType
