@@ -41,7 +41,7 @@ import dev.orestegabo.sequo.theme.SequoPrimary
 import dev.orestegabo.sequo.theme.SequoSecondary
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequohub_logo_mark
+import sequo.shared.generated.resources.sequo_icon_green
 
 internal enum class SequoErrorKind {
     Offline,
@@ -96,7 +96,7 @@ internal fun SequoErrorPanel(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Image(
-                painter = painterResource(Res.drawable.sequohub_logo_mark),
+                painter = painterResource(Res.drawable.sequo_icon_green),
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
