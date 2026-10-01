@@ -1,12 +1,22 @@
 package dev.orestegabo.sequo
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -21,20 +31,117 @@ import org.json.JSONObject
 import java.security.SecureRandom
 
 private const val GoogleSignInTag = "SequoGoogleSignIn"
+private const val SequoNotificationChannelId = "sequo_home_updates_v2"
+private const val HomeWelcomeNotificationId = 1001
+private const val OpenNotificationsAction = "dev.orestegabo.sequo.OPEN_NOTIFICATIONS"
 
 class MainActivity : ComponentActivity() {
     private val credentialManager by lazy {
         CredentialManager.create(this)
     }
     private val secureRandom = SecureRandom()
+    private val openNotificationsRequest = mutableStateOf(0)
+    private var homeNotificationShown = false
+    private var homeNotificationPending = false
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted && homeNotificationPending) {
+            homeNotificationPending = false
+            showHomeWelcomeNotification()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        createNotificationChannel()
+        handleNotificationIntent(intent)
 
         setContent {
-            App(onGoogleSignIn = ::signInWithGoogle)
+            App(
+                onGoogleSignIn = ::signInWithGoogle,
+                onHomeEntered = ::notifyHomeReached,
+                openNotificationsRequest = openNotificationsRequest.value,
+            )
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent?.action == OpenNotificationsAction) {
+            openNotificationsRequest.value += 1
+        }
+    }
+
+    private fun notifyHomeReached() {
+        if (homeNotificationShown) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            homeNotificationPending = true
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        showHomeWelcomeNotification()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel = NotificationChannel(
+            SequoNotificationChannelId,
+            "Sequo updates",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "Helpful Sequo updates, guest-safe notices, and account reminders."
+            enableVibration(true)
+        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    private fun showHomeWelcomeNotification() {
+        if (homeNotificationShown) return
+        homeNotificationShown = true
+
+        val openNotificationsIntent = Intent(this, MainActivity::class.java).apply {
+            action = OpenNotificationsAction
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val openNotificationsPendingIntent = PendingIntent.getActivity(
+            this,
+            HomeWelcomeNotificationId,
+            openNotificationsIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.Notification.Builder(this, SequoNotificationChannelId)
+        } else {
+            @Suppress("DEPRECATION")
+            android.app.Notification.Builder(this)
+        }
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Welcome to Sequo")
+            .setContentText("You can browse products as a guest. Sign in only when you are ready to save, order, or track.")
+            .setContentIntent(openNotificationsPendingIntent)
+            .setCategory(android.app.Notification.CATEGORY_STATUS)
+            .setPriority(android.app.Notification.PRIORITY_HIGH)
+            .setDefaults(android.app.Notification.DEFAULT_ALL)
+            .setStyle(
+                android.app.Notification.BigTextStyle().bigText(
+                    "You can browse products as a guest. Sign in only when you are ready to save a basket, place an order, track delivery, or manage private account details.",
+                ),
+            )
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(HomeWelcomeNotificationId, notification)
     }
 
     private suspend fun signInWithGoogle(): GoogleSignInResult {
