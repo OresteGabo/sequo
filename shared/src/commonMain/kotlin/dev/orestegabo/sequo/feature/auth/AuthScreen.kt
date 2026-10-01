@@ -83,10 +83,11 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
 import sequo.shared.generated.resources.auth_fingerprint
-import sequo.shared.generated.resources.onboarding_history
-import sequo.shared.generated.resources.onboarding_pickup_flow
-import sequo.shared.generated.resources.onboarding_scan_arrivals
+import sequo.shared.generated.resources.onboarding_sale_store
+import sequo.shared.generated.resources.onboarding_save_time
 import sequo.shared.generated.resources.sequo_icon_green
+import sequo.shared.generated.resources.sequo_relay_icon
+import sequo.shared.generated.resources.sequo_rider_icon
 
 @Composable
 fun AuthScreen(
@@ -209,19 +210,24 @@ private fun SocialAuthPage(
 private fun OnboardingPager() {
     val slides = listOf(
         OnboardingSlide(
-            title = "Scan every package",
-            subtitle = "New seller drop-offs, courier arrivals, customer pickups, and returns all start from one QR scan.",
-            illustration = Res.drawable.onboarding_scan_arrivals,
+            title = "Save time shopping",
+            subtitle = "Browse nearby sellers, compare items, and build your basket without running across town.",
+            illustration = Res.drawable.onboarding_save_time,
         ),
         OnboardingSlide(
-            title = "Know the next action",
-            subtitle = "See the right flow immediately: store a package, collect fees, open a locker, or receive a return.",
-            illustration = Res.drawable.onboarding_pickup_flow,
+            title = "Riders keep it moving",
+            subtitle = "Sequo riders handle pickup and delivery so your order gets from seller to you efficiently.",
+            illustration = Res.drawable.sequo_rider_icon,
         ),
         OnboardingSlide(
-            title = "Keep the hub traceable",
-            subtitle = "Follow locker status, sync state, pickups, and returns in one simple history.",
-            illustration = Res.drawable.onboarding_history,
+            title = "Pick up at relay points",
+            subtitle = "Send packages to a Sequo relay point when pickup nearby is easier than waiting at home.",
+            illustration = Res.drawable.sequo_relay_icon,
+        ),
+        OnboardingSlide(
+            title = "Catch better deals",
+            subtitle = "Spot products on sale, save favorites, and come back when the right price shows up.",
+            illustration = Res.drawable.onboarding_sale_store,
         ),
     )
     val pagerState = rememberPagerState(pageCount = { slides.size })
