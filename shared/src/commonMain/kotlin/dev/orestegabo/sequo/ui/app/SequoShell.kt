@@ -55,6 +55,7 @@ internal fun SequoShell(
     onLogout: () -> Unit,
 ) {
     var currentDestination by remember { mutableStateOf(SequoSection.Home) }
+    var notificationBackDestination by remember { mutableStateOf<SequoSection?>(null) }
     var extraBasketItems by remember { mutableStateOf(0) }
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf("") }
@@ -94,6 +95,7 @@ internal fun SequoShell(
 
     LaunchedEffect(openNotificationsRequest) {
         if (openNotificationsRequest > 0) {
+            notificationBackDestination = SequoSection.Home
             currentDestination = SequoSection.Notifications
             searchVisible = false
             selectedProductListing = null
@@ -112,6 +114,7 @@ internal fun SequoShell(
                     categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
                     selectedMarketTypeKey = typeKey
                     currentDestination = SequoSection.Markets
+                    notificationBackDestination = null
                     searchVisible = false
                     scope.launch { drawerState.close() }
                 },
@@ -122,7 +125,10 @@ internal fun SequoShell(
             SequoAmbientBackground(modifier = Modifier.fillMaxSize())
             SequoContentStage(
                 currentDestination = currentDestination,
-                onDestinationSelected = { currentDestination = it },
+                onDestinationSelected = {
+                    currentDestination = it
+                    notificationBackDestination = null
+                },
                 selectedProductListing = selectedProductListing,
                 onProductSelected = { listing ->
                     selectedProductListing = listing
@@ -161,13 +167,24 @@ internal fun SequoShell(
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onSearchClick = { searchVisible = !searchVisible },
                 onNotificationsClick = {
+                    notificationBackDestination = if (currentDestination == SequoSection.Notifications) {
+                        SequoSection.Home
+                    } else {
+                        currentDestination
+                    }
                     currentDestination = SequoSection.Notifications
                     searchVisible = false
                     selectedProductListing = null
                 },
                 notificationUnreadCount = notificationUnreadCount,
                 productListing = selectedProductListing,
+                showBackButton = notificationBackDestination != null && currentDestination == SequoSection.Notifications,
                 onBackClick = {
+                    val notificationReturn = notificationBackDestination
+                    if (notificationReturn != null && currentDestination == SequoSection.Notifications) {
+                        currentDestination = notificationReturn
+                        notificationBackDestination = null
+                    }
                     selectedProductListing = null
                     searchVisible = false
                 },
@@ -177,6 +194,7 @@ internal fun SequoShell(
                 currentDestination = currentDestination,
                 onDestinationSelected = {
                     currentDestination = it
+                    notificationBackDestination = null
                     searchVisible = false
                     selectedProductListing = null
                 },
@@ -415,7 +433,7 @@ private fun SequoNavigationDrawer(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                SequoIconMark(Icons.Filled.Storefront, MaterialTheme.colorScheme.primary, Modifier.size(40.dp))
+                SequoShoppingMark(Modifier.size(40.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         currentUser?.displayName ?: "Sequo customer",
