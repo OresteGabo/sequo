@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.catalog.CatalogApiClient
+import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -45,19 +47,40 @@ internal fun SequoShell() {
     var currentDestination by remember { mutableStateOf(SequoSection.Home) }
     var extraBasketItems by remember { mutableStateOf(0) }
     var searchVisible by remember { mutableStateOf(false) }
-    var selectedMarketTypeKey by remember { mutableStateOf(sequoShopTypes.first().key) }
+    var selectedMarketTypeKey by remember { mutableStateOf("") }
     var selectedProductListing by remember { mutableStateOf<SequoProductListing?>(null) }
+    var catalogState by remember { mutableStateOf<CatalogUiState>(CatalogUiState.Loading) }
+    val catalogClient = remember { CatalogApiClient() }
     val categoryUsage = remember { mutableStateMapOf<String, Int>() }
     val pinnedCategoryKeys = remember { mutableStateListOf("food") }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val basketCount = sequoBasket.sumOf { it.quantity } + extraBasketItems
+    val basketCount = extraBasketItems
+
+    fun reloadCatalog() {
+        scope.launch {
+            catalogState = CatalogUiState.Loading
+            catalogState = runCatching { catalogClient.home() }
+                .fold(
+                    onSuccess = { snapshot ->
+                        if (selectedMarketTypeKey.isBlank()) selectedMarketTypeKey = snapshot.defaultCategoryKey
+                        CatalogUiState.Ready(snapshot)
+                    },
+                    onFailure = { CatalogUiState.Failed(it.message ?: "Unable to load Sequo catalog.") },
+                )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        reloadCatalog()
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             SequoNavigationDrawer(
                 selectedMarketTypeKey = selectedMarketTypeKey,
+                shopTypes = (catalogState as? CatalogUiState.Ready)?.snapshot?.categories.orEmpty(),
                 onMarketTypeSelected = { typeKey ->
                     categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
                     selectedMarketTypeKey = typeKey
@@ -96,6 +119,8 @@ internal fun SequoShell() {
                     }
                 },
                 onAddProduct = { extraBasketItems += 1 },
+                catalogState = catalogState,
+                onReloadCatalog = ::reloadCatalog,
                 modifier = Modifier.fillMaxSize(),
             )
             SequoTopAppBar(
@@ -144,12 +169,28 @@ internal fun SequoContentStage(
     onCategoryUsed: (String) -> Unit,
     onToggleCategoryPinned: (String) -> Unit,
     onAddProduct: () -> Unit,
+    catalogState: CatalogUiState,
+    onReloadCatalog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (selectedProductListing != null) {
+    val catalog = (catalogState as? CatalogUiState.Ready)?.snapshot
+    if (catalogState is CatalogUiState.Loading) {
+        SequoScreenColumn(modifier = modifier) {
+            SequoCatalogLoadingCard()
+        }
+    } else if (catalogState is CatalogUiState.Failed) {
+        SequoScreenColumn(modifier = modifier) {
+            SequoErrorPanel(
+                kind = SequoErrorKind.Server,
+                onRetry = onReloadCatalog,
+                technicalNote = catalogState.message,
+            )
+        }
+    } else if (selectedProductListing != null && catalog != null) {
         ProductDetailScreenColumn(modifier = modifier) {
             ProductDetailContent(
                 listing = selectedProductListing,
+                allShops = catalog.shops,
                 onAddProduct = onAddProduct,
                 onProductSelected = onProductSelected,
                 onNegotiateClick = {},
@@ -162,6 +203,7 @@ internal fun SequoContentStage(
             }
             when (currentDestination) {
                 SequoSection.Home -> HomeContent(
+                    catalog = requireNotNull(catalog),
                     onDestinationSelected = onDestinationSelected,
                     onAddProduct = onAddProduct,
                     onProductSelected = onProductSelected,
@@ -171,6 +213,7 @@ internal fun SequoContentStage(
                     onToggleCategoryPinned = onToggleCategoryPinned,
                 )
                 SequoSection.Markets -> MarketsContent(
+                    catalog = requireNotNull(catalog),
                     selectedTypeKey = selectedMarketTypeKey,
                     onAddProduct = onAddProduct,
                     onProductSelected = onProductSelected,
@@ -217,6 +260,7 @@ internal fun ProductDetailScreenColumn(
 @Composable
 private fun SequoNavigationDrawer(
     selectedMarketTypeKey: String,
+    shopTypes: List<SequoShopType>,
     onMarketTypeSelected: (String) -> Unit,
 ) {
     ModalDrawerSheet(
@@ -249,7 +293,15 @@ private fun SequoNavigationDrawer(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold,
             )
-            sequoShopTypes.forEach { type ->
+            if (shopTypes.isEmpty()) {
+                Text(
+                    "Catalog loading",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            shopTypes.forEach { type ->
                 NavigationDrawerItem(
                     label = {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -276,6 +328,34 @@ private fun SequoNavigationDrawer(
             DrawerToolRow(Icons.Filled.FavoriteBorder, "Saved shops", "Favorite sellers and repeat buys")
             DrawerToolRow(Icons.Filled.Place, "Delivery areas", "Lome zones and fees")
             DrawerToolRow(Icons.Filled.SupportAgent, "Support", "Orders, refunds, seller help")
+        }
+    }
+}
+
+internal sealed interface CatalogUiState {
+    data object Loading : CatalogUiState
+    data class Ready(val snapshot: CatalogSnapshot) : CatalogUiState
+    data class Failed(val message: String) : CatalogUiState
+}
+
+@Composable
+private fun SequoCatalogLoadingCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.50f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Loading Sequo catalog", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Products and shops are being fetched from the API.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
