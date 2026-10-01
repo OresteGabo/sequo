@@ -5,7 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -23,22 +23,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.theme.SequoPrimary
-import dev.orestegabo.sequo.theme.SequoSecondary
 import dev.orestegabo.sequo.ui.chrome.SequoIconMark
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
-import org.jetbrains.compose.resources.painterResource
-import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequohub_logo_mark
 
 private enum class NotificationFilter(val label: String) {
     Today("Today"),
@@ -58,6 +61,8 @@ private data class SequoNotificationItem(
     val expandedDetail: String? = null,
     val primaryAction: String? = null,
     val secondaryAction: String? = null,
+    val primaryActionType: NotificationActionType = NotificationActionType.Dismiss,
+    val secondaryActionType: NotificationActionType = NotificationActionType.Refuse,
     val secureCode: String? = null,
     val icon: ImageVector,
     val accent: Color,
@@ -65,9 +70,19 @@ private data class SequoNotificationItem(
     val urgent: Boolean = false,
 )
 
+private enum class NotificationActionType {
+    Dismiss,
+    Refuse,
+    OpenPrivacy,
+    OpenTerms,
+}
+
 @Composable
 internal fun NotificationsContent(
     onOpenOrders: () -> Unit,
+    onOpenPrivacy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
+    onUnreadCountChanged: (Int) -> Unit = {},
 ) {
     var selectedFilter by remember { mutableStateOf(NotificationFilter.Today) }
     val notifications = remember { demoNotifications() }
@@ -82,6 +97,10 @@ internal fun NotificationsContent(
         NotificationFilter.Archived -> archivedNotifications
     }
     val unreadCount = activeNotifications.count { it.unread }
+
+    LaunchedEffect(unreadCount) {
+        onUnreadCountChanged(unreadCount)
+    }
 
     NotificationCompactSummary(
         unreadCount = unreadCount,
@@ -104,15 +123,16 @@ internal fun NotificationsContent(
     if (visibleItems.isEmpty()) {
         NotificationEmptyState(
             filter = selectedFilter,
-            onOpenOrders = onOpenOrders,
         )
     } else {
-        NotificationList(
-            items = visibleItems,
-            archived = selectedFilter == NotificationFilter.Archived,
-            onArchive = { id ->
-                if (id !in archivedIds) {
-                    archivedIds.add(id)
+                NotificationList(
+                    items = visibleItems,
+                    archived = selectedFilter == NotificationFilter.Archived,
+                    onOpenPrivacy = onOpenPrivacy,
+                    onOpenTerms = onOpenTerms,
+                    onArchive = { id ->
+                        if (id !in archivedIds) {
+                            archivedIds.add(id)
                 }
             },
             onRestore = { archivedIds.remove(it) },
@@ -184,6 +204,8 @@ private fun NotificationListHeader(title: String, action: String) {
 private fun NotificationList(
     items: List<SequoNotificationItem>,
     archived: Boolean = false,
+    onOpenPrivacy: () -> Unit,
+    onOpenTerms: () -> Unit,
     onArchive: (String) -> Unit,
     onRestore: (String) -> Unit = {},
 ) {
@@ -193,6 +215,8 @@ private fun NotificationList(
                 NotificationRow(
                     item = item,
                     archived = archived,
+                    onOpenPrivacy = onOpenPrivacy,
+                    onOpenTerms = onOpenTerms,
                     onArchive = { onArchive(item.id) },
                     onRestore = { onRestore(item.id) },
                 )
@@ -210,140 +234,124 @@ private fun NotificationList(
 @Composable
 private fun NotificationEmptyState(
     filter: NotificationFilter,
-    onOpenOrders: () -> Unit,
 ) {
-    val content = emptyStateContent(filter)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.48f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 26.dp, bottom = 34.dp, start = 18.dp, end = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Image(
-                painter = painterResource(Res.drawable.sequohub_logo_mark),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 12.dp)
-                    .size(118.dp)
-                    .alpha(0.055f),
+        EmptyNotificationBell(
+            modifier = Modifier
+                .size(width = 220.dp, height = 190.dp)
+                .alpha(0.92f),
+        )
+        Text(
+            text = emptyStateTitle(filter),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.64f),
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = "All your notifications will be saved here for you to access their state anytime.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.52f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(max = 310.dp),
+        )
+    }
+}
+
+@Composable
+private fun EmptyNotificationBell(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(
+            modifier = Modifier
+                .matchParentSize()
+                .rotate(-11f),
+        ) {
+            val strokeColor = Color(0xFF7F8781).copy(alpha = 0.43f)
+            val accentColor = SequoPrimary.copy(alpha = 0.20f)
+            val stroke = Stroke(width = 4.2f, cap = StrokeCap.Round)
+            val w = size.width
+            val h = size.height
+            val bell = Path().apply {
+                moveTo(w * 0.50f, h * 0.22f)
+                cubicTo(w * 0.33f, h * 0.25f, w * 0.25f, h * 0.40f, w * 0.24f, h * 0.58f)
+                cubicTo(w * 0.23f, h * 0.69f, w * 0.17f, h * 0.76f, w * 0.13f, h * 0.82f)
+                cubicTo(w * 0.33f, h * 0.90f, w * 0.67f, h * 0.90f, w * 0.87f, h * 0.82f)
+                cubicTo(w * 0.83f, h * 0.76f, w * 0.77f, h * 0.69f, w * 0.76f, h * 0.58f)
+                cubicTo(w * 0.75f, h * 0.40f, w * 0.67f, h * 0.25f, w * 0.50f, h * 0.22f)
+            }
+            drawPath(path = bell, color = strokeColor, style = stroke)
+            drawArc(
+                color = strokeColor,
+                startAngle = 11f,
+                sweepAngle = 158f,
+                useCenter = false,
+                topLeft = Offset(w * 0.36f, h * 0.80f),
+                size = Size(w * 0.28f, h * 0.18f),
+                style = stroke,
             )
-            Column(
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 22.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    color = content.accent.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, content.accent.copy(alpha = 0.18f)),
-                ) {
-                    Icon(
-                        imageVector = content.icon,
-                        contentDescription = null,
-                        tint = content.accent,
-                        modifier = Modifier.padding(12.dp),
-                    )
-                }
+            drawLine(
+                color = accentColor,
+                start = Offset(w * 0.50f, h * 0.13f),
+                end = Offset(w * 0.50f, h * 0.21f),
+                strokeWidth = 4.2f,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = strokeColor.copy(alpha = 0.34f),
+                start = Offset(w * 0.16f, h * 0.30f),
+                end = Offset(w * 0.06f, h * 0.23f),
+                strokeWidth = 3.2f,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = strokeColor.copy(alpha = 0.28f),
+                start = Offset(w * 0.84f, h * 0.30f),
+                end = Offset(w * 0.95f, h * 0.23f),
+                strokeWidth = 3.2f,
+                cap = StrokeCap.Round,
+            )
+        }
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 24.dp, end = 30.dp)
+                .size(42.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+        ) {
+            Box(contentAlignment = Alignment.Center) {
                 Text(
-                    content.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text = "0",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.58f),
                     fontWeight = FontWeight.SemiBold,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
-                Text(
-                    content.detail,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-                content.actionLabel?.let { label ->
-                    NotificationEmptyAction(
-                        label = label,
-                        accent = content.accent,
-                        onClick = when (filter) {
-                            NotificationFilter.Attention -> onOpenOrders
-                            else -> ({})
-                        },
-                    )
-                }
             }
         }
     }
 }
 
-@Composable
-private fun NotificationEmptyAction(
-    label: String,
-    accent: Color,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(999.dp),
-        color = accent.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.24f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 13.dp, top = 8.dp, end = 11.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge,
-                color = accent,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-    }
-}
-
-private data class NotificationEmptyContent(
-    val icon: ImageVector,
-    val title: String,
-    val detail: String,
-    val accent: Color,
-    val actionLabel: String? = null,
-)
-
-@Composable
-private fun emptyStateContent(filter: NotificationFilter): NotificationEmptyContent =
+private fun emptyStateTitle(filter: NotificationFilter): String =
     when (filter) {
-        NotificationFilter.Today -> NotificationEmptyContent(
-            icon = Icons.Filled.NotificationsNone,
-            title = "You are all caught up",
-            detail = "Today’s order alerts, offer replies, pickup codes, payment updates, and security notices will appear here.",
-            accent = SequoPrimary,
-        )
-        NotificationFilter.Attention -> NotificationEmptyContent(
-            icon = Icons.Filled.PriorityHigh,
-            title = "Nothing urgent",
-            detail = "Time-sensitive pickup codes, expiring seller offers, failed payments, and delivery problems will be grouped here.",
-            accent = SequoPrimary,
-            actionLabel = "View orders",
-        )
-        NotificationFilter.Promos -> NotificationEmptyContent(
-            icon = Icons.Filled.LocalOffer,
-            title = "No promos right now",
-            detail = "Useful price drops, seasonal product alerts, and campaign messages stay here instead of crowding urgent updates.",
-            accent = Color(0xFF8F5576),
-        )
-        NotificationFilter.Archived -> NotificationEmptyContent(
-            icon = Icons.Filled.Archive,
-            title = "Nothing archived yet",
-            detail = "Swipe a notification left to archive it. Archived notifications can be restored here until cleanup removes them from this inbox.",
-            accent = MaterialTheme.colorScheme.primary,
-        )
+        NotificationFilter.Today -> "No notifications yet"
+        NotificationFilter.Attention -> "No urgent notifications"
+        NotificationFilter.Promos -> "No promos yet"
+        NotificationFilter.Archived -> "Nothing archived"
     }
 
 @Composable
@@ -385,6 +393,8 @@ private val NotificationFilter.icon: ImageVector
 private fun NotificationRow(
     item: SequoNotificationItem,
     archived: Boolean = false,
+    onOpenPrivacy: () -> Unit,
+    onOpenTerms: () -> Unit,
     onArchive: () -> Unit,
     onRestore: () -> Unit = {},
 ) {
@@ -520,9 +530,13 @@ private fun NotificationRow(
                     NotificationExpandedActions(
                         item = item,
                         showSecureCode = secureCodeVisible.value,
-                        onAccept = { expanded = false },
-                        onRefuse = {
-                            cancelled = true
+                        onAction = { actionType ->
+                            when (actionType) {
+                                NotificationActionType.OpenPrivacy -> onOpenPrivacy()
+                                NotificationActionType.OpenTerms -> onOpenTerms()
+                                NotificationActionType.Refuse -> cancelled = true
+                                NotificationActionType.Dismiss -> Unit
+                            }
                             expanded = false
                         },
                     )
@@ -589,8 +603,7 @@ private fun ExpandHint(expanded: Boolean, accent: Color) {
 private fun NotificationExpandedActions(
     item: SequoNotificationItem,
     showSecureCode: Boolean,
-    onAccept: () -> Unit,
-    onRefuse: () -> Unit,
+    onAction: (NotificationActionType) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -649,7 +662,7 @@ private fun NotificationExpandedActions(
         if (item.primaryAction != null || item.secondaryAction != null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item.secondaryAction?.let { label ->
                 Surface(
-                    onClick = onRefuse,
+                    onClick = { onAction(item.secondaryActionType) },
                     modifier = Modifier.weight(1f).height(42.dp),
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surface,
@@ -662,7 +675,7 @@ private fun NotificationExpandedActions(
             }
             item.primaryAction?.let { label ->
                 Surface(
-                    onClick = onAccept,
+                    onClick = { onAction(item.primaryActionType) },
                     modifier = Modifier.weight(1f).height(42.dp),
                     shape = RoundedCornerShape(14.dp),
                     color = item.accent,
@@ -730,3 +743,6 @@ private fun NotificationCountPill(count: String) {
 }
 
 private fun demoNotifications(): List<SequoNotificationItem> = emptyList()
+
+internal fun defaultNotificationUnreadCount(): Int =
+    demoNotifications().count { it.unread }
