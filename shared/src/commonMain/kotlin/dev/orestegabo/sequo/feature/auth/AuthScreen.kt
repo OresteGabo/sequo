@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,12 +32,16 @@ import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -52,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -60,10 +66,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,10 +93,13 @@ import sequo.shared.generated.resources.sequohub_logo_text
 fun AuthScreen(
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
-    onLogin: () -> Unit,
+    emailAuthInProgress: Boolean = false,
+    onEmailLogin: (email: String, password: String) -> Unit,
+    onEmailSignUp: (email: String, password: String, name: String) -> Unit,
     googleSignInInProgress: Boolean = false,
     onGoogleLogin: () -> Unit,
     onAppleLogin: () -> Unit,
+    onSkipAuth: () -> Unit,
     onPrivacyTermsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -114,10 +126,13 @@ fun AuthScreen(
                 language = language,
                 onLanguageChange = onLanguageChange,
                 onBack = { showEmailFallback = false },
-                onLogin = onLogin,
+                emailAuthInProgress = emailAuthInProgress,
+                onEmailLogin = onEmailLogin,
+                onEmailSignUp = onEmailSignUp,
                 googleSignInInProgress = googleSignInInProgress,
                 onGoogleLogin = onGoogleLogin,
                 onAppleLogin = onAppleLogin,
+                onSkipAuth = onSkipAuth,
                 onPrivacyTermsClick = onPrivacyTermsClick,
             )
         } else {
@@ -128,6 +143,7 @@ fun AuthScreen(
                 googleSignInInProgress = googleSignInInProgress,
                 onGoogleLogin = onGoogleLogin,
                 onEmailFallback = { showEmailFallback = true },
+                onSkipAuth = onSkipAuth,
                 onPrivacyTermsClick = onPrivacyTermsClick,
             )
         }
@@ -142,6 +158,7 @@ private fun SocialAuthPage(
     googleSignInInProgress: Boolean,
     onGoogleLogin: () -> Unit,
     onEmailFallback: () -> Unit,
+    onSkipAuth: () -> Unit,
     onPrivacyTermsClick: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -180,6 +197,8 @@ private fun SocialAuthPage(
                         .clickable(onClick = onEmailFallback)
                         .padding(top = 2.dp, bottom = 6.dp),
                 )
+
+                GuestBrowseLink(onClick = onSkipAuth)
 
                 TermsLine(onPrivacyTermsClick = onPrivacyTermsClick)
             }
@@ -285,14 +304,18 @@ private fun EmailFallbackPage(
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
     onBack: () -> Unit,
-    onLogin: () -> Unit,
+    emailAuthInProgress: Boolean,
+    onEmailLogin: (email: String, password: String) -> Unit,
+    onEmailSignUp: (email: String, password: String, name: String) -> Unit,
     googleSignInInProgress: Boolean,
     onGoogleLogin: () -> Unit,
     onAppleLogin: () -> Unit,
+    onSkipAuth: () -> Unit,
     onPrivacyTermsClick: () -> Unit,
 ) {
     var authMode by rememberSaveable { mutableStateOf(AuthMode.SignIn) }
     var authStep by rememberSaveable { mutableStateOf(AuthStep.Email) }
+    var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var birthDate by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -304,9 +327,12 @@ private fun EmailFallbackPage(
     val provider = authProviderForEmail(email)
     val canContinue = email.isNotBlank() && emailError == null
     val birthDateError = birthDateValidationError(birthDate)
+    val nameError = nameValidationError(name)
     val passwordError = signUpPasswordValidationError(password)
     val confirmPasswordError = confirmPasswordValidationError(password, confirmPassword)
     val canSubmitCredentials = if (isSignUp) {
+        name.isNotBlank() &&
+            nameError == null &&
         birthDate.isNotBlank() &&
             birthDateError == null &&
             password.isNotBlank() &&
@@ -323,6 +349,13 @@ private fun EmailFallbackPage(
             "We will start account setup for this email."
         } else {
             "We will continue with email for this account."
+        }
+    }
+    val submitEmailCredentials = {
+        if (isSignUp) {
+            onEmailSignUp(email, password, name)
+        } else {
+            onEmailLogin(email, password)
         }
     }
 
@@ -362,6 +395,7 @@ private fun EmailFallbackPage(
                     password = ""
                     confirmPassword = ""
                     birthDate = ""
+                    name = ""
                     biometricConsent = true
                 },
             )
@@ -423,6 +457,23 @@ private fun EmailFallbackPage(
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.None,
                             keyboardType = KeyboardType.Email,
+                            imeAction = if (provider == AuthProvider.Email) ImeAction.Next else ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                if (canContinue && provider == AuthProvider.Email) {
+                                    authStep = AuthStep.Credentials
+                                }
+                            },
+                            onDone = {
+                                if (canContinue) {
+                                    when (provider) {
+                                        AuthProvider.Google -> onGoogleLogin()
+                                        AuthProvider.Apple -> onAppleLogin()
+                                        AuthProvider.Email -> authStep = AuthStep.Credentials
+                                    }
+                                }
+                            },
                         ),
                         isError = emailError != null,
                         supportingText = {
@@ -446,6 +497,9 @@ private fun EmailFallbackPage(
                 } else {
                     EmailCredentialsForm(
                         mode = authMode,
+                        name = name,
+                        onNameChange = { name = it },
+                        nameError = nameError,
                         email = email,
                         birthDate = birthDate,
                         onBirthDateChange = { birthDate = cleanBirthDateInput(it) },
@@ -458,11 +512,13 @@ private fun EmailFallbackPage(
                         confirmPasswordError = confirmPasswordError,
                         biometricConsent = biometricConsent,
                         onBiometricConsentChange = { biometricConsent = it },
+                        canSubmit = canSubmitCredentials && !emailAuthInProgress,
+                        onSubmit = submitEmailCredentials,
                     )
 
                     Button(
-                        onClick = onLogin,
-                        enabled = canSubmitCredentials,
+                        onClick = submitEmailCredentials,
+                        enabled = canSubmitCredentials && !emailAuthInProgress,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -472,8 +528,16 @@ private fun EmailFallbackPage(
                             contentColor = colorScheme.onPrimary,
                         ),
                     ) {
+                        if (emailAuthInProgress) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                        }
                         Text(
-                            text = if (isSignUp) "Create account" else "Sign in",
+                            text = if (emailAuthInProgress) "Please wait..." else if (isSignUp) "Create account" else "Sign in",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -497,6 +561,7 @@ private fun EmailFallbackPage(
                                     password = ""
                                     confirmPassword = ""
                                     birthDate = ""
+                                    name = ""
                                     biometricConsent = true
                                 } else {
                                     onBack()
@@ -507,14 +572,47 @@ private fun EmailFallbackPage(
                 )
 
                 TermsLine(onPrivacyTermsClick = onPrivacyTermsClick)
+
+                GuestBrowseLink(onClick = onSkipAuth)
             }
         }
     }
 }
 
 @Composable
+private fun GuestBrowseLink(onClick: () -> Unit) {
+    val colorScheme = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.QrCodeScanner,
+            contentDescription = null,
+            tint = colorScheme.primary,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Browse catalog first",
+            color = colorScheme.primary,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
 private fun EmailCredentialsForm(
     mode: AuthMode,
+    name: String,
+    onNameChange: (String) -> Unit,
+    nameError: String?,
     email: String,
     birthDate: String,
     onBirthDateChange: (String) -> Unit,
@@ -527,9 +625,12 @@ private fun EmailCredentialsForm(
     confirmPasswordError: String?,
     biometricConsent: Boolean,
     onBiometricConsentChange: (Boolean) -> Unit,
+    canSubmit: Boolean,
+    onSubmit: () -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val isSignUp = mode == AuthMode.SignUp
+    val focusManager = LocalFocusManager.current
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -560,11 +661,39 @@ private fun EmailCredentialsForm(
     if (isSignUp) {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
+            value = name,
+            onValueChange = onNameChange,
+            singleLine = true,
+            label = { Text("Full name") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = colorScheme.primary,
+                )
+            },
+            isError = nameError != null,
+            supportingText = {
+                Text(nameError ?: "This name will appear in your Sequo profile.")
+            },
+            shape = SequoShapes.Small,
+            colors = emailFieldColors(),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Words,
+                imeAction = ImeAction.Next,
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            ),
+        )
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
             value = birthDate,
             onValueChange = onBirthDateChange,
             singleLine = true,
             label = { Text("Birth date") },
-            placeholder = { Text("YYYY-MM-DD") },
+            placeholder = { Text("JJ/MM/AAAA") },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Filled.CalendarMonth,
@@ -575,69 +704,53 @@ private fun EmailCredentialsForm(
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next,
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) },
             ),
             isError = birthDateError != null,
             supportingText = {
-                Text(birthDateError ?: "Use your legal birth date.")
+                Text(birthDateError ?: "Format: JJ/MM/AAAA.")
             },
             shape = SequoShapes.Small,
             colors = emailFieldColors(),
         )
     }
 
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
+    PasswordTextField(
         value = password,
         onValueChange = onPasswordChange,
-        singleLine = true,
-        label = { Text("Password") },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Filled.Lock,
-                contentDescription = null,
-                tint = colorScheme.primary,
-            )
-        },
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.None,
-            keyboardType = KeyboardType.Password,
-        ),
+        label = "Password",
         isError = isSignUp && passwordError != null,
         supportingText = if (isSignUp) {
-            { Text(passwordError ?: "At least 10 characters with upper, lower, number, and symbol.") }
+            passwordError ?: "At least 10 characters with upper, lower, number, and symbol."
         } else {
             null
         },
-        shape = SequoShapes.Small,
-        colors = emailFieldColors(),
+        imeAction = if (isSignUp) ImeAction.Next else ImeAction.Done,
+        onImeAction = {
+            if (isSignUp) {
+                focusManager.moveFocus(FocusDirection.Down)
+            } else {
+                focusManager.clearFocus()
+                if (canSubmit) onSubmit()
+            }
+        },
     )
 
     if (isSignUp) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
+        PasswordTextField(
             value = confirmPassword,
             onValueChange = onConfirmPasswordChange,
-            singleLine = true,
-            label = { Text("Confirm password") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = null,
-                    tint = colorScheme.primary,
-                )
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                keyboardType = KeyboardType.Password,
-            ),
+            label = "Confirm password",
             isError = confirmPasswordError != null,
-            supportingText = {
-                Text(confirmPasswordError ?: "Repeat the same password.")
+            supportingText = confirmPasswordError ?: "Repeat the same password.",
+            imeAction = ImeAction.Done,
+            onImeAction = {
+                focusManager.clearFocus()
+                if (canSubmit) onSubmit()
             },
-            shape = SequoShapes.Small,
-            colors = emailFieldColors(),
         )
     } else {
         BiometricConsentRow(
@@ -645,6 +758,58 @@ private fun EmailCredentialsForm(
             onCheckedChange = onBiometricConsentChange,
         )
     }
+}
+
+@Composable
+private fun PasswordTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isError: Boolean,
+    supportingText: String?,
+    imeAction: ImeAction,
+    onImeAction: () -> Unit,
+) {
+    var visible by rememberSaveable { mutableStateOf(false) }
+    val colorScheme = MaterialTheme.colorScheme
+
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth(),
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Lock,
+                contentDescription = null,
+                tint = colorScheme.primary,
+            )
+        },
+        trailingIcon = {
+            IconButton(onClick = { visible = !visible }) {
+                Icon(
+                    imageVector = if (visible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                    contentDescription = if (visible) "Hide password" else "Show password",
+                    tint = colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            keyboardType = KeyboardType.Password,
+            imeAction = imeAction,
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { onImeAction() },
+            onDone = { onImeAction() },
+        ),
+        isError = isError,
+        supportingText = supportingText?.let { text -> { Text(text) } },
+        shape = SequoShapes.Small,
+        colors = emailFieldColors(),
+    )
 }
 
 @Composable
@@ -888,18 +1053,25 @@ private fun emailValidationError(email: String): String? {
     return if (isValid) null else "Enter a valid email address."
 }
 
-private fun cleanBirthDateInput(value: String): String =
-    value.filter { it.isDigit() || it == '-' }.take(10)
+private fun cleanBirthDateInput(value: String): String {
+    val digits = value.filter(Char::isDigit).take(8)
+    return buildString {
+        digits.forEachIndexed { index, char ->
+            if (index == 2 || index == 4) append('/')
+            append(char)
+        }
+    }
+}
 
 private fun birthDateValidationError(value: String): String? {
     if (value.isBlank()) return null
-    val parts = value.split("-")
-    if (parts.size != 3 || parts[0].length != 4 || parts[1].length != 2 || parts[2].length != 2) {
-        return "Use the format YYYY-MM-DD."
+    val parts = value.split("/")
+    if (parts.size != 3 || parts[0].length != 2 || parts[1].length != 2 || parts[2].length != 4) {
+        return "Use the format JJ/MM/AAAA."
     }
-    val year = parts[0].toIntOrNull() ?: return "Use a valid year."
+    val day = parts[0].toIntOrNull() ?: return "Use a valid day."
     val month = parts[1].toIntOrNull() ?: return "Use a valid month."
-    val day = parts[2].toIntOrNull() ?: return "Use a valid day."
+    val year = parts[2].toIntOrNull() ?: return "Use a valid year."
     if (year !in 1900..2026) return "Use a valid year."
     if (month !in 1..12) return "Use a valid month."
     val maxDay = when (month) {
@@ -908,6 +1080,16 @@ private fun birthDateValidationError(value: String): String? {
         else -> 31
     }
     return if (day in 1..maxDay) null else "Use a valid day."
+}
+
+private fun nameValidationError(value: String): String? {
+    if (value.isBlank()) return null
+    val trimmed = value.trim()
+    return when {
+        trimmed.length < 2 -> "Enter at least 2 characters."
+        trimmed.length > 80 -> "Name is too long."
+        else -> null
+    }
 }
 
 private fun isLeapYear(year: Int): Boolean =
