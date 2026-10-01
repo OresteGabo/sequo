@@ -63,6 +63,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -338,92 +339,154 @@ private fun OnboardingSceneDoodles(scene: OnboardingScene, modifier: Modifier = 
     Canvas(modifier = modifier) {
         val primary = colorScheme.primary
         val secondary = Color(0xFFE49B3A)
-        val violet = Color(0xFF7C6DE8)
-        val muted = colorScheme.surfaceVariant
-
-        drawCircle(
-            color = primary.copy(alpha = 0.10f),
-            radius = size.minDimension * 0.32f,
-            center = Offset(size.width * 0.50f, size.height * 0.52f),
-        )
-        drawCircle(
-            color = secondary.copy(alpha = 0.16f),
-            radius = size.minDimension * 0.15f,
-            center = Offset(size.width * 0.78f, size.height * 0.28f),
-        )
-        drawCircle(
-            color = violet.copy(alpha = 0.11f),
-            radius = size.minDimension * 0.13f,
-            center = Offset(size.width * 0.20f, size.height * 0.76f),
-        )
-
-        drawLine(
-            color = primary.copy(alpha = 0.34f),
-            start = Offset(size.width * 0.17f, size.height * 0.60f),
-            end = Offset(size.width * 0.82f, size.height * 0.35f),
-            strokeWidth = 2.5.dp.toPx(),
-        )
-        listOf(
-            Offset(size.width * 0.17f, size.height * 0.60f),
-            Offset(size.width * 0.32f, size.height * 0.54f),
-            Offset(size.width * 0.66f, size.height * 0.41f),
-            Offset(size.width * 0.82f, size.height * 0.35f),
-        ).forEachIndexed { index, point ->
-            drawCircle(
-                color = if (index == 0 || index == 3) secondary else Color.White,
-                radius = if (index == 0 || index == 3) 5.5.dp.toPx() else 4.dp.toPx(),
-                center = point,
-            )
-            drawCircle(
-                color = primary.copy(alpha = 0.42f),
-                radius = 6.5.dp.toPx(),
-                center = point,
-                style = Stroke(width = 1.3.dp.toPx()),
-            )
+        val baseColor = when (scene) {
+            OnboardingScene.Rider -> primary
+            OnboardingScene.Relay -> secondary
+            OnboardingScene.FullArt -> primary
         }
-
+        drawOrganicCloudBackdrop(
+            color = baseColor.copy(alpha = 0.11f),
+            center = Offset(size.width * 0.50f, size.height * 0.54f),
+            width = size.width * 0.74f,
+            height = size.height * 0.84f,
+        )
+        drawOrganicCloudBackdrop(
+            color = baseColor.copy(alpha = 0.06f),
+            center = Offset(size.width * 0.57f, size.height * 0.47f),
+            width = size.width * 0.43f,
+            height = size.height * 0.45f,
+        )
         when (scene) {
             OnboardingScene.Rider -> {
                 drawParcel(
-                    topLeft = Offset(size.width * 0.08f, size.height * 0.18f),
-                    parcelSize = Size(34.dp.toPx(), 25.dp.toPx()),
-                    color = secondary,
+                    topLeft = Offset(size.width * 0.10f, size.height * 0.18f),
+                    parcelSize = Size(30.dp.toPx(), 22.dp.toPx()),
+                    color = secondary.copy(alpha = 0.75f),
                 )
-                drawParcel(
-                    topLeft = Offset(size.width * 0.79f, size.height * 0.66f),
-                    parcelSize = Size(39.dp.toPx(), 27.dp.toPx()),
-                    color = primary,
+                drawWatermarkClock(
+                    center = Offset(size.width * 0.79f, size.height * 0.22f),
+                    color = primary.copy(alpha = 0.22f),
+                    scale = 0.76f,
                 )
-                drawSpeedLine(Offset(size.width * 0.08f, size.height * 0.78f), primary)
-                drawSpeedLine(Offset(size.width * 0.72f, size.height * 0.17f), secondary)
+                drawSpeedLine(Offset(size.width * 0.13f, size.height * 0.78f), primary.copy(alpha = 0.62f))
+                drawSpeedLine(Offset(size.width * 0.72f, size.height * 0.76f), secondary.copy(alpha = 0.66f))
             }
             OnboardingScene.Relay -> {
                 drawPickupTile(
-                    topLeft = Offset(size.width * 0.09f, size.height * 0.26f),
-                    tileSize = Size(40.dp.toPx(), 34.dp.toPx()),
-                    color = primary,
+                    topLeft = Offset(size.width * 0.11f, size.height * 0.22f),
+                    tileSize = Size(34.dp.toPx(), 29.dp.toPx()),
+                    color = primary.copy(alpha = 0.66f),
                 )
-                drawPickupTile(
-                    topLeft = Offset(size.width * 0.76f, size.height * 0.57f),
-                    tileSize = Size(46.dp.toPx(), 36.dp.toPx()),
-                    color = secondary,
+                drawWatermarkPin(
+                    center = Offset(size.width * 0.80f, size.height * 0.22f),
+                    color = secondary.copy(alpha = 0.30f),
+                    scale = 0.82f,
                 )
-                drawCircle(
-                    color = muted.copy(alpha = 0.62f),
-                    radius = 8.dp.toPx(),
-                    center = Offset(size.width * 0.22f, size.height * 0.19f),
-                    style = Stroke(width = 2.dp.toPx()),
+                drawWatermarkCheck(
+                    center = Offset(size.width * 0.18f, size.height * 0.78f),
+                    color = primary.copy(alpha = 0.24f),
+                    scale = 0.76f,
                 )
-                drawCircle(
-                    color = violet.copy(alpha = 0.50f),
-                    radius = 7.dp.toPx(),
-                    center = Offset(size.width * 0.84f, size.height * 0.27f),
-                    style = Stroke(width = 2.dp.toPx()),
+                drawParcel(
+                    topLeft = Offset(size.width * 0.76f, size.height * 0.70f),
+                    parcelSize = Size(32.dp.toPx(), 23.dp.toPx()),
+                    color = secondary.copy(alpha = 0.58f),
                 )
             }
             OnboardingScene.FullArt -> Unit
         }
     }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOrganicCloudBackdrop(
+    center: Offset,
+    color: Color,
+    width: Float,
+    height: Float,
+) {
+    val left = center.x - width / 2f
+    val top = center.y - height / 2f
+    val path = Path().apply {
+        moveTo(left + width * 0.10f, top + height * 0.58f)
+        cubicTo(left + width * 0.03f, top + height * 0.38f, left + width * 0.18f, top + height * 0.20f, left + width * 0.34f, top + height * 0.24f)
+        cubicTo(left + width * 0.39f, top + height * 0.05f, left + width * 0.66f, top + height * 0.06f, left + width * 0.70f, top + height * 0.26f)
+        cubicTo(left + width * 0.90f, top + height * 0.24f, left + width * 0.98f, top + height * 0.45f, left + width * 0.86f, top + height * 0.58f)
+        cubicTo(left + width * 0.98f, top + height * 0.78f, left + width * 0.72f, top + height * 0.96f, left + width * 0.56f, top + height * 0.84f)
+        cubicTo(left + width * 0.42f, top + height * 1.02f, left + width * 0.14f, top + height * 0.88f, left + width * 0.22f, top + height * 0.68f)
+        cubicTo(left + width * 0.16f, top + height * 0.66f, left + width * 0.12f, top + height * 0.63f, left + width * 0.10f, top + height * 0.58f)
+        close()
+    }
+    drawPath(path = path, color = color)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWatermarkClock(
+    center: Offset,
+    color: Color,
+    scale: Float,
+) {
+    val radius = 17.dp.toPx() * scale
+    drawCircle(color = color, radius = radius, center = center, style = Stroke(width = 2.dp.toPx()))
+    drawLine(color = color, start = center, end = Offset(center.x, center.y - radius * 0.48f), strokeWidth = 2.dp.toPx())
+    drawLine(color = color, start = center, end = Offset(center.x + radius * 0.46f, center.y + radius * 0.20f), strokeWidth = 2.dp.toPx())
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWatermarkRouteArrow(
+    center: Offset,
+    color: Color,
+    scale: Float,
+) {
+    val stroke = Stroke(width = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+    val path = Path().apply {
+        moveTo(center.x - 26.dp.toPx() * scale, center.y + 12.dp.toPx() * scale)
+        quadraticTo(center.x - 6.dp.toPx() * scale, center.y - 20.dp.toPx() * scale, center.x + 22.dp.toPx() * scale, center.y - 5.dp.toPx() * scale)
+    }
+    drawPath(path, color = color, style = stroke)
+    drawLine(color = color, start = Offset(center.x + 22.dp.toPx() * scale, center.y - 5.dp.toPx() * scale), end = Offset(center.x + 9.dp.toPx() * scale, center.y - 9.dp.toPx() * scale), strokeWidth = 2.dp.toPx())
+    drawLine(color = color, start = Offset(center.x + 22.dp.toPx() * scale, center.y - 5.dp.toPx() * scale), end = Offset(center.x + 14.dp.toPx() * scale, center.y + 6.dp.toPx() * scale), strokeWidth = 2.dp.toPx())
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWatermarkPin(
+    center: Offset,
+    color: Color,
+    scale: Float,
+) {
+    val r = 12.dp.toPx() * scale
+    drawCircle(color = color, radius = r, center = Offset(center.x, center.y - r * 0.35f), style = Stroke(width = 2.dp.toPx()))
+    drawCircle(color = color, radius = r * 0.32f, center = Offset(center.x, center.y - r * 0.35f))
+    drawLine(color = color, start = Offset(center.x, center.y + r * 0.65f), end = Offset(center.x - r * 0.55f, center.y + r * 0.05f), strokeWidth = 2.dp.toPx())
+    drawLine(color = color, start = Offset(center.x, center.y + r * 0.65f), end = Offset(center.x + r * 0.55f, center.y + r * 0.05f), strokeWidth = 2.dp.toPx())
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWatermarkCheck(
+    center: Offset,
+    color: Color,
+    scale: Float,
+) {
+    drawCircle(color = color.copy(alpha = color.alpha * 0.55f), radius = 20.dp.toPx() * scale, center = center)
+    drawLine(color = color, start = Offset(center.x - 11.dp.toPx() * scale, center.y), end = Offset(center.x - 3.dp.toPx() * scale, center.y + 8.dp.toPx() * scale), strokeWidth = 3.dp.toPx())
+    drawLine(color = color, start = Offset(center.x - 3.dp.toPx() * scale, center.y + 8.dp.toPx() * scale), end = Offset(center.x + 13.dp.toPx() * scale, center.y - 10.dp.toPx() * scale), strokeWidth = 3.dp.toPx())
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWatermarkBag(
+    center: Offset,
+    color: Color,
+    scale: Float,
+) {
+    val w = 34.dp.toPx() * scale
+    val h = 30.dp.toPx() * scale
+    val topLeft = Offset(center.x - w / 2f, center.y - h / 2f)
+    drawRoundRect(color = color, topLeft = topLeft, size = Size(w, h), cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx()), style = Stroke(width = 2.dp.toPx()))
+    drawLine(color = color, start = Offset(center.x - w * 0.22f, topLeft.y + 2.dp.toPx()), end = Offset(center.x - w * 0.10f, topLeft.y - 9.dp.toPx() * scale), strokeWidth = 2.dp.toPx())
+    drawLine(color = color, start = Offset(center.x + w * 0.22f, topLeft.y + 2.dp.toPx()), end = Offset(center.x + w * 0.10f, topLeft.y - 9.dp.toPx() * scale), strokeWidth = 2.dp.toPx())
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWatermarkParcel(
+    center: Offset,
+    color: Color,
+    scale: Float,
+) {
+    val s = Size(36.dp.toPx() * scale, 26.dp.toPx() * scale)
+    drawParcel(topLeft = Offset(center.x - s.width / 2f, center.y - s.height / 2f), parcelSize = s, color = color)
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawParcel(
