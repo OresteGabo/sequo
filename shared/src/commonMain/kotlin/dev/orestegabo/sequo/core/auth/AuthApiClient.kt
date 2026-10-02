@@ -21,26 +21,38 @@ import kotlinx.serialization.SerialName
 class AuthApiClient(
     private val baseUrl: String = NetworkConfig.ProductionBaseUrl,
     private val httpClient: HttpClient = createSequoHttpClient(baseUrl),
+    private val deviceIdProvider: () -> String,
 ) {
     suspend fun loginWithGoogle(idToken: String): AuthApiResponse {
+        return loginWithSocialToken(SocialLoginProvider.Google, idToken)
+    }
+
+    suspend fun loginWithFacebook(accessToken: String): AuthApiResponse {
+        return loginWithSocialToken(SocialLoginProvider.Facebook, accessToken)
+    }
+
+    private suspend fun loginWithSocialToken(provider: SocialLoginProvider, token: String): AuthApiResponse {
         val response = try {
-            httpClient.post("${baseUrl.trimEnd('/')}/api/auth/login/social") {
+            httpClient.post("${baseUrl.trimEnd('/')}/api/auth/social/${provider.wireName}") {
                 headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(
                     SocialLoginRequest(
-                        provider = SocialLoginProvider.Google,
-                        token = idToken,
+                        token = token,
+                        device = DeviceRequest(
+                            deviceId = deviceIdProvider(),
+                            appSource = AppSource.SequoApp,
+                        ),
                     ),
                 )
             }
         } catch (error: SequoApiException) {
             throw AuthApiException(
                 statusCode = error.statusCode,
-                safeMessage = googleLoginFailureMessage(error.statusCode, error.responseBody),
+                safeMessage = socialLoginFailureMessage(provider, error.statusCode, error.responseBody),
                 cause = error,
             )
         }
-        return response.toAuthApiResponse()
+        return response.toAuthApiResponse(provider)
     }
 
     suspend fun signUpWithEmail(email: String, password: String, name: String?): AuthApiResponse {
@@ -93,12 +105,12 @@ class AuthApiClient(
         httpClient.close()
     }
 
-    private suspend fun HttpResponse.toAuthApiResponse(): AuthApiResponse {
+    private suspend fun HttpResponse.toAuthApiResponse(provider: SocialLoginProvider = SocialLoginProvider.Google): AuthApiResponse {
         val statusCode = status.value
         if (statusCode !in 200..299) {
             throw AuthApiException(
                 statusCode = statusCode,
-                safeMessage = googleLoginFailureMessage(statusCode, bodyAsText()),
+                safeMessage = socialLoginFailureMessage(provider, statusCode, bodyAsText()),
             )
         }
 
@@ -123,7 +135,19 @@ private fun emailAuthFailureMessage(statusCode: Int, responseBody: String?): Str
     }
 }
 
-private fun googleLoginFailureMessage(statusCode: Int, responseBody: String?): String {
+private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode: Int, responseBody: String?): String {
+    if (provider != SocialLoginProvider.Google) {
+        val error = responseBody
+            ?.takeIf { it.isNotBlank() }
+            ?.let { body -> runCatching { defaultNetworkJson.decodeFromString<AuthErrorResponse>(body) }.getOrNull() }
+        return when (statusCode) {
+            401 -> error?.message ?: "${provider.displayName} sign-in could not be completed."
+            409 -> error?.message ?: "This account must be opened with another sign-in method."
+            429 -> error?.message ?: "Too many attempts. Please wait before trying again."
+            else -> error?.message ?: "${provider.displayName} login failed with HTTP $statusCode."
+        }
+    }
+
     val googleError = responseBody
         ?.takeIf { it.isNotBlank() }
         ?.let { body ->
@@ -159,13 +183,18 @@ data class AuthApiResponse(
 @Serializable
 data class CurrentUser(
     val id: String,
-    val email: String,
+    val email: String? = null,
     val name: String? = null,
+    @SerialName("displayName")
+    val backendDisplayName: String? = null,
     val provider: String,
     val status: String,
 ) {
     val displayName: String
-        get() = name?.takeIf { it.isNotBlank() } ?: email.substringBefore("@").replaceFirstChar { it.uppercase() }
+        get() = backendDisplayName?.takeIf { it.isNotBlank() }
+            ?: name?.takeIf { it.isNotBlank() }
+            ?: email?.substringBefore("@")?.replaceFirstChar { it.uppercase() }
+            ?: "Sequo user"
 }
 
 class AuthApiException(
@@ -183,8 +212,14 @@ data class AuthSession(
 
 @Serializable
 private data class SocialLoginRequest(
-    val provider: SocialLoginProvider,
     val token: String,
+    val device: DeviceRequest,
+)
+
+@Serializable
+private data class DeviceRequest(
+    val deviceId: String,
+    val appSource: AppSource,
 )
 
 @Serializable
@@ -219,4 +254,25 @@ private data class GoogleLoginErrorResponse(
 private enum class SocialLoginProvider {
     @SerialName("GOOGLE")
     Google,
+
+    @SerialName("FACEBOOK")
+    Facebook;
+
+    val wireName: String
+        get() = when (this) {
+            Google -> "GOOGLE"
+            Facebook -> "FACEBOOK"
+        }
+
+    val displayName: String
+        get() = when (this) {
+            Google -> "Google"
+            Facebook -> "Facebook"
+        }
+}
+
+@Serializable
+private enum class AppSource {
+    @SerialName("SEQUO_APP")
+    SequoApp,
 }
