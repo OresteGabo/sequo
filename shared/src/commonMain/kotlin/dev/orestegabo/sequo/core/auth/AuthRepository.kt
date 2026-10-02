@@ -3,6 +3,7 @@ package dev.orestegabo.sequo.core.auth
 class AuthRepository(
     private val authApiClient: AuthApiClient,
     private val sessionStore: AuthSessionStore,
+    private val secureSessionCache: SecureSessionCache,
     private val logger: AuthDebugLogger = AuthDebugLogger,
 ) {
     suspend fun loginWithGoogle(idToken: String): AuthSession {
@@ -13,19 +14,30 @@ class AuthRepository(
         logger.logGoogleIdToken(idToken)
         val response = authApiClient.loginWithGoogle(idToken)
         logger.logBackendStatus(response.statusCode)
-        sessionStore.save(response.session)
+        saveSession(response.session)
+        return response.session
+    }
+
+    suspend fun loginWithFacebook(accessToken: String): AuthSession {
+        if (accessToken.isBlank()) {
+            throw FacebookAccessTokenMissingException()
+        }
+
+        val response = authApiClient.loginWithFacebook(accessToken)
+        logger.logBackendStatus(response.statusCode, "Facebook")
+        saveSession(response.session)
         return response.session
     }
 
     suspend fun signUpWithEmail(email: String, password: String, name: String?): AuthSession {
         val response = authApiClient.signUpWithEmail(email = email, password = password, name = name)
-        sessionStore.save(response.session)
+        saveSession(response.session)
         return response.session
     }
 
     suspend fun loginWithEmail(email: String, password: String): AuthSession {
         val response = authApiClient.loginWithEmail(email = email, password = password)
-        sessionStore.save(response.session)
+        saveSession(response.session)
         return response.session
     }
 
@@ -37,12 +49,34 @@ class AuthRepository(
     suspend fun getSavedSession(): AuthSession? =
         sessionStore.get()
 
+    suspend fun hasCachedRefreshToken(): Boolean =
+        secureSessionCache.hasCachedRefreshToken()
+
+    suspend fun migrateSavedSessionToSecureCache() {
+        val session = sessionStore.get() ?: return
+        secureSessionCache.cache(session)
+    }
+
+    suspend fun unlockCachedSession(): SecureSessionUnlockResult =
+        secureSessionCache.unlockCachedSession(
+            BiometricPromptConfig(
+                title = "Unlock Sequo",
+                subtitle = "Use biometrics to restore your saved session.",
+            ),
+        )
+
     suspend fun logout() {
         sessionStore.clear()
+        secureSessionCache.clearSession()
     }
 
     fun close() {
         authApiClient.close()
+    }
+
+    private suspend fun saveSession(session: AuthSession) {
+        sessionStore.save(session)
+        secureSessionCache.cache(session)
     }
 }
 
@@ -50,12 +84,16 @@ class GoogleIdTokenMissingException : Exception(
     "Google ID token missing. Check OAuth client configuration.",
 )
 
+class FacebookAccessTokenMissingException : Exception(
+    "Facebook access token missing. Check native Facebook Login SDK configuration.",
+)
+
 object AuthDebugLogger {
     fun logGoogleIdToken(idToken: String) {
         println("Google sign-in idToken present=${idToken.isNotBlank()} length=${idToken.length}")
     }
 
-    fun logBackendStatus(statusCode: Int) {
-        println("Google backend login status=$statusCode")
+    fun logBackendStatus(statusCode: Int, provider: String = "Google") {
+        println("$provider backend login status=$statusCode")
     }
 }
