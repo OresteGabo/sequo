@@ -17,7 +17,12 @@ import dev.orestegabo.sequo.core.auth.AuthApiClient
 import dev.orestegabo.sequo.core.auth.AuthRepository
 import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
+import dev.orestegabo.sequo.core.auth.SecureSessionCache
+import dev.orestegabo.sequo.core.auth.SecureSessionUnlockResult
+import dev.orestegabo.sequo.core.auth.rememberAuthDeviceId
 import dev.orestegabo.sequo.core.auth.rememberAuthSessionStore
+import dev.orestegabo.sequo.core.auth.rememberBiometricAuthenticator
+import dev.orestegabo.sequo.core.auth.rememberSecureTokenStorage
 import dev.orestegabo.sequo.feature.auth.AuthScreen
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
 import dev.orestegabo.sequo.feature.legal.LegalScreen
@@ -62,10 +67,20 @@ private fun SequoApp(
     var emailAuthInProgress by rememberSaveable { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<CurrentUser?>(null) }
     val authSessionStore = rememberAuthSessionStore()
-    val authRepository = remember(authSessionStore) {
+    val secureTokenStorage = rememberSecureTokenStorage()
+    val biometricAuthenticator = rememberBiometricAuthenticator()
+    val authDeviceId = rememberAuthDeviceId()
+    val secureSessionCache = remember(secureTokenStorage, biometricAuthenticator) {
+        SecureSessionCache(
+            tokenStorage = secureTokenStorage,
+            biometricAuthenticator = biometricAuthenticator,
+        )
+    }
+    val authRepository = remember(authSessionStore, secureSessionCache, authDeviceId) {
         AuthRepository(
-            authApiClient = AuthApiClient(),
+            authApiClient = AuthApiClient(deviceIdProvider = { authDeviceId }),
             sessionStore = authSessionStore,
+            secureSessionCache = secureSessionCache,
         )
     }
     val scope = rememberCoroutineScope()
@@ -75,19 +90,38 @@ private fun SequoApp(
     }
 
     LaunchedEffect(authRepository) {
-        if (authRepository.getSavedSession() != null) {
-            runCatching { authRepository.currentUser() }
-                .onSuccess { user ->
-                    currentUser = user
-                    isAuthenticated = user != null
-                    guestMode = user == null
+        if (authRepository.getSavedSession() != null && !authRepository.hasCachedRefreshToken()) {
+            authRepository.migrateSavedSessionToSecureCache()
+        }
+
+        if (authRepository.hasCachedRefreshToken()) {
+            when (val unlockResult = authRepository.unlockCachedSession()) {
+                is SecureSessionUnlockResult.Unlocked -> {
+                    currentUser = null
+                    isAuthenticated = true
+                    guestMode = false
+                    authErrorMessage = null
                 }
-                .onFailure {
-                    authRepository.logout()
+                SecureSessionUnlockResult.Cancelled,
+                SecureSessionUnlockResult.NoCachedSession,
+                -> {
                     currentUser = null
                     isAuthenticated = false
                     guestMode = false
                 }
+                is SecureSessionUnlockResult.Unavailable -> {
+                    currentUser = null
+                    isAuthenticated = false
+                    guestMode = false
+                    authErrorMessage = "Biometric unlock is not available on this device. Sign in again to continue."
+                }
+                is SecureSessionUnlockResult.Failed -> {
+                    currentUser = null
+                    isAuthenticated = false
+                    guestMode = false
+                    authErrorMessage = unlockResult.message ?: "Biometric unlock failed. Sign in again to continue."
+                }
+            }
         }
     }
 
