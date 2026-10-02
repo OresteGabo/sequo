@@ -193,7 +193,19 @@ private fun SequoApp(
                 }
             },
             onAppleLogin = {
-                authErrorMessage = "Apple sign-in is not implemented yet. Use Google or email/password for now."
+                authErrorMessage = "Apple sign-in needs native identity token wiring before it can complete."
+            },
+            onFacebookLogin = {
+                authErrorMessage = "Facebook sign-in needs native provider token wiring before it can complete."
+            },
+            onWhatsAppLogin = {
+                authErrorMessage = "WhatsApp sign-in needs the OTP flow wired into this compact launcher."
+            },
+            onPasskeyLogin = {
+                authErrorMessage = "Passkey sign-in needs native passkey assertion wiring before it can complete."
+            },
+            onSequoLogin = {
+                authErrorMessage = "Login by Sequo needs cross-device approval wiring before it can complete."
             },
             onSkipAuth = {
                 currentUser = null
