@@ -33,7 +33,7 @@ import dev.orestegabo.sequo.model.SequoSection
 import dev.orestegabo.sequo.model.sequoPrimaryDestinations
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequo_icon_green
+import sequo.shared.generated.resources.sequo_shopping_icon
 
 @Composable
 internal fun SequoBottomBar(
@@ -128,9 +128,10 @@ private fun SequoBottomNavItem(
         ) {
             Box(
                 modifier = Modifier
+                    .size(40.dp)
                     .clip(SequoShapes.IconCapsule)
-                    .background(if (selected) colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
-                    .padding(if (destination == SequoSection.Home) 10.dp else 8.dp),
+                    .background(if (selected) colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent),
+                contentAlignment = Alignment.Center,
             ) {
                 BadgedBox(
                     badge = {
@@ -146,10 +147,10 @@ private fun SequoBottomNavItem(
                 ) {
                     if (destination == SequoSection.Home) {
                         Image(
-                            painter = painterResource(Res.drawable.sequo_icon_green),
+                            painter = painterResource(Res.drawable.sequo_shopping_icon),
                             contentDescription = destination.label,
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(36.dp),
                         )
                     } else {
                         Icon(
@@ -170,15 +171,13 @@ private fun SequoBottomNavItem(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 4.dp),
             )
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 5.dp)
-                        .size(width = 16.dp, height = 3.dp)
-                        .clip(SequoShapes.IconCapsule)
-                        .background(colorScheme.primary),
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .padding(top = 5.dp)
+                    .size(width = 16.dp, height = 3.dp)
+                    .clip(SequoShapes.IconCapsule)
+                    .background(if (selected) colorScheme.primary else Color.Transparent),
+            )
         }
     }
 }
