@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Visibility
@@ -70,6 +71,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.ImeAction
@@ -86,6 +89,8 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
 import sequo.shared.generated.resources.auth_fingerprint
+import sequo.shared.generated.resources.auth_facebook
+import sequo.shared.generated.resources.auth_whatsapp
 import sequo.shared.generated.resources.onboarding_sale_store
 import sequo.shared.generated.resources.onboarding_save_time
 import sequo.shared.generated.resources.sequo_icon_green
@@ -102,11 +107,14 @@ fun AuthScreen(
     googleSignInInProgress: Boolean = false,
     onGoogleLogin: () -> Unit,
     onAppleLogin: () -> Unit,
+    onFacebookLogin: () -> Unit = {},
+    onWhatsAppLogin: () -> Unit = {},
+    onPasskeyLogin: () -> Unit = {},
+    onSequoLogin: () -> Unit = {},
     onSkipAuth: () -> Unit,
     onPrivacyTermsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showEmailFallback by rememberSaveable { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
 
     Box(
@@ -124,32 +132,19 @@ fun AuthScreen(
     ) {
         AuthBackgroundIcons()
 
-        if (showEmailFallback) {
-            EmailFallbackPage(
-                language = language,
-                onLanguageChange = onLanguageChange,
-                onBack = { showEmailFallback = false },
-                emailAuthInProgress = emailAuthInProgress,
-                onEmailLogin = onEmailLogin,
-                onEmailSignUp = onEmailSignUp,
-                googleSignInInProgress = googleSignInInProgress,
-                onGoogleLogin = onGoogleLogin,
-                onAppleLogin = onAppleLogin,
-                onSkipAuth = onSkipAuth,
-                onPrivacyTermsClick = onPrivacyTermsClick,
-            )
-        } else {
-            SocialAuthPage(
-                language = language,
-                onLanguageChange = onLanguageChange,
-                onAppleLogin = onAppleLogin,
-                googleSignInInProgress = googleSignInInProgress,
-                onGoogleLogin = onGoogleLogin,
-                onEmailFallback = { showEmailFallback = true },
-                onSkipAuth = onSkipAuth,
-                onPrivacyTermsClick = onPrivacyTermsClick,
-            )
-        }
+        SocialAuthPage(
+            language = language,
+            onLanguageChange = onLanguageChange,
+            onAppleLogin = onAppleLogin,
+            googleSignInInProgress = googleSignInInProgress,
+            onGoogleLogin = onGoogleLogin,
+            onFacebookLogin = onFacebookLogin,
+            onWhatsAppLogin = onWhatsAppLogin,
+            onPasskeyLogin = onPasskeyLogin,
+            onSequoLogin = onSequoLogin,
+            onSkipAuth = onSkipAuth,
+            onPrivacyTermsClick = onPrivacyTermsClick,
+        )
     }
 }
 
@@ -160,7 +155,10 @@ private fun SocialAuthPage(
     onAppleLogin: () -> Unit,
     googleSignInInProgress: Boolean,
     onGoogleLogin: () -> Unit,
-    onEmailFallback: () -> Unit,
+    onFacebookLogin: () -> Unit,
+    onWhatsAppLogin: () -> Unit,
+    onPasskeyLogin: () -> Unit,
+    onSequoLogin: () -> Unit,
     onSkipAuth: () -> Unit,
     onPrivacyTermsClick: () -> Unit,
 ) {
@@ -182,23 +180,24 @@ private fun SocialAuthPage(
         Column(verticalArrangement = Arrangement.Bottom) {
             OnboardingPager()
             Spacer(modifier = Modifier.size(24.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                AppleButton(onClick = onAppleLogin)
-                GoogleButton(
-                    loading = googleSignInInProgress,
-                    onClick = onGoogleLogin,
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Sign in with",
+                    color = colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
-                Text(
-                    text = "Use email instead",
-                    color = colorScheme.primary,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onEmailFallback)
-                        .padding(top = 2.dp, bottom = 6.dp),
+                ProviderIconRow(
+                    googleSignInInProgress = googleSignInInProgress,
+                    onGoogleLogin = onGoogleLogin,
+                    onAppleLogin = onAppleLogin,
+                    onFacebookLogin = onFacebookLogin,
+                    onWhatsAppLogin = onWhatsAppLogin,
+                    onPasskeyLogin = onPasskeyLogin,
+                    onSequoLogin = onSequoLogin,
                 )
 
                 GuestBrowseLink(onClick = onSkipAuth)
@@ -565,6 +564,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpeedLine(
 }
 
 @Composable
+@Suppress("DEPRECATION")
+@Deprecated("Email/password authentication is no longer part of Sequo sign-in. Kept temporarily for rollback/reference only.")
 private fun EmailFallbackPage(
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
@@ -856,14 +857,14 @@ private fun GuestBrowseLink(onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = Icons.Filled.QrCodeScanner,
+            imageVector = Icons.Filled.Package2,
             contentDescription = null,
             tint = colorScheme.primary,
             modifier = Modifier.size(18.dp),
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Browse catalog first",
+            text = "Continue as a guest",
             color = colorScheme.primary,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
@@ -873,6 +874,191 @@ private fun GuestBrowseLink(onClick: () -> Unit) {
 }
 
 @Composable
+private fun ProviderIconRow(
+    googleSignInInProgress: Boolean,
+    onGoogleLogin: () -> Unit,
+    onAppleLogin: () -> Unit,
+    onFacebookLogin: () -> Unit,
+    onWhatsAppLogin: () -> Unit,
+    onPasskeyLogin: () -> Unit,
+    onSequoLogin: () -> Unit,
+) {
+    var showMoreProviders by rememberSaveable { mutableStateOf(false) }
+    var lastUsedProvider by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun providerClick(provider: AuthProviderShortcut, action: () -> Unit): () -> Unit = {
+        lastUsedProvider = provider.name
+        action()
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SquareProviderButton(
+                label = AuthProviderShortcut.Google.label,
+                lastUsed = lastUsedProvider == AuthProviderShortcut.Google.name,
+                enabled = !googleSignInInProgress,
+                onClick = providerClick(AuthProviderShortcut.Google, onGoogleLogin),
+            ) {
+                if (googleSignInInProgress) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = GoogleIcon,
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
+            SquareProviderButton(
+                label = AuthProviderShortcut.Apple.label,
+                lastUsed = lastUsedProvider == AuthProviderShortcut.Apple.name,
+                onClick = providerClick(AuthProviderShortcut.Apple, onAppleLogin),
+            ) {
+                Icon(
+                    imageVector = AppleIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(23.dp),
+                )
+            }
+            SquareProviderButton(
+                label = AuthProviderShortcut.WhatsApp.label,
+                lastUsed = lastUsedProvider == AuthProviderShortcut.WhatsApp.name,
+                onClick = providerClick(AuthProviderShortcut.WhatsApp, onWhatsAppLogin),
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.auth_whatsapp),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(25.dp),
+                )
+            }
+            SquareProviderButton(
+                label = AuthProviderShortcut.Facebook.label,
+                lastUsed = lastUsedProvider == AuthProviderShortcut.Facebook.name,
+                onClick = providerClick(AuthProviderShortcut.Facebook, onFacebookLogin),
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.auth_facebook),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(25.dp),
+                )
+            }
+            SquareProviderButton(
+                label = "More sign-in options",
+                onClick = { showMoreProviders = !showMoreProviders },
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreHoriz,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+
+        if (showMoreProviders) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SquareProviderButton(
+                    label = AuthProviderShortcut.Passkey.label,
+                    lastUsed = lastUsedProvider == AuthProviderShortcut.Passkey.name,
+                    onClick = providerClick(AuthProviderShortcut.Passkey, onPasskeyLogin),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Fingerprint,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(25.dp),
+                    )
+                }
+                SquareProviderButton(
+                    label = AuthProviderShortcut.Sequo.label,
+                    lastUsed = lastUsedProvider == AuthProviderShortcut.Sequo.name,
+                    onClick = providerClick(AuthProviderShortcut.Sequo, onSequoLogin),
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.sequo_icon_green),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(30.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SquareProviderButton(
+    label: String,
+    enabled: Boolean = true,
+    lastUsed: Boolean = false,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .width(48.dp)
+            .height(56.dp)
+            .semantics { contentDescription = if (lastUsed) "$label, last used" else label },
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Surface(
+            modifier = Modifier.size(48.dp),
+            onClick = onClick,
+            enabled = enabled,
+            shape = SequoShapes.Small,
+            color = colorScheme.surface.copy(alpha = 0.92f),
+            contentColor = colorScheme.onSurface,
+            border = BorderStroke(1.dp, colorScheme.outlineVariant.copy(alpha = 0.72f)),
+            tonalElevation = 1.dp,
+            shadowElevation = 1.dp,
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                content()
+            }
+        }
+        if (lastUsed) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopCenter),
+                shape = SequoShapes.IconCapsule,
+                color = colorScheme.primary,
+                contentColor = colorScheme.onPrimary,
+                shadowElevation = 1.dp,
+            ) {
+                Text(
+                    text = "Last",
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+@Suppress("DEPRECATION")
+@Deprecated("Email/password authentication is no longer part of Sequo sign-in. Kept temporarily for rollback/reference only.")
 private fun EmailCredentialsForm(
     mode: AuthMode,
     name: String,
@@ -1026,6 +1212,7 @@ private fun EmailCredentialsForm(
 }
 
 @Composable
+@Deprecated("Password fields are deprecated because Sequo sign-in is passwordless.")
 private fun PasswordTextField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -1078,6 +1265,7 @@ private fun PasswordTextField(
 }
 
 @Composable
+@Deprecated("Email/password biometric consent is deprecated; passkeys handle device biometric auth.")
 private fun BiometricConsentRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
@@ -1112,6 +1300,7 @@ private fun BiometricConsentRow(
 }
 
 @Composable
+@Deprecated("Email sign-in/sign-up tabs are deprecated because Sequo sign-in is passwordless.")
 private fun AuthModeTabs(
     selectedMode: AuthMode,
     onModeSelected: (AuthMode) -> Unit,
@@ -1156,6 +1345,7 @@ private fun AuthModeTabs(
 }
 
 @Composable
+@Deprecated("Email-provider routing is deprecated because email/password sign-in is disabled.")
 private fun AuthProviderActionButton(
     provider: AuthProvider,
     mode: AuthMode,
@@ -1305,6 +1495,15 @@ private enum class AuthProvider {
     Email,
     Google,
     Apple,
+}
+
+private enum class AuthProviderShortcut(val label: String) {
+    Google("Google"),
+    Apple("Apple"),
+    WhatsApp("WhatsApp"),
+    Facebook("Facebook"),
+    Passkey("Passkey"),
+    Sequo("Sequo"),
 }
 
 private fun emailValidationError(email: String): String? {
