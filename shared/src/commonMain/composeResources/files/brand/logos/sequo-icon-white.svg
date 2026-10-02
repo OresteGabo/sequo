@@ -6,5 +6,5 @@
     </filter>
   </defs>
   <rect width="1024" height="1024" fill="none"/>
-  <image href="assets/sequo-shopping-icon.png" x="-80" y="155" width="1184" height="947" filter="url(#white-mark)"/>
+  <image href="assets/sequo-shopping-icon.png" x="-80" y="39" width="1184" height="947" filter="url(#white-mark)"/>
 </svg>
