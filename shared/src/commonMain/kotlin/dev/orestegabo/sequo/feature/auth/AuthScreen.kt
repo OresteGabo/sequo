@@ -91,11 +91,11 @@ import sequo.shared.generated.resources.Res
 import sequo.shared.generated.resources.auth_fingerprint
 import sequo.shared.generated.resources.auth_facebook
 import sequo.shared.generated.resources.auth_whatsapp
+import sequo.shared.generated.resources.onboarding_relay_icon_large
+import sequo.shared.generated.resources.onboarding_rider_icon_large
 import sequo.shared.generated.resources.onboarding_sale_store
 import sequo.shared.generated.resources.onboarding_save_time
 import sequo.shared.generated.resources.sequo_icon_green
-import sequo.shared.generated.resources.sequo_relay_icon
-import sequo.shared.generated.resources.sequo_rider_icon
 
 @Composable
 fun AuthScreen(
@@ -219,13 +219,13 @@ private fun OnboardingPager() {
         OnboardingSlide(
             title = "Riders keep it moving",
             subtitle = "Sequo riders handle pickup and delivery so your order gets from seller to you efficiently.",
-            illustration = Res.drawable.sequo_rider_icon,
+            illustration = Res.drawable.onboarding_rider_icon_large,
             scene = OnboardingScene.Rider,
         ),
         OnboardingSlide(
             title = "Pick up at relay points",
             subtitle = "Send packages to a Sequo relay point when pickup nearby is easier than waiting at home.",
-            illustration = Res.drawable.sequo_relay_icon,
+            illustration = Res.drawable.onboarding_relay_icon_large,
             scene = OnboardingScene.Relay,
         ),
         OnboardingSlide(
@@ -325,7 +325,7 @@ private fun OnboardingIllustration(slide: OnboardingSlide) {
             modifier = when (slide.scene) {
                 OnboardingScene.FullArt -> Modifier.fillMaxSize()
                 OnboardingScene.Rider,
-                OnboardingScene.Relay -> Modifier.size(width = 176.dp, height = 142.dp)
+                OnboardingScene.Relay -> Modifier.size(width = 300.dp, height = 166.dp)
             },
             contentScale = ContentScale.Fit,
         )
