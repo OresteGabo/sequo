@@ -1,0 +1,136 @@
+package dev.orestegabo.sequo.feature.settings
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import org.jetbrains.compose.resources.StringResource
+import sequo.shared.generated.resources.*
+
+val LocalAppLanguage = compositionLocalOf { AppLanguage.English }
+
+@Composable
+fun appText(resource: StringResource): String =
+    appText(resource, LocalAppLanguage.current)
+
+fun appText(resource: StringResource, language: AppLanguage): String {
+    val key = resource.key
+    return when (language) {
+        AppLanguage.English -> EnglishStrings[key]
+        AppLanguage.French -> FrenchStrings[key]
+    } ?: error("Missing ${language.name} translation for '$key'")
+}
+
+private val EnglishStrings = mapOf(
+    Res.string.auth_sign_in_with.key to "Sign in with",
+    Res.string.auth_continue_guest.key to "Continue as a guest",
+    Res.string.auth_terms_prefix.key to "By continuing you accept ",
+    Res.string.auth_privacy_terms.key to "Privacy & Terms",
+    Res.string.auth_more_options.key to "More sign-in options",
+    Res.string.auth_last_used.key to "Last",
+    Res.string.auth_signing_in.key to "Signing in...",
+    Res.string.auth_continue_google.key to "Continue with Google",
+    Res.string.auth_dialog_title.key to "Sign in",
+    Res.string.common_ok.key to "OK",
+    Res.string.onboarding_save_time_title.key to "Save time shopping",
+    Res.string.onboarding_save_time_subtitle.key to "Browse nearby sellers, compare items, and build your basket without running across town.",
+    Res.string.onboarding_riders_title.key to "Riders keep it moving",
+    Res.string.onboarding_riders_subtitle.key to "Sequo riders handle pickup and delivery so your order gets from seller to you efficiently.",
+    Res.string.onboarding_relay_title.key to "Pick up at relay points",
+    Res.string.onboarding_relay_subtitle.key to "Send packages to a Sequo relay point when pickup nearby is easier than waiting at home.",
+    Res.string.onboarding_deals_title.key to "Catch better deals",
+    Res.string.onboarding_deals_subtitle.key to "Spot products on sale, save favorites, and come back when the right price shows up.",
+    Res.string.nav_home_title.key to "Tokoin Gbadago",
+    Res.string.nav_home_subtitle.key to "Deliver to Pharmacie des Etoiles area",
+    Res.string.nav_markets_title.key to "Markets",
+    Res.string.nav_markets_subtitle.key to "Verified Lome sellers",
+    Res.string.nav_basket_title.key to "Cart",
+    Res.string.nav_basket_subtitle.key to "Review and checkout",
+    Res.string.nav_orders_title.key to "Orders",
+    Res.string.nav_orders_subtitle.key to "Track every handoff",
+    Res.string.nav_notifications_title.key to "Notifications",
+    Res.string.nav_notifications_subtitle.key to "What needs your attention",
+    Res.string.nav_account_title.key to "Account",
+    Res.string.nav_account_subtitle.key to "Addresses, payment, and support",
+    Res.string.bottom_home.key to "Sequo",
+    Res.string.cd_back.key to "Back",
+    Res.string.cd_open_menu.key to "Open menu",
+    Res.string.cd_search.key to "Search",
+    Res.string.cd_notifications.key to "Notifications",
+    Res.string.guest_basket_title.key to "Sign in to build your basket",
+    Res.string.guest_basket_detail.key to "You can inspect products and menus first. Saving cart items, choosing an address, and checkout require an account.",
+    Res.string.guest_orders_title.key to "Sign in to track orders",
+    Res.string.guest_orders_detail.key to "You can browse products as a guest. Orders, delivery status, pickup codes, returns, and receipts stay behind your account.",
+    Res.string.common_browse.key to "Browse",
+    Res.string.drawer_customer.key to "Sequo customer",
+    Res.string.drawer_guest.key to "Guest browsing",
+    Res.string.drawer_signed_in.key to "Signed in",
+    Res.string.drawer_shop_categories.key to "Shop categories",
+    Res.string.drawer_catalog_loading.key to "Catalog loading",
+    Res.string.drawer_now.key to "Now",
+    Res.string.drawer_marketplace_tools.key to "Marketplace tools",
+    Res.string.drawer_promos.key to "Promos & campaigns",
+    Res.string.drawer_promos_detail.key to "Lunch, holidays, weekend deals",
+    Res.string.drawer_saved_shops.key to "Saved shops",
+    Res.string.drawer_saved_shops_detail.key to "Favorite sellers and repeat buys",
+    Res.string.drawer_delivery_areas.key to "Delivery areas",
+    Res.string.drawer_delivery_areas_detail.key to "Lome zones and fees",
+    Res.string.drawer_support.key to "Support",
+    Res.string.drawer_support_detail.key to "Orders, refunds, seller help",
+)
+
+private val FrenchStrings = mapOf(
+    Res.string.auth_sign_in_with.key to "Connectez-vous avec",
+    Res.string.auth_continue_guest.key to "Continuer en invite",
+    Res.string.auth_terms_prefix.key to "En continuant, vous acceptez ",
+    Res.string.auth_privacy_terms.key to "Confidentialite et conditions",
+    Res.string.auth_more_options.key to "Autres options de connexion",
+    Res.string.auth_last_used.key to "Dernier",
+    Res.string.auth_signing_in.key to "Connexion...",
+    Res.string.auth_continue_google.key to "Continuer avec Google",
+    Res.string.auth_dialog_title.key to "Connexion",
+    Res.string.common_ok.key to "OK",
+    Res.string.onboarding_save_time_title.key to "Gagnez du temps",
+    Res.string.onboarding_save_time_subtitle.key to "Parcourez les vendeurs proches, comparez les articles et preparez votre panier sans traverser la ville.",
+    Res.string.onboarding_riders_title.key to "Les livreurs avancent",
+    Res.string.onboarding_riders_subtitle.key to "Les livreurs Sequo gerent le retrait et la livraison pour que votre commande arrive efficacement.",
+    Res.string.onboarding_relay_title.key to "Retrait en point relais",
+    Res.string.onboarding_relay_subtitle.key to "Envoyez vos colis vers un point relais Sequo quand un retrait proche est plus simple que l'attente a domicile.",
+    Res.string.onboarding_deals_title.key to "Trouvez de meilleures offres",
+    Res.string.onboarding_deals_subtitle.key to "Reperez les produits en promo, gardez vos favoris et revenez quand le bon prix apparait.",
+    Res.string.nav_home_title.key to "Tokoin Gbadago",
+    Res.string.nav_home_subtitle.key to "Livraison vers la zone Pharmacie des Etoiles",
+    Res.string.nav_markets_title.key to "Marches",
+    Res.string.nav_markets_subtitle.key to "Vendeurs verifies a Lome",
+    Res.string.nav_basket_title.key to "Panier",
+    Res.string.nav_basket_subtitle.key to "Verifier et payer",
+    Res.string.nav_orders_title.key to "Commandes",
+    Res.string.nav_orders_subtitle.key to "Suivre chaque etape",
+    Res.string.nav_notifications_title.key to "Notifications",
+    Res.string.nav_notifications_subtitle.key to "Ce qui demande votre attention",
+    Res.string.nav_account_title.key to "Compte",
+    Res.string.nav_account_subtitle.key to "Adresses, paiement et support",
+    Res.string.bottom_home.key to "Sequo",
+    Res.string.cd_back.key to "Retour",
+    Res.string.cd_open_menu.key to "Ouvrir le menu",
+    Res.string.cd_search.key to "Rechercher",
+    Res.string.cd_notifications.key to "Notifications",
+    Res.string.guest_basket_title.key to "Connectez-vous pour creer votre panier",
+    Res.string.guest_basket_detail.key to "Vous pouvez d'abord consulter les produits et les menus. Enregistrer le panier, choisir une adresse et payer demande un compte.",
+    Res.string.guest_orders_title.key to "Connectez-vous pour suivre vos commandes",
+    Res.string.guest_orders_detail.key to "Vous pouvez parcourir les produits en invite. Les commandes, statuts, codes de retrait, retours et recus restent dans votre compte.",
+    Res.string.common_browse.key to "Parcourir",
+    Res.string.drawer_customer.key to "Client Sequo",
+    Res.string.drawer_guest.key to "Navigation invite",
+    Res.string.drawer_signed_in.key to "Connecte",
+    Res.string.drawer_shop_categories.key to "Categories",
+    Res.string.drawer_catalog_loading.key to "Chargement du catalogue",
+    Res.string.drawer_now.key to "Maintenant",
+    Res.string.drawer_marketplace_tools.key to "Outils marketplace",
+    Res.string.drawer_promos.key to "Promos et campagnes",
+    Res.string.drawer_promos_detail.key to "Dejeuner, fetes, offres week-end",
+    Res.string.drawer_saved_shops.key to "Boutiques enregistrees",
+    Res.string.drawer_saved_shops_detail.key to "Vendeurs favoris et achats repetes",
+    Res.string.drawer_delivery_areas.key to "Zones de livraison",
+    Res.string.drawer_delivery_areas_detail.key to "Zones et frais a Lome",
+    Res.string.drawer_support.key to "Support",
+    Res.string.drawer_support_detail.key to "Commandes, remboursements, aide vendeur",
+)
