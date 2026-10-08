@@ -4,14 +4,20 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 @Composable
 actual fun rememberSecureTokenStorage(): SecureTokenStorage {
     val context = LocalContext.current.applicationContext
-    return remember(context) {
-        AndroidSecureTokenStorage(context = context)
+    val isPreview = LocalInspectionMode.current
+    return remember(context, isPreview) {
+        if (isPreview) {
+            PreviewSecureTokenStorage()
+        } else {
+            AndroidSecureTokenStorage(context = context)
+        }
     }
 }
 
@@ -45,5 +51,22 @@ private class AndroidSecureTokenStorage(
 
     private companion object {
         const val RefreshTokenKey = "refresh_token"
+    }
+}
+
+/**
+ * A non-encrypted implementation for use in Compose Previews where AndroidKeyStore is unavailable.
+ */
+private class PreviewSecureTokenStorage : SecureTokenStorage {
+    private var refreshToken: String? = null
+
+    override suspend fun saveRefreshToken(token: String) {
+        refreshToken = token
+    }
+
+    override suspend fun getRefreshToken(): String? = refreshToken
+
+    override suspend fun clearSession() {
+        refreshToken = null
     }
 }
