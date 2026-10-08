@@ -2,6 +2,7 @@ package dev.orestegabo.sequo.ui.catalog
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
@@ -15,15 +16,18 @@ import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
+import dev.orestegabo.sequo.core.platform.*
 import dev.orestegabo.sequo.theme.*
 import dev.orestegabo.sequo.ui.account.*
 import dev.orestegabo.sequo.ui.app.*
@@ -35,6 +39,8 @@ import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 import org.jetbrains.compose.resources.DrawableResource
@@ -192,9 +198,9 @@ internal fun ProductLine(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 ProductImage(
                     product = product,
+                    onClick = onProductClick,
                     modifier = Modifier
-                        .size(58.dp)
-                        .clickable(onClick = onProductClick),
+                        .size(58.dp),
                 )
                 Column(
                     Modifier
@@ -255,7 +261,7 @@ internal fun CompactProductCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ProductImage(product = product, modifier = Modifier.size(52.dp))
+            ProductImage(product = product, onClick = onProductClick, modifier = Modifier.size(52.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -427,9 +433,17 @@ internal fun PhotoAuthenticityBadge(
 internal fun ProductImage(
     product: SequoProduct,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
+    var showPhotoActions by remember(product.id, product.name) { mutableStateOf(false) }
+
     Surface(
-        modifier = modifier,
+        modifier = modifier.pointerInput(product.id, onClick) {
+            detectTapGestures(
+                onTap = { onClick?.invoke() },
+                onLongPress = { showPhotoActions = true },
+            )
+        },
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
@@ -449,6 +463,178 @@ internal fun ProductImage(
             )
         }
     }
+
+    if (showPhotoActions) {
+        ProductPhotoActionDialog(
+            product = product,
+            onDismiss = { showPhotoActions = false },
+        )
+    }
+}
+
+@Composable
+internal fun ProductPhotoActionDialog(
+    product: SequoProduct,
+    onDismiss: () -> Unit,
+) {
+    val exporter = rememberProductPhotoExporter()
+    val scope = rememberCoroutineScope()
+    val image = imageResource(productImageResource(product))
+    var statusMessage by remember(product.id, product.name) { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(210.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 12.dp,
+            ) {
+                Box(Modifier.fillMaxSize()) {
+                    Image(
+                        bitmap = image,
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    PhotoAuthenticityBadge(
+                        product = product,
+                        onDark = true,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                    )
+                }
+            }
+            Surface(
+                modifier = Modifier.widthIn(max = 340.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f)),
+                shadowElevation = 18.dp,
+            ) {
+                Column(Modifier.fillMaxWidth()) {
+                    ProductPhotoActionRow(
+                        label = "Post Photo",
+                        icon = Icons.Filled.AddPhotoAlternate,
+                        onClick = { statusMessage = "Posting photos will connect to seller tools next." },
+                    )
+                    ProductPhotoActionDivider()
+                    ProductPhotoActionRow(
+                        label = "Copy Photo",
+                        icon = Icons.Filled.ContentCopy,
+                        onClick = { statusMessage = "Image copy needs native clipboard support next." },
+                    )
+                    ProductPhotoActionDivider()
+                    ProductPhotoActionRow(
+                        label = "Save Photo",
+                        icon = Icons.Filled.Download,
+                        onClick = {
+                            scope.launch {
+                                statusMessage = "Saving watermarked photo..."
+                                statusMessage = exporter.saveWatermarkedPhoto(
+                                    image = image,
+                                    fileName = product.photoExportFileName(),
+                                    productName = product.name,
+                                ).message
+                            }
+                        },
+                    )
+                    ProductPhotoActionDivider()
+                    ProductPhotoActionRow(
+                        label = "Edit photo",
+                        icon = Icons.Filled.Edit,
+                        onClick = { statusMessage = "Photo editing will open from this menu next." },
+                    )
+                    ProductPhotoActionDivider()
+                    ProductPhotoActionRow(
+                        label = "Share via...",
+                        icon = Icons.Filled.Share,
+                        onClick = {
+                            scope.launch {
+                                statusMessage = "Preparing watermarked share..."
+                                statusMessage = exporter.sharePhoto(
+                                    image = image,
+                                    fileName = product.photoExportFileName(),
+                                    productName = product.name,
+                                ).message
+                            }
+                        },
+                    )
+                }
+            }
+            statusMessage?.let { message ->
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = Color.Black.copy(alpha = 0.70f),
+                ) {
+                    Text(
+                        text = message,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductPhotoActionRow(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 18.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductPhotoActionDivider() {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
+}
+
+private fun SequoProduct.photoExportFileName(): String {
+    val base = listOf(id, name)
+        .firstOrNull { it.isNotBlank() }
+        ?.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        ?.trim('_')
+        ?.ifBlank { null }
+        ?: "sequo-photo"
+    return "sequo_$base.jpg"
 }
 
 internal fun productImageResource(product: SequoProduct): DrawableResource {
