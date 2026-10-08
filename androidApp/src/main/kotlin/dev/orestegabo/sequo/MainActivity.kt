@@ -27,6 +27,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
+import dev.orestegabo.sequo.feature.settings.AppLanguage
 import org.json.JSONObject
 import java.security.SecureRandom
 
@@ -43,12 +44,13 @@ class MainActivity : ComponentActivity() {
     private val openNotificationsRequest = mutableStateOf(0)
     private var homeNotificationShown = false
     private var homeNotificationPending = false
+    private var homeNotificationPendingLanguage = AppLanguage.English
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted && homeNotificationPending) {
             homeNotificationPending = false
-            showHomeWelcomeNotification()
+            showHomeWelcomeNotification(homeNotificationPendingLanguage)
         }
     }
 
@@ -79,16 +81,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun notifyHomeReached() {
+    private fun notifyHomeReached(language: AppLanguage) {
         if (homeNotificationShown) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             homeNotificationPending = true
+            homeNotificationPendingLanguage = language
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             return
         }
-        showHomeWelcomeNotification()
+        showHomeWelcomeNotification(language)
     }
 
     private fun createNotificationChannel() {
@@ -104,7 +107,7 @@ class MainActivity : ComponentActivity() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    private fun showHomeWelcomeNotification() {
+    private fun showHomeWelcomeNotification(language: AppLanguage = AppLanguage.English) {
         if (homeNotificationShown) return
         homeNotificationShown = true
 
@@ -119,6 +122,19 @@ class MainActivity : ComponentActivity() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val title = when (language) {
+            AppLanguage.French -> "Bienvenue sur Sequo"
+            AppLanguage.English -> "Welcome to Sequo"
+        }
+        val body = when (language) {
+            AppLanguage.French -> "Vous pouvez parcourir les produits en invite. Connectez-vous quand vous voulez enregistrer, commander ou suivre."
+            AppLanguage.English -> "You can browse products as a guest. Sign in only when you are ready to save, order, or track."
+        }
+        val longBody = when (language) {
+            AppLanguage.French -> "Vous pouvez parcourir les produits en invite. Connectez-vous seulement quand vous etes pret a enregistrer un panier, passer commande, suivre la livraison ou gerer vos details prives."
+            AppLanguage.English -> "You can browse products as a guest. Sign in only when you are ready to save a basket, place an order, track delivery, or manage private account details."
+        }
+
         val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             android.app.Notification.Builder(this, SequoNotificationChannelId)
         } else {
@@ -126,15 +142,15 @@ class MainActivity : ComponentActivity() {
             android.app.Notification.Builder(this)
         }
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Welcome to Sequo")
-            .setContentText("You can browse products as a guest. Sign in only when you are ready to save, order, or track.")
+            .setContentTitle(title)
+            .setContentText(body)
             .setContentIntent(openNotificationsPendingIntent)
             .setCategory(android.app.Notification.CATEGORY_STATUS)
             .setPriority(android.app.Notification.PRIORITY_HIGH)
             .setDefaults(android.app.Notification.DEFAULT_ALL)
             .setStyle(
                 android.app.Notification.BigTextStyle().bigText(
-                    "You can browse products as a guest. Sign in only when you are ready to save a basket, place an order, track delivery, or manage private account details.",
+                    longBody,
                 ),
             )
             .setAutoCancel(true)
