@@ -25,6 +25,7 @@ import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.catalog.CatalogApiClient
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
+import dev.orestegabo.sequo.feature.settings.appCatalogText
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
@@ -70,6 +71,7 @@ internal fun SequoShell(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val basketCount = extraBasketItems
+    val catalogLoadError = appText(Res.string.home_catalog_load_error)
 
     fun reloadCatalog() {
         scope.launch {
@@ -80,7 +82,7 @@ internal fun SequoShell(
                         if (selectedMarketTypeKey.isBlank()) selectedMarketTypeKey = snapshot.defaultCategoryKey
                         CatalogUiState.Ready(snapshot)
                     },
-                    onFailure = { CatalogUiState.Failed(it.message ?: "Unable to load Sequo catalog.") },
+                    onFailure = { CatalogUiState.Failed(it.message ?: catalogLoadError) },
                 )
         }
     }
@@ -477,7 +479,7 @@ private fun SequoNavigationDrawer(
                 NavigationDrawerItem(
                     label = {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(type.title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(appCatalogText(type.title), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             when (type.key) {
                                 "food" -> Text(appText(Res.string.drawer_now), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
