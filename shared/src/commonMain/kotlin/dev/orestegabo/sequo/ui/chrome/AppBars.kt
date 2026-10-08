@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -71,7 +72,7 @@ internal fun SequoTopAppBar(
             IconButton(onClick = if (backMode) onBackClick else onMenuClick) {
                 Icon(
                     imageVector = if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
-                    contentDescription = if (backMode) "Back" else "Open menu",
+                    contentDescription = if (backMode) appText(Res.string.cd_back) else appText(Res.string.cd_open_menu),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp),
                 )
@@ -81,7 +82,7 @@ internal fun SequoTopAppBar(
                 verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 Text(
-                    text = productListing?.product?.name ?: currentDestination.appBarTitle,
+                    text = productListing?.product?.name ?: currentDestination.appBarTitle(),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
@@ -89,7 +90,7 @@ internal fun SequoTopAppBar(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = productListing?.let { "${it.shop.name} / ${it.shop.area}" } ?: currentDestination.appBarSubtitle,
+                    text = productListing?.let { "${it.shop.name} / ${it.shop.area}" } ?: currentDestination.appBarSubtitle(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -101,7 +102,7 @@ internal fun SequoTopAppBar(
                     IconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Filled.Search,
-                            contentDescription = "Search",
+                            contentDescription = appText(Res.string.cd_search),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(24.dp),
                         )
@@ -122,7 +123,7 @@ internal fun SequoTopAppBar(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Notifications,
-                            contentDescription = "Notifications",
+                            contentDescription = appText(Res.string.cd_notifications),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(24.dp),
                         )
@@ -133,24 +134,26 @@ internal fun SequoTopAppBar(
     }
 }
 
-private val SequoSection.appBarTitle: String
-    get() = when (this) {
-        SequoSection.Home -> "Tokoin Gbadago"
-        SequoSection.Markets -> "Markets"
-        SequoSection.Basket -> "Cart"
-        SequoSection.Orders -> "Orders"
-        SequoSection.Notifications -> "Notifications"
-        SequoSection.Account -> "Account"
+@Composable
+private fun SequoSection.appBarTitle(): String =
+    when (this) {
+        SequoSection.Home -> appText(Res.string.nav_home_title)
+        SequoSection.Markets -> appText(Res.string.nav_markets_title)
+        SequoSection.Basket -> appText(Res.string.nav_basket_title)
+        SequoSection.Orders -> appText(Res.string.nav_orders_title)
+        SequoSection.Notifications -> appText(Res.string.nav_notifications_title)
+        SequoSection.Account -> appText(Res.string.nav_account_title)
     }
 
-private val SequoSection.appBarSubtitle: String
-    get() = when (this) {
-        SequoSection.Home -> "Deliver to Pharmacie des Etoiles area"
-        SequoSection.Markets -> "Verified Lome sellers"
-        SequoSection.Basket -> "Review and checkout"
-        SequoSection.Orders -> "Track every handoff"
-        SequoSection.Notifications -> "What needs your attention"
-        SequoSection.Account -> "Addresses, payment, and support"
+@Composable
+private fun SequoSection.appBarSubtitle(): String =
+    when (this) {
+        SequoSection.Home -> appText(Res.string.nav_home_subtitle)
+        SequoSection.Markets -> appText(Res.string.nav_markets_subtitle)
+        SequoSection.Basket -> appText(Res.string.nav_basket_subtitle)
+        SequoSection.Orders -> appText(Res.string.nav_orders_subtitle)
+        SequoSection.Notifications -> appText(Res.string.nav_notifications_subtitle)
+        SequoSection.Account -> appText(Res.string.nav_account_subtitle)
     }
 
 @Composable
