@@ -2,6 +2,7 @@ package dev.orestegabo.sequo.ui.catalog
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
@@ -103,6 +105,7 @@ private fun ProductPhotoStack(
     val stackedProducts = galleryProducts
         .filterIndexed { index, _ -> index != selectedPhotoIndex }
         .take(3)
+    var photoActionProduct by remember { mutableStateOf<SequoProduct?>(null) }
 
     Box(
         modifier = Modifier
@@ -141,8 +144,11 @@ private fun ProductPhotoStack(
             modifier = Modifier
                 .fillMaxWidth(0.82f)
                 .height(214.dp)
-                .clickable {
-                    onPhotoSelected((selectedPhotoIndex + 1) % galleryProducts.size)
+                .pointerInput(selectedProduct.id) {
+                    detectTapGestures(
+                        onTap = { onPhotoSelected((selectedPhotoIndex + 1) % galleryProducts.size) },
+                        onLongPress = { photoActionProduct = selectedProduct },
+                    )
                 },
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -188,6 +194,12 @@ private fun ProductPhotoStack(
                 }
             }
         }
+        photoActionProduct?.let { actionProduct ->
+            ProductPhotoActionDialog(
+                product = actionProduct,
+                onDismiss = { photoActionProduct = null },
+            )
+        }
         Row(
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -217,6 +229,7 @@ private fun ProductDetailHero(
 ) {
     val selectedProduct = galleryProducts[selectedPhotoIndex]
     var heroSettled by remember(product.id) { mutableStateOf(false) }
+    var photoActionProduct by remember { mutableStateOf<SequoProduct?>(null) }
     LaunchedEffect(product.id) {
         heroSettled = true
     }
@@ -246,7 +259,10 @@ private fun ProductDetailHero(
                 .fillMaxWidth()
                 .height(heroHeight)
                 .align(Alignment.TopCenter)
-                .padding(horizontal = heroHorizontalPadding),
+                .padding(horizontal = heroHorizontalPadding)
+                .pointerInput(selectedProduct.id) {
+                    detectTapGestures(onLongPress = { photoActionProduct = selectedProduct })
+                },
             shape = RoundedCornerShape(heroCornerRadius),
             color = MaterialTheme.colorScheme.surfaceVariant,
             shadowElevation = if (heroSettled) 0.dp else 8.dp,
@@ -283,6 +299,12 @@ private fun ProductDetailHero(
                         ),
                 )
             }
+        }
+        photoActionProduct?.let { actionProduct ->
+            ProductPhotoActionDialog(
+                product = actionProduct,
+                onDismiss = { photoActionProduct = null },
+            )
         }
         Row(
             modifier = Modifier
@@ -322,11 +344,17 @@ private fun MiniPhotoStack(
     val stackedProducts = galleryProducts
         .filterIndexed { index, _ -> index != selectedPhotoIndex }
         .take(3)
+    var photoActionProduct by remember { mutableStateOf<SequoProduct?>(null) }
 
     Box(
         modifier = modifier
             .size(width = 106.dp, height = 92.dp)
-            .clickable(onClick = onNextPhoto),
+            .pointerInput(selectedProduct.id) {
+                detectTapGestures(
+                    onTap = { onNextPhoto() },
+                    onLongPress = { photoActionProduct = selectedProduct },
+                )
+            },
         contentAlignment = Alignment.Center,
     ) {
         stackedProducts.reversed().forEachIndexed { index, galleryProduct ->
@@ -389,6 +417,12 @@ private fun MiniPhotoStack(
                     )
                 }
             }
+        }
+        photoActionProduct?.let { actionProduct ->
+            ProductPhotoActionDialog(
+                product = actionProduct,
+                onDismiss = { photoActionProduct = null },
+            )
         }
     }
 }
