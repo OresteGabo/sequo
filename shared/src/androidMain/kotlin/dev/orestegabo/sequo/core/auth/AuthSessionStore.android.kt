@@ -1,9 +1,11 @@
 package dev.orestegabo.sequo.core.auth
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.serialization.encodeToString
@@ -12,8 +14,13 @@ import kotlinx.serialization.json.Json
 @Composable
 actual fun rememberAuthSessionStore(): AuthSessionStore {
     val context = LocalContext.current.applicationContext
-    return remember(context) {
-        AndroidAuthSessionStore(context = context)
+    val isPreview = LocalInspectionMode.current
+    return remember(context, isPreview) {
+        if (isPreview) {
+            PreviewAuthSessionStore()
+        } else {
+            AndroidAuthSessionStore(context = context)
+        }
     }
 }
 
@@ -50,5 +57,22 @@ private class AndroidAuthSessionStore(
 
     private companion object {
         const val AuthSessionKey = "auth_session"
+    }
+}
+
+/**
+ * A non-encrypted implementation for use in Compose Previews where AndroidKeyStore is unavailable.
+ */
+private class PreviewAuthSessionStore : AuthSessionStore {
+    private var session: AuthSession? = null
+
+    override suspend fun save(session: AuthSession) {
+        this.session = session
+    }
+
+    override suspend fun get(): AuthSession? = session
+
+    override suspend fun clear() {
+        session = null
     }
 }
