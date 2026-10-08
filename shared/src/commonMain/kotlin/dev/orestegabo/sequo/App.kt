@@ -43,7 +43,7 @@ fun App(
     onGoogleSignIn: suspend () -> GoogleSignInResult = {
         GoogleSignInResult.Failure("Google sign-in is not configured on this platform yet.")
     },
-    onHomeEntered: () -> Unit = {},
+    onHomeEntered: (AppLanguage) -> Unit = {},
     openNotificationsRequest: Int = 0,
 ) {
     SequoTheme {
@@ -58,7 +58,7 @@ fun App(
 @Composable
 private fun SequoApp(
     onGoogleSignIn: suspend () -> GoogleSignInResult,
-    onHomeEntered: () -> Unit,
+    onHomeEntered: (AppLanguage) -> Unit,
     openNotificationsRequest: Int,
 ) {
     var showSplash by rememberSaveable { mutableStateOf(shouldShowInAppSplash) }
@@ -275,7 +275,7 @@ private fun SequoApp(
             currentUser = currentUser,
             isGuest = guestMode,
             onOpenLegal = { legalScreenTab = it },
-            onHomeEntered = onHomeEntered,
+            onHomeEntered = { onHomeEntered(language) },
             openNotificationsRequest = openNotificationsRequest,
             onSignInRequested = {
                 guestMode = false
