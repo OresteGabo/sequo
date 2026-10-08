@@ -89,8 +89,8 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
 import sequo.shared.generated.resources.auth_fingerprint
-import sequo.shared.generated.resources.auth_facebook
-import sequo.shared.generated.resources.auth_whatsapp
+import sequo.shared.generated.resources.auth_facebook_icon
+import sequo.shared.generated.resources.auth_whatsapp_icon
 import sequo.shared.generated.resources.onboarding_relay_icon_large
 import sequo.shared.generated.resources.onboarding_rider_icon_large
 import sequo.shared.generated.resources.onboarding_sale_store
@@ -939,7 +939,7 @@ private fun ProviderIconRow(
                 onClick = providerClick(AuthProviderShortcut.WhatsApp, onWhatsAppLogin),
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.auth_whatsapp),
+                    painter = painterResource(Res.drawable.auth_whatsapp_icon),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.size(25.dp),
@@ -951,7 +951,7 @@ private fun ProviderIconRow(
                 onClick = providerClick(AuthProviderShortcut.Facebook, onFacebookLogin),
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.auth_facebook),
+                    painter = painterResource(Res.drawable.auth_facebook_icon),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.size(25.dp),
