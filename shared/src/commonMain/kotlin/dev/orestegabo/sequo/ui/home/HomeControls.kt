@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appCatalogText
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -73,7 +75,7 @@ internal fun SequoSearchCard(onClose: () -> Unit) {
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (query.isBlank()) {
                             Text(
-                                "Search products or shops",
+                                appText(Res.string.home_search_placeholder),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -87,7 +89,7 @@ internal fun SequoSearchCard(onClose: () -> Unit) {
             IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "Close search",
+                    contentDescription = appText(Res.string.home_close_search),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp),
                 )
@@ -232,14 +234,14 @@ private fun ProductPromoCard(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SequoTinyButton("Add", onAddProduct)
+                    SequoTinyButton(appText(Res.string.home_add), onAddProduct)
                     Surface(
                         onClick = onSeeAll,
                         shape = RoundedCornerShape(999.dp),
                         color = Color.White.copy(alpha = 0.18f),
                     ) {
                         Text(
-                            "View",
+                            appText(Res.string.home_view),
                             modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = Color.White,
@@ -271,7 +273,7 @@ private fun PromoPrice(
             ) {
                 Icon(
                     imageVector = Icons.Filled.LocalOffer,
-                    contentDescription = "Make an offer",
+                    contentDescription = appText(Res.string.home_make_offer),
                     tint = Color.White,
                     modifier = Modifier.size(13.dp),
                 )
@@ -322,10 +324,15 @@ internal fun MarketplaceCategorySection(
     onTogglePinned: (String) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val actionLabel = when (action) {
+        null -> null
+        "See all" -> appText(Res.string.home_see_all)
+        else -> action
+    }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(
-            title = "Categories",
-            action = action?.let { if (expanded) "Less" else it },
+            title = appText(Res.string.home_categories),
+            action = actionLabel?.let { if (expanded) appText(Res.string.home_less) else it },
             onAction = {
                 expanded = !expanded
                 if (expanded) {
@@ -480,9 +487,9 @@ internal fun MarketplaceCategoryBubble(
                     text = {
                         Text(
                             when {
-                                pinned -> "Unpin category"
-                                canTogglePinned -> "Pin category"
-                                else -> "3 pinned max"
+                                pinned -> appText(Res.string.home_unpin_category)
+                                canTogglePinned -> appText(Res.string.home_pin_category)
+                                else -> appText(Res.string.home_pinned_max)
                             },
                         )
                     },
@@ -498,7 +505,7 @@ internal fun MarketplaceCategoryBubble(
             }
         }
         Text(
-            type.title,
+            appCatalogText(type.title),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
