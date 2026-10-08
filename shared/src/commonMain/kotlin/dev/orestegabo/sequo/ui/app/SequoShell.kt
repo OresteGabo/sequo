@@ -25,6 +25,7 @@ import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.catalog.CatalogApiClient
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -280,8 +281,8 @@ internal fun SequoContentStage(
                 )
                 SequoSection.Basket -> if (isGuest) {
                     GuestSignInPanel(
-                        title = "Sign in to build your basket",
-                        detail = "You can inspect products and menus first. Saving cart items, choosing an address, and checkout require an account.",
+                        title = appText(Res.string.guest_basket_title),
+                        detail = appText(Res.string.guest_basket_detail),
                         onSignIn = onSignInRequested,
                         onBrowse = { onDestinationSelected(SequoSection.Markets) },
                     )
@@ -290,8 +291,8 @@ internal fun SequoContentStage(
                 }
                 SequoSection.Orders -> if (isGuest) {
                     GuestSignInPanel(
-                        title = "Sign in to track orders",
-                        detail = "You can browse products as a guest. Orders, delivery status, pickup codes, returns, and receipts stay behind your account.",
+                        title = appText(Res.string.guest_orders_title),
+                        detail = appText(Res.string.guest_orders_detail),
                         onSignIn = onSignInRequested,
                         onBrowse = { onDestinationSelected(SequoSection.Home) },
                     )
@@ -368,14 +369,14 @@ private fun GuestSignInPanel(
                     modifier = Modifier.weight(1f).height(48.dp),
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text("Browse")
+                    Text(appText(Res.string.common_browse))
                 }
                 Button(
                     onClick = onSignIn,
                     modifier = Modifier.weight(1f).height(48.dp),
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text("Sign in")
+                    Text(appText(Res.string.auth_dialog_title))
                 }
             }
         }
@@ -437,7 +438,7 @@ private fun SequoNavigationDrawer(
                 SequoShoppingMark(Modifier.size(40.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        currentUser?.displayName ?: "Sequo customer",
+                        currentUser?.displayName ?: appText(Res.string.drawer_customer),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
@@ -445,9 +446,9 @@ private fun SequoNavigationDrawer(
                     )
                     Text(
                         when {
-                            isGuest -> "Guest browsing"
+                            isGuest -> appText(Res.string.drawer_guest)
                             currentUser?.email != null -> currentUser.email
-                            else -> "Signed in"
+                            else -> appText(Res.string.drawer_signed_in)
                         },
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -458,7 +459,7 @@ private fun SequoNavigationDrawer(
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
             Text(
-                "Shop categories",
+                appText(Res.string.drawer_shop_categories),
                 modifier = Modifier.padding(start = 12.dp, top = 8.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -466,7 +467,7 @@ private fun SequoNavigationDrawer(
             )
             if (shopTypes.isEmpty()) {
                 Text(
-                    "Catalog loading",
+                    appText(Res.string.drawer_catalog_loading),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -478,7 +479,7 @@ private fun SequoNavigationDrawer(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(type.title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                             when (type.key) {
-                                "food" -> Text("Now", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                "food" -> Text(appText(Res.string.drawer_now), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     },
@@ -489,16 +490,16 @@ private fun SequoNavigationDrawer(
                 )
             }
             Text(
-                "Marketplace tools",
+                appText(Res.string.drawer_marketplace_tools),
                 modifier = Modifier.padding(start = 12.dp, top = 10.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold,
             )
-            DrawerToolRow(Icons.Filled.LocalOffer, "Promos & campaigns", "Lunch, holidays, weekend deals")
-            DrawerToolRow(Icons.Filled.FavoriteBorder, "Saved shops", "Favorite sellers and repeat buys")
-            DrawerToolRow(Icons.Filled.Place, "Delivery areas", "Lome zones and fees")
-            DrawerToolRow(Icons.Filled.SupportAgent, "Support", "Orders, refunds, seller help")
+            DrawerToolRow(Icons.Filled.LocalOffer, appText(Res.string.drawer_promos), appText(Res.string.drawer_promos_detail))
+            DrawerToolRow(Icons.Filled.FavoriteBorder, appText(Res.string.drawer_saved_shops), appText(Res.string.drawer_saved_shops_detail))
+            DrawerToolRow(Icons.Filled.Place, appText(Res.string.drawer_delivery_areas), appText(Res.string.drawer_delivery_areas_detail))
+            DrawerToolRow(Icons.Filled.SupportAgent, appText(Res.string.drawer_support), appText(Res.string.drawer_support_detail))
         }
     }
 }
