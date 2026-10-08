@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appCatalogText
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -73,8 +75,8 @@ internal fun HomeContent(
         onTogglePinned = onToggleCategoryPinned,
     )
     FlashSaleSection(
-        title = "Popular picks",
-        badge = selectedType.supportLabel,
+        title = appText(Res.string.home_popular_picks),
+        badge = appCatalogText(selectedType.supportLabel),
         products = featuredProducts,
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
@@ -82,8 +84,8 @@ internal fun HomeContent(
     )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(
-            title = "Nearby shops",
-            action = selectedType.supportLabel,
+            title = appText(Res.string.home_nearby_shops),
+            action = appCatalogText(selectedType.supportLabel),
             onAction = { onDestinationSelected(SequoSection.Markets) },
         )
         selectedShops.take(2).forEach { shop ->
