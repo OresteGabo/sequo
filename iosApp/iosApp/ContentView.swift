@@ -12,7 +12,7 @@ final class SequoNotificationPresenter: NSObject, UNUserNotificationCenterDelega
         super.init()
     }
 
-    func notifyHomeReached() {
+    func notifyHomeReached(language: AppLanguage) {
         guard !homeNotificationShown else { return }
         homeNotificationShown = true
 
@@ -22,8 +22,11 @@ final class SequoNotificationPresenter: NSObject, UNUserNotificationCenterDelega
             guard granted else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "Welcome to Sequo"
-            content.body = "You can browse products as a guest. Sign in when you are ready to save, order, or track."
+            let french = language == AppLanguage.french
+            content.title = french ? "Bienvenue sur Sequo" : "Welcome to Sequo"
+            content.body = french
+                ? "Vous pouvez parcourir les produits en invite. Connectez-vous quand vous voulez enregistrer, commander ou suivre."
+                : "You can browse products as a guest. Sign in when you are ready to save, order, or track."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -65,8 +68,8 @@ struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Self.Context) -> UIViewController {
         SequoNotificationPresenter.shared.onOpenNotifications = onOpenNotifications
         return MainViewControllerKt.MainViewController(
-            onHomeEntered: {
-                SequoNotificationPresenter.shared.notifyHomeReached()
+            onHomeEntered: { language in
+                SequoNotificationPresenter.shared.notifyHomeReached(language: language)
             },
             openNotificationsRequest: Int32(openNotificationsRequest)
         )
