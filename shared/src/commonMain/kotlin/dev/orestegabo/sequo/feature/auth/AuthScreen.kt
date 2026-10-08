@@ -1844,9 +1844,9 @@ private fun GoogleButton(
 
 @Composable
 private fun TermsLine(onPrivacyTermsClick: () -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
@@ -1860,6 +1860,7 @@ private fun TermsLine(onPrivacyTermsClick: () -> Unit) {
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
             modifier = Modifier.clickable(onClick = onPrivacyTermsClick),
         )
     }
