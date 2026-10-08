@@ -29,11 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.designsystem.component.SequoShapes
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.model.SequoSection
 import dev.orestegabo.sequo.model.sequoPrimaryDestinations
 import org.jetbrains.compose.resources.painterResource
-import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequo_shopping_icon
+import sequo.shared.generated.resources.*
 
 @Composable
 internal fun SequoBottomBar(
@@ -103,6 +103,7 @@ private fun SequoBottomNavItem(
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val label = destination.bottomLabel()
     val containerColor by animateColorAsState(
         targetValue = if (selected) colorScheme.primaryContainer else Color.Transparent,
         label = "navItemContainer",
@@ -148,14 +149,14 @@ private fun SequoBottomNavItem(
                     if (destination == SequoSection.Home) {
                         Image(
                             painter = painterResource(Res.drawable.sequo_shopping_icon),
-                            contentDescription = destination.label,
+                            contentDescription = label,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.size(36.dp),
                         )
                     } else {
                         Icon(
                             imageVector = destination.icon,
-                            contentDescription = destination.label,
+                            contentDescription = label,
                             tint = contentColor,
                             modifier = Modifier.size(20.dp),
                         )
@@ -163,7 +164,7 @@ private fun SequoBottomNavItem(
                 }
             }
             Text(
-                text = destination.label,
+                text = label,
                 color = contentColor,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
@@ -181,3 +182,14 @@ private fun SequoBottomNavItem(
         }
     }
 }
+
+@Composable
+private fun SequoSection.bottomLabel(): String =
+    when (this) {
+        SequoSection.Home -> appText(Res.string.bottom_home)
+        SequoSection.Markets -> appText(Res.string.nav_markets_title)
+        SequoSection.Basket -> appText(Res.string.nav_basket_title)
+        SequoSection.Orders -> appText(Res.string.nav_orders_title)
+        SequoSection.Notifications -> appText(Res.string.nav_notifications_title)
+        SequoSection.Account -> appText(Res.string.nav_account_title)
+    }
