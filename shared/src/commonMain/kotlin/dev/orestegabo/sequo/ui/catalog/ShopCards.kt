@@ -28,6 +28,8 @@ import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.core.platform.*
+import dev.orestegabo.sequo.feature.settings.appCatalogText
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.theme.*
 import dev.orestegabo.sequo.ui.account.*
 import dev.orestegabo.sequo.ui.app.*
@@ -66,17 +68,17 @@ internal fun SequoShopCard(
                 SequoShoppingMark(Modifier.size(52.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(shop.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("${shop.area} / ${shop.kind}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(shop.openStatus, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text("${shop.area} / ${appCatalogText(shop.kind)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(appCatalogText(shop.openStatus), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 }
                 RatingMark(shop.rating)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
                 MetaPill(formatCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
-                MetaPill(shop.eta, SequoAccent)
+                MetaPill(appCatalogText(shop.eta), SequoAccent)
             }
-            RuleRow(shop.photoStatus, shop.consolidation)
+            RuleRow(appCatalogText(shop.photoStatus), appCatalogText(shop.consolidation))
             displayProducts.forEach { product ->
                 ProductLine(
                     product = product,
@@ -142,7 +144,7 @@ internal fun ShopSummaryRow(shop: SequoShop) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
                 MetaPill(formatCompactCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
-                MetaPill(shop.eta, SequoAccent)
+                MetaPill(appCatalogText(shop.eta), SequoAccent)
             }
             Box(
                 modifier = Modifier
@@ -153,7 +155,7 @@ internal fun ShopSummaryRow(shop: SequoShop) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 ShopStatusDot()
                 Text(
-                    shop.openStatus,
+                    appCatalogText(shop.openStatus),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f),
@@ -161,7 +163,7 @@ internal fun ShopSummaryRow(shop: SequoShop) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    shop.kind,
+                    appCatalogText(shop.kind),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
                     maxLines = 1,
@@ -208,11 +210,11 @@ internal fun ProductLine(
                         .clickable(onClick = onProductClick),
                 ) {
                     Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(productSubcategory(product), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(appCatalogText(productSubcategory(product)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                MetaPill(productSubcategory(product), if (product.isNegotiable) SequoSecondary else SequoAccent)
+                MetaPill(appCatalogText(productSubcategory(product)), if (product.isNegotiable) SequoSecondary else SequoAccent)
                 Text(product.optionHint, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Row(
@@ -227,7 +229,7 @@ internal fun ProductLine(
                     )
                     ProductDiscountBadge(product = product)
                 }
-                SequoTinyButton("Add", onAddProduct)
+                SequoTinyButton(appText(Res.string.home_add), onAddProduct)
             }
         }
     }
@@ -296,7 +298,7 @@ internal fun CompactProductCard(
                         )
                         ProductDiscountBadge(product = product, compact = true)
                     }
-                    SequoTinyButton("Add", onAddProduct)
+                    SequoTinyButton(appText(Res.string.home_add), onAddProduct)
                 }
             }
         }
@@ -335,7 +337,7 @@ internal fun NegotiablePrice(
             ) {
                 Icon(
                     imageVector = Icons.Filled.LocalOffer,
-                    contentDescription = "Make an offer",
+                    contentDescription = appText(Res.string.home_make_offer),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(if (compact) 13.dp else 15.dp),
                 )
