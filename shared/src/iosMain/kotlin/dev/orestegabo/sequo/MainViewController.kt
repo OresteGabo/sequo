@@ -1,9 +1,10 @@
 package dev.orestegabo.sequo
 
 import androidx.compose.ui.window.ComposeUIViewController
+import dev.orestegabo.sequo.feature.settings.AppLanguage
 
 fun MainViewController(
-    onHomeEntered: () -> Unit = {},
+    onHomeEntered: (AppLanguage) -> Unit = {},
     openNotificationsRequest: Int = 0,
 ) = ComposeUIViewController {
     App(
