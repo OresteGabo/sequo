@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -44,8 +45,8 @@ internal fun LomeRouteCard() {
     SequoCard(shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Today route", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text("fees visible", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(appText(Res.string.home_today_route), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text(appText(Res.string.home_fees_visible), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 RouteStop("Tokoin", true, Modifier.weight(1f))
@@ -140,8 +141,8 @@ internal fun SequoHeroCard(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetaPill("400 CFA nearby", SequoPrimary)
-                    MetaPill("Product view", SequoAccent)
+                    MetaPill(appText(Res.string.home_nearby_fee), SequoPrimary)
+                    MetaPill(appText(Res.string.home_product_view), SequoAccent)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     SequoPrimaryButton(primaryLabel, onPrimary, Modifier.weight(1f))
@@ -178,9 +179,9 @@ internal fun MetricCard(value: String, label: String, modifier: Modifier = Modif
 @Composable
 internal fun HomeSignalRow() {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        HomeSignalPill(Icons.Filled.PhotoCamera, "Product view", SequoPrimary, Modifier.weight(1f))
+        HomeSignalPill(Icons.Filled.PhotoCamera, appText(Res.string.home_product_view), SequoPrimary, Modifier.weight(1f))
         HomeSignalPill(Icons.Filled.Payments, "Yas/Moov", SequoSecondary, Modifier.weight(1f))
-        HomeSignalPill(Icons.Filled.CheckCircle, "72h relai", SequoAccent, Modifier.weight(1f))
+        HomeSignalPill(Icons.Filled.CheckCircle, appText(Res.string.home_relay_72h), SequoAccent, Modifier.weight(1f))
     }
 }
 
@@ -265,7 +266,7 @@ internal fun FlashSaleSection(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "See all flash products",
+                        contentDescription = appText(Res.string.home_see_all),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(21.dp),
                     )
@@ -372,7 +373,7 @@ internal fun FlashProductCard(
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = Icons.Filled.LocalOffer,
-                                            contentDescription = "Make an offer",
+                                            contentDescription = appText(Res.string.home_make_offer),
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(16.dp),
                                         )
@@ -428,7 +429,7 @@ internal fun FlashProductCard(
                     )
                     ProductDiscountBadge(product = product, compact = true)
                 }
-                SequoTinyButton("Add", onAddProduct)
+                SequoTinyButton(appText(Res.string.home_add), onAddProduct)
             }
         }
     }
