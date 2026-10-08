@@ -85,17 +85,10 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.designsystem.component.Package2
 import dev.orestegabo.sequo.core.designsystem.component.SequoShapes
 import dev.orestegabo.sequo.feature.settings.AppLanguage
+import dev.orestegabo.sequo.feature.settings.appText
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.auth_fingerprint
-import sequo.shared.generated.resources.auth_facebook_icon
-import sequo.shared.generated.resources.auth_whatsapp_icon
-import sequo.shared.generated.resources.onboarding_relay_icon_large
-import sequo.shared.generated.resources.onboarding_rider_icon_large
-import sequo.shared.generated.resources.onboarding_sale_store
-import sequo.shared.generated.resources.onboarding_save_time
-import sequo.shared.generated.resources.sequo_icon_green
+import sequo.shared.generated.resources.*
 
 @Composable
 fun AuthScreen(
@@ -182,7 +175,7 @@ private fun SocialAuthPage(
             Spacer(modifier = Modifier.size(24.dp))
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Sign in with",
+                    text = appText(Res.string.auth_sign_in_with),
                     color = colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
@@ -212,25 +205,25 @@ private fun SocialAuthPage(
 private fun OnboardingPager() {
     val slides = listOf(
         OnboardingSlide(
-            title = "Save time shopping",
-            subtitle = "Browse nearby sellers, compare items, and build your basket without running across town.",
+            title = appText(Res.string.onboarding_save_time_title),
+            subtitle = appText(Res.string.onboarding_save_time_subtitle),
             illustration = Res.drawable.onboarding_save_time,
         ),
         OnboardingSlide(
-            title = "Riders keep it moving",
-            subtitle = "Sequo riders handle pickup and delivery so your order gets from seller to you efficiently.",
+            title = appText(Res.string.onboarding_riders_title),
+            subtitle = appText(Res.string.onboarding_riders_subtitle),
             illustration = Res.drawable.onboarding_rider_icon_large,
             scene = OnboardingScene.Rider,
         ),
         OnboardingSlide(
-            title = "Pick up at relay points",
-            subtitle = "Send packages to a Sequo relay point when pickup nearby is easier than waiting at home.",
+            title = appText(Res.string.onboarding_relay_title),
+            subtitle = appText(Res.string.onboarding_relay_subtitle),
             illustration = Res.drawable.onboarding_relay_icon_large,
             scene = OnboardingScene.Relay,
         ),
         OnboardingSlide(
-            title = "Catch better deals",
-            subtitle = "Spot products on sale, save favorites, and come back when the right price shows up.",
+            title = appText(Res.string.onboarding_deals_title),
+            subtitle = appText(Res.string.onboarding_deals_subtitle),
             illustration = Res.drawable.onboarding_sale_store,
         ),
     )
@@ -864,7 +857,7 @@ private fun GuestBrowseLink(onClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Continue as a guest",
+            text = appText(Res.string.auth_continue_guest),
             color = colorScheme.primary,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
@@ -958,7 +951,7 @@ private fun ProviderIconRow(
                 )
             }
             SquareProviderButton(
-                label = "More sign-in options",
+                label = appText(Res.string.auth_more_options),
                 onClick = { showMoreProviders = !showMoreProviders },
             ) {
                 Icon(
@@ -1045,7 +1038,7 @@ private fun SquareProviderButton(
                 shadowElevation = 1.dp,
             ) {
                 Text(
-                    text = "Last",
+                    text = appText(Res.string.auth_last_used),
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Black,
@@ -1840,7 +1833,7 @@ private fun GoogleButton(
         }
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            text = if (loading) "Signing in..." else "Continue with Google",
+            text = if (loading) appText(Res.string.auth_signing_in) else appText(Res.string.auth_continue_google),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -1857,13 +1850,13 @@ private fun TermsLine(onPrivacyTermsClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
-            text = "By continuing you accept ",
+            text = appText(Res.string.auth_terms_prefix),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
         )
         Text(
-            text = "Privacy & Terms",
+            text = appText(Res.string.auth_privacy_terms),
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
