@@ -9,9 +9,12 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import platform.CoreFoundation.CFDictionaryRef
-import platform.CoreFoundation.CFTypeRefVar
 import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.CFTypeRefVar
+import platform.Foundation.CFBridgingRetain
 import platform.Foundation.NSData
+import platform.Foundation.NSCopyingProtocol
+import platform.Foundation.NSMutableDictionary
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.create
@@ -40,15 +43,16 @@ actual fun rememberSecureTokenStorage(): SecureTokenStorage =
 private class IosSecureTokenStorage : SecureTokenStorage {
     override suspend fun saveRefreshToken(token: String) {
         val tokenData = token.toNSData() ?: return
-        SecItemDelete(baseQuery())
+        baseQueryMap().useCFDictionary { query ->
+            SecItemDelete(query)
+        }
 
-        val status = SecItemAdd(
-            (baseQueryMap() + mapOf<Any?, Any?>(
+        val status = (baseQueryMap() + mapOf<Any?, Any?>(
                 kSecValueData to tokenData,
                 kSecAttrAccessible to kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            )).toCFDictionary(),
-            null,
-        )
+            )).useCFDictionary { query ->
+                SecItemAdd(query, null)
+            }
         check(status == errSecSuccess) { "Keychain failed to save refresh token: $status" }
     }
 
@@ -56,13 +60,12 @@ private class IosSecureTokenStorage : SecureTokenStorage {
     override suspend fun getRefreshToken(): String? =
         memScoped {
             val result = alloc<CFTypeRefVar>()
-            val status = SecItemCopyMatching(
-                (baseQueryMap() + mapOf<Any?, Any?>(
+            val status = (baseQueryMap() + mapOf<Any?, Any?>(
                     kSecReturnData to true,
                     kSecMatchLimit to kSecMatchLimitOne,
-                )).toCFDictionary(),
-                result.ptr,
-            )
+                )).useCFDictionary { query ->
+                    SecItemCopyMatching(query, result.ptr)
+                }
             when (status) {
                 errSecSuccess -> {
                     val data = result.value as? NSData
@@ -76,11 +79,10 @@ private class IosSecureTokenStorage : SecureTokenStorage {
         }
 
     override suspend fun clearSession() {
-        SecItemDelete(baseQuery())
+        baseQueryMap().useCFDictionary { query ->
+            SecItemDelete(query)
+        }
     }
-
-    private fun baseQuery(): CFDictionaryRef =
-        baseQueryMap().toCFDictionary()
 
     private fun baseQueryMap(): Map<Any?, Any?> =
         mapOf(
@@ -95,10 +97,26 @@ private class IosSecureTokenStorage : SecureTokenStorage {
     }
 }
 
-@Suppress("CAST_NEVER_SUCCEEDS")
 @OptIn(ExperimentalForeignApi::class)
-private fun Map<Any?, Any?>.toCFDictionary(): CFDictionaryRef =
-    this as CFDictionaryRef
+private inline fun <T> Map<Any?, Any?>.useCFDictionary(block: (CFDictionaryRef) -> T): T {
+    val dictionary = toRetainedCFDictionary()
+    return try {
+        block(dictionary)
+    } finally {
+        CFRelease(dictionary)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun Map<Any?, Any?>.toRetainedCFDictionary(): CFDictionaryRef {
+    val dictionary = NSMutableDictionary()
+    forEach { (key, value) ->
+        if (key is NSCopyingProtocol && value != null) {
+            dictionary.setObject(value, forKey = key)
+        }
+    }
+    return CFBridgingRetain(dictionary) as CFDictionaryRef
+}
 
 @OptIn(BetaInteropApi::class)
 private fun String.toNSData(): NSData? =
