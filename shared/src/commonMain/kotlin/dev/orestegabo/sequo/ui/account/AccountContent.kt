@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.auth.CurrentUser
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -54,25 +55,25 @@ internal fun AccountContent(
     AccountProfileCard(currentUser = currentUser, onLogout = onLogout)
     SequoStatusStrip(
         icon = Icons.Filled.CheckCircle,
-        title = "Subscription active",
-        detail = "15% off / 500 CFA credit",
+        title = appText(Res.string.account_subscription_active),
+        detail = appText(Res.string.account_subscription_detail),
         tag = "15%",
     )
     SequoPassCard()
-    SequoSectionCard(title = "Saved places", action = "Lome") {
-        AccountAddressRow("Home", "Tokoin Gbadago, near Pharmacie des Etoiles")
-        AccountAddressRow("Family", "Adidogome, carrefour Limousine")
-        AccountAddressRow("Office", "Be-Kpota, route du marche")
+    SequoSectionCard(title = appText(Res.string.account_saved_places), action = "Lome") {
+        AccountAddressRow(appText(Res.string.account_home), "Tokoin Gbadago, near Pharmacie des Etoiles")
+        AccountAddressRow(appText(Res.string.account_family), "Adidogome, carrefour Limousine")
+        AccountAddressRow(appText(Res.string.account_office), "Be-Kpota, route du marche")
     }
-    SequoSectionCard(title = "Supported payments", action = "no cash") {
-        SupportedPaymentRow("Yas Togo", "Primary")
-        SupportedPaymentRow("Moov Africa", "Backup")
+    SequoSectionCard(title = appText(Res.string.account_supported_payments), action = appText(Res.string.account_no_cash)) {
+        SupportedPaymentRow("Yas Togo", appText(Res.string.account_primary))
+        SupportedPaymentRow("Moov Africa", appText(Res.string.account_backup))
     }
-    SequoSectionCard(title = "Account tools", action = "secure") {
-        SettingRow("Payments", "Yas / Moov")
-        SettingRow("Returns", "72 hours")
-        SettingRow("Parrainage", "Delivery credit")
-        SettingRow("Subscription", "15% active")
+    SequoSectionCard(title = appText(Res.string.account_tools), action = appText(Res.string.account_secure)) {
+        SettingRow(appText(Res.string.account_payments), "Yas / Moov")
+        SettingRow(appText(Res.string.account_returns), "72 hours")
+        SettingRow("Parrainage", appText(Res.string.account_delivery_credit))
+        SettingRow(appText(Res.string.account_subscription), appText(Res.string.account_active_15))
     }
 }
 
@@ -97,14 +98,14 @@ private fun GuestAccountCard(onSignInRequested: () -> Unit) {
                 )
             }
             Text(
-                "Guest browsing",
+                appText(Res.string.account_guest_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
             )
             Text(
-                "Create an account or sign in when you are ready to save baskets, place orders, track delivery, and manage payments.",
+                appText(Res.string.account_guest_detail),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -114,7 +115,7 @@ private fun GuestAccountCard(onSignInRequested: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
-                Text("Sign in or create account")
+                Text(appText(Res.string.account_sign_in_create))
             }
         }
     }
@@ -150,7 +151,7 @@ private fun AccountProfileCard(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    currentUser?.displayName ?: "Sequo customer",
+                    currentUser?.displayName ?: appText(Res.string.account_customer),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Black,
@@ -158,14 +159,14 @@ private fun AccountProfileCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    currentUser?.email ?: "No email loaded",
+                    currentUser?.email ?: appText(Res.string.account_no_email),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Provider: ${currentUser?.provider?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "unknown"}",
+                    "${appText(Res.string.account_provider)}: ${currentUser?.provider?.lowercase()?.replaceFirstChar { it.uppercase() } ?: appText(Res.string.account_unknown)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
@@ -176,7 +177,7 @@ private fun AccountProfileCard(
             IconButton(onClick = onLogout) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Logout,
-                    contentDescription = "Sign out",
+                    contentDescription = appText(Res.string.account_sign_out),
                     tint = MaterialTheme.colorScheme.error,
                 )
             }
