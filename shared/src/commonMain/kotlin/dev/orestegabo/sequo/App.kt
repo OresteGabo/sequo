@@ -4,6 +4,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,11 +28,14 @@ import dev.orestegabo.sequo.feature.auth.AuthScreen
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
 import dev.orestegabo.sequo.feature.legal.LegalScreen
 import dev.orestegabo.sequo.feature.settings.AppLanguage
+import dev.orestegabo.sequo.feature.settings.LocalAppLanguage
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.feature.splash.SplashScreen
 import dev.orestegabo.sequo.theme.SequoTheme
 import dev.orestegabo.sequo.ui.app.SequoShell
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import sequo.shared.generated.resources.*
 
 @Composable
 @Preview
@@ -139,151 +143,155 @@ private fun SequoApp(
     }
 
     if (!isAuthenticated && !guestMode) {
-        AuthScreen(
-            language = language,
-            onLanguageChange = { language = it },
-            emailAuthInProgress = emailAuthInProgress,
-            onEmailLogin = { email, password ->
-                if (emailAuthInProgress) return@AuthScreen
-                scope.launch {
-                    emailAuthInProgress = true
-                    authErrorMessage = null
-                    try {
-                        runCatching {
-                            authRepository.loginWithEmail(email, password)
-                            authRepository.currentUser()
-                        }.onSuccess { user ->
-                            currentUser = user
-                            isAuthenticated = user != null
-                            guestMode = false
-                        }.onFailure { error ->
-                            if (error is CancellationException) throw error
-                            authErrorMessage = error.message ?: "Email sign-in failed."
-                        }
-                    } finally {
-                        emailAuthInProgress = false
-                    }
-                }
-            },
-            onEmailSignUp = { email, password, name ->
-                if (emailAuthInProgress) return@AuthScreen
-                scope.launch {
-                    emailAuthInProgress = true
-                    authErrorMessage = null
-                    try {
-                        runCatching {
-                            authRepository.signUpWithEmail(email, password, name)
-                            authRepository.currentUser()
-                        }.onSuccess { user ->
-                            currentUser = user
-                            isAuthenticated = user != null
-                            guestMode = false
-                        }.onFailure { error ->
-                            if (error is CancellationException) throw error
-                            authErrorMessage = error.message ?: "Email sign-up failed."
-                        }
-                    } finally {
-                        emailAuthInProgress = false
-                    }
-                }
-            },
-            googleSignInInProgress = googleSignInInProgress,
-            onGoogleLogin = {
-                if (googleSignInInProgress) return@AuthScreen
-                scope.launch {
-                    googleSignInInProgress = true
-                    authErrorMessage = null
-                    try {
-                        val result = runCatching {
-                            onGoogleSignIn()
-                        }.getOrElse { error ->
-                            if (error is CancellationException) throw error
-                            GoogleSignInResult.Failure(error.message ?: "Google sign-in failed.")
-                        }
-
-                        when (result) {
-                            is GoogleSignInResult.Success -> {
-                                runCatching {
-                                    authRepository.loginWithGoogle(result.idToken)
-                                    authRepository.currentUser()
-                                }.onSuccess {
-                                    authErrorMessage = null
-                                    currentUser = it
-                                    isAuthenticated = it != null
-                                    guestMode = false
-                                }.onFailure { error ->
-                                    if (error is CancellationException) throw error
-                                    authErrorMessage = error.message ?: "Backend Google login failed."
-                                }
+        CompositionLocalProvider(LocalAppLanguage provides language) {
+            AuthScreen(
+                language = language,
+                onLanguageChange = { language = it },
+                emailAuthInProgress = emailAuthInProgress,
+                onEmailLogin = { email, password ->
+                    if (emailAuthInProgress) return@AuthScreen
+                    scope.launch {
+                        emailAuthInProgress = true
+                        authErrorMessage = null
+                        try {
+                            runCatching {
+                                authRepository.loginWithEmail(email, password)
+                                authRepository.currentUser()
+                            }.onSuccess { user ->
+                                currentUser = user
+                                isAuthenticated = user != null
+                                guestMode = false
+                            }.onFailure { error ->
+                                if (error is CancellationException) throw error
+                                authErrorMessage = error.message ?: "Email sign-in failed."
                             }
-                            GoogleSignInResult.Cancelled -> Unit
-                            is GoogleSignInResult.Failure -> {
-                                authErrorMessage = result.message
-                            }
+                        } finally {
+                            emailAuthInProgress = false
                         }
-                    } finally {
-                        googleSignInInProgress = false
-                    }
-                }
-            },
-            onAppleLogin = {
-                authErrorMessage = "Apple sign-in needs native identity token wiring before it can complete."
-            },
-            onFacebookLogin = {
-                authErrorMessage = "Facebook sign-in needs native provider token wiring before it can complete."
-            },
-            onWhatsAppLogin = {
-                authErrorMessage = "WhatsApp sign-in needs the OTP flow wired into this compact launcher."
-            },
-            onPasskeyLogin = {
-                authErrorMessage = "Passkey sign-in needs native passkey assertion wiring before it can complete."
-            },
-            onSequoLogin = {
-                authErrorMessage = "Login by Sequo needs cross-device approval wiring before it can complete."
-            },
-            onSkipAuth = {
-                currentUser = null
-                isAuthenticated = false
-                guestMode = true
-                authErrorMessage = null
-            },
-            onPrivacyTermsClick = { legalScreenTab = LegalInitialTab.Privacy },
-        )
-        authErrorMessage?.let { message ->
-            AlertDialog(
-                onDismissRequest = { authErrorMessage = null },
-                title = { Text("Sign in") },
-                text = { Text(message) },
-                confirmButton = {
-                    TextButton(onClick = { authErrorMessage = null }) {
-                        Text("OK")
                     }
                 },
+                onEmailSignUp = { email, password, name ->
+                    if (emailAuthInProgress) return@AuthScreen
+                    scope.launch {
+                        emailAuthInProgress = true
+                        authErrorMessage = null
+                        try {
+                            runCatching {
+                                authRepository.signUpWithEmail(email, password, name)
+                                authRepository.currentUser()
+                            }.onSuccess { user ->
+                                currentUser = user
+                                isAuthenticated = user != null
+                                guestMode = false
+                            }.onFailure { error ->
+                                if (error is CancellationException) throw error
+                                authErrorMessage = error.message ?: "Email sign-up failed."
+                            }
+                        } finally {
+                            emailAuthInProgress = false
+                        }
+                    }
+                },
+                googleSignInInProgress = googleSignInInProgress,
+                onGoogleLogin = {
+                    if (googleSignInInProgress) return@AuthScreen
+                    scope.launch {
+                        googleSignInInProgress = true
+                        authErrorMessage = null
+                        try {
+                            val result = runCatching {
+                                onGoogleSignIn()
+                            }.getOrElse { error ->
+                                if (error is CancellationException) throw error
+                                GoogleSignInResult.Failure(error.message ?: "Google sign-in failed.")
+                            }
+
+                            when (result) {
+                                is GoogleSignInResult.Success -> {
+                                    runCatching {
+                                        authRepository.loginWithGoogle(result.idToken)
+                                        authRepository.currentUser()
+                                    }.onSuccess {
+                                        authErrorMessage = null
+                                        currentUser = it
+                                        isAuthenticated = it != null
+                                        guestMode = false
+                                    }.onFailure { error ->
+                                        if (error is CancellationException) throw error
+                                        authErrorMessage = error.message ?: "Backend Google login failed."
+                                    }
+                                }
+                                GoogleSignInResult.Cancelled -> Unit
+                                is GoogleSignInResult.Failure -> {
+                                    authErrorMessage = result.message
+                                }
+                            }
+                        } finally {
+                            googleSignInInProgress = false
+                        }
+                    }
+                },
+                onAppleLogin = {
+                    authErrorMessage = "Apple sign-in needs native identity token wiring before it can complete."
+                },
+                onFacebookLogin = {
+                    authErrorMessage = "Facebook sign-in needs native provider token wiring before it can complete."
+                },
+                onWhatsAppLogin = {
+                    authErrorMessage = "WhatsApp sign-in needs the OTP flow wired into this compact launcher."
+                },
+                onPasskeyLogin = {
+                    authErrorMessage = "Passkey sign-in needs native passkey assertion wiring before it can complete."
+                },
+                onSequoLogin = {
+                    authErrorMessage = "Login by Sequo needs cross-device approval wiring before it can complete."
+                },
+                onSkipAuth = {
+                    currentUser = null
+                    isAuthenticated = false
+                    guestMode = true
+                    authErrorMessage = null
+                },
+                onPrivacyTermsClick = { legalScreenTab = LegalInitialTab.Privacy },
             )
+            authErrorMessage?.let { message ->
+                AlertDialog(
+                    onDismissRequest = { authErrorMessage = null },
+                    title = { Text(appText(Res.string.auth_dialog_title)) },
+                    text = { Text(message) },
+                    confirmButton = {
+                        TextButton(onClick = { authErrorMessage = null }) {
+                            Text(appText(Res.string.common_ok))
+                        }
+                    },
+                )
+            }
         }
         return
     }
 
-    SequoShell(
-        currentUser = currentUser,
-        isGuest = guestMode,
-        onOpenLegal = { legalScreenTab = it },
-        onHomeEntered = onHomeEntered,
-        openNotificationsRequest = openNotificationsRequest,
-        onSignInRequested = {
-            guestMode = false
-            isAuthenticated = false
-            currentUser = null
-        },
-        onLogout = {
-            scope.launch {
-                authRepository.logout()
-                currentUser = null
-                isAuthenticated = false
+    CompositionLocalProvider(LocalAppLanguage provides language) {
+        SequoShell(
+            currentUser = currentUser,
+            isGuest = guestMode,
+            onOpenLegal = { legalScreenTab = it },
+            onHomeEntered = onHomeEntered,
+            openNotificationsRequest = openNotificationsRequest,
+            onSignInRequested = {
                 guestMode = false
-            }
-        },
-    )
+                isAuthenticated = false
+                currentUser = null
+            },
+            onLogout = {
+                scope.launch {
+                    authRepository.logout()
+                    currentUser = null
+                    isAuthenticated = false
+                    guestMode = false
+                }
+            },
+        )
+    }
 }
 
 internal expect val shouldShowInAppSplash: Boolean
