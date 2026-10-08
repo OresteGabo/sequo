@@ -38,16 +38,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.theme.SequoPrimary
 import dev.orestegabo.sequo.ui.chrome.SequoIconMark
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+import sequo.shared.generated.resources.*
 
-private enum class NotificationFilter(val label: String) {
-    Today("Today"),
-    Attention("Attention"),
-    Promos("Promos"),
-    Archived("Archived"),
+private enum class NotificationFilter {
+    Today,
+    Attention,
+    Promos,
+    Archived,
 }
 
 private data class SequoNotificationItem(
@@ -118,12 +120,7 @@ internal fun NotificationsContent(
         onFilterSelected = { selectedFilter = it },
     )
     NotificationListHeader(
-        title = when (selectedFilter) {
-            NotificationFilter.Today -> "Today"
-            NotificationFilter.Attention -> "Needs attention"
-            NotificationFilter.Promos -> "Promos"
-            NotificationFilter.Archived -> "Archived"
-        },
+        title = selectedFilter.headerTitle(),
         action = "${visibleItems.size}",
     )
     if (visibleItems.isEmpty()) {
@@ -167,12 +164,12 @@ private fun NotificationCompactSummary(unreadCount: Int, urgentCount: Int, archi
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "Inbox",
+                    appText(Res.string.notif_inbox),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    "$unreadCount unread / $urgentCount need attention / $archivedCount archived",
+                    "$unreadCount ${appText(Res.string.notif_unread)} / $urgentCount ${appText(Res.string.notif_need_attention)} / $archivedCount ${appText(Res.string.notif_archived_lower)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -261,7 +258,7 @@ private fun NotificationEmptyState(
             textAlign = TextAlign.Center,
         )
         Text(
-            text = "All your notifications will be saved here for you to access their state anytime.",
+            text = appText(Res.string.notif_empty_detail),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.52f),
             textAlign = TextAlign.Center,
@@ -352,12 +349,29 @@ private fun EmptyNotificationBell(
     }
 }
 
+@Composable
 private fun emptyStateTitle(filter: NotificationFilter): String =
     when (filter) {
-        NotificationFilter.Today -> "No notifications yet"
-        NotificationFilter.Attention -> "No urgent notifications"
-        NotificationFilter.Promos -> "No promos yet"
-        NotificationFilter.Archived -> "Nothing archived"
+        NotificationFilter.Today -> appText(Res.string.notif_empty_today)
+        NotificationFilter.Attention -> appText(Res.string.notif_empty_attention)
+        NotificationFilter.Promos -> appText(Res.string.notif_empty_promos)
+        NotificationFilter.Archived -> appText(Res.string.notif_empty_archived)
+    }
+
+@Composable
+private fun NotificationFilter.label(): String =
+    when (this) {
+        NotificationFilter.Today -> appText(Res.string.notif_filter_today)
+        NotificationFilter.Attention -> appText(Res.string.notif_filter_attention)
+        NotificationFilter.Promos -> appText(Res.string.notif_filter_promos)
+        NotificationFilter.Archived -> appText(Res.string.notif_filter_archived)
+    }
+
+@Composable
+private fun NotificationFilter.headerTitle(): String =
+    when (this) {
+        NotificationFilter.Attention -> appText(Res.string.notif_header_attention)
+        else -> label()
     }
 
 @Composable
@@ -380,7 +394,7 @@ private fun NotificationFilters(
                         modifier = Modifier.size(17.dp),
                     )
                 },
-                label = { Text(filter.label) },
+                label = { Text(filter.label()) },
             )
         }
         Spacer(Modifier.width(2.dp))
@@ -474,7 +488,7 @@ private fun NotificationRow(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                if (cancelled) "${item.title} cancelled" else item.title,
+                                if (cancelled) "${item.title} ${appText(Res.string.notif_cancelled_suffix)}" else item.title,
                                 modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = if (item.unread && !cancelled) FontWeight.Bold else FontWeight.SemiBold,
@@ -493,7 +507,7 @@ private fun NotificationRow(
                             }
                         }
                         Text(
-                            if (cancelled) "The seller offer was refused and removed from checkout." else item.detail,
+                            if (cancelled) appText(Res.string.notif_cancelled_detail) else item.detail,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = rowAlpha),
                             maxLines = 2,
@@ -512,12 +526,12 @@ private fun NotificationRow(
                         )
                         when {
                             archived -> NotificationActionPill(
-                                label = "Restore",
+                                label = appText(Res.string.notif_restore),
                                 accent = item.accent,
                                 onClick = onRestore,
                             )
                             item.secureCode != null && !cancelled -> NotificationActionPill(
-                                label = item.action ?: "Show",
+                                label = item.action ?: appText(Res.string.notif_show),
                                 accent = item.accent,
                                 onClick = {
                                     secureCodeVisible.value = true
@@ -579,7 +593,7 @@ private fun SwipeArchiveBackground(modifier: Modifier = Modifier, visible: Boole
                     modifier = Modifier.size(18.dp),
                 )
                 Text(
-                    "Archive",
+                    appText(Res.string.notif_archive),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.SemiBold,
@@ -647,7 +661,7 @@ private fun NotificationExpandedActions(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        "Pickup code",
+                        appText(Res.string.notif_pickup_code),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -658,7 +672,7 @@ private fun NotificationExpandedActions(
                         fontWeight = FontWeight.Black,
                     )
                     Text(
-                        "Show this only at handoff.",
+                        appText(Res.string.notif_handoff_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
