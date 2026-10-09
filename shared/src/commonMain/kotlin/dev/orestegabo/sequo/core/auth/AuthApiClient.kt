@@ -48,7 +48,7 @@ class AuthApiClient(
         } catch (error: SequoApiException) {
             throw AuthApiException(
                 statusCode = error.statusCode,
-                safeMessage = socialLoginFailureMessage(provider, error.statusCode, error.responseBody),
+                userMessage = socialLoginFailureMessage(provider, error.statusCode, error.responseBody),
                 cause = error,
             )
         }
@@ -64,7 +64,7 @@ class AuthApiClient(
         } catch (error: SequoApiException) {
             throw AuthApiException(
                 statusCode = error.statusCode,
-                safeMessage = emailAuthFailureMessage(error.statusCode, error.responseBody),
+                userMessage = emailAuthFailureMessage(error.statusCode, error.responseBody),
                 cause = error,
             )
         }
@@ -80,7 +80,7 @@ class AuthApiClient(
         } catch (error: SequoApiException) {
             throw AuthApiException(
                 statusCode = error.statusCode,
-                safeMessage = emailAuthFailureMessage(error.statusCode, error.responseBody),
+                userMessage = emailAuthFailureMessage(error.statusCode, error.responseBody),
                 cause = error,
             )
         }
@@ -95,7 +95,7 @@ class AuthApiClient(
         } catch (error: SequoApiException) {
             throw AuthApiException(
                 statusCode = error.statusCode,
-                safeMessage = "Could not load the authenticated user profile.",
+                userMessage = AuthUserMessage.ProfileLoadFailed,
                 cause = error,
             )
         }
@@ -110,7 +110,7 @@ class AuthApiClient(
         } catch (error: SequoApiException) {
             throw AuthApiException(
                 statusCode = error.statusCode,
-                safeMessage = "Could not restore the saved session.",
+                userMessage = AuthUserMessage.SessionRestoreFailed,
                 cause = error,
             )
         }
@@ -136,7 +136,7 @@ class AuthApiClient(
         if (statusCode !in 200..299) {
             throw AuthApiException(
                 statusCode = statusCode,
-                safeMessage = socialLoginFailureMessage(provider, statusCode, bodyAsText()),
+                userMessage = socialLoginFailureMessage(provider, statusCode, bodyAsText()),
             )
         }
 
@@ -147,30 +147,23 @@ class AuthApiClient(
     }
 }
 
-private fun emailAuthFailureMessage(statusCode: Int, responseBody: String?): String {
-    val error = responseBody
-        ?.takeIf { it.isNotBlank() }
-        ?.let { body -> runCatching { defaultNetworkJson.decodeFromString<AuthErrorResponse>(body) }.getOrNull() }
-
+private fun emailAuthFailureMessage(statusCode: Int, @Suppress("UNUSED_PARAMETER") responseBody: String?): AuthUserMessage {
     return when (statusCode) {
-        400 -> error?.safeMessage() ?: "Check the email and password format."
-        401 -> "Email or password is incorrect."
-        409 -> error?.safeMessage() ?: "This account must be opened with another sign-in method."
-        429 -> error?.safeMessage() ?: "Too many attempts. Please wait before trying again."
-        else -> "Authentication is temporarily unavailable. Please try again later."
+        400 -> AuthUserMessage.EmailFormatInvalid
+        401 -> AuthUserMessage.EmailPasswordIncorrect
+        409 -> AuthUserMessage.AccountUsesAnotherMethod
+        429 -> AuthUserMessage.TooManyAttempts
+        else -> AuthUserMessage.AuthenticationUnavailable
     }
 }
 
-private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode: Int, responseBody: String?): String {
+private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode: Int, responseBody: String?): AuthUserMessage {
     if (provider != SocialLoginProvider.Google) {
-        val error = responseBody
-            ?.takeIf { it.isNotBlank() }
-            ?.let { body -> runCatching { defaultNetworkJson.decodeFromString<AuthErrorResponse>(body) }.getOrNull() }
         return when (statusCode) {
-            401 -> error?.safeMessage() ?: "${provider.displayName} sign-in could not be completed."
-            409 -> error?.safeMessage() ?: "This account must be opened with another sign-in method."
-            429 -> error?.safeMessage() ?: "Too many attempts. Please wait before trying again."
-            else -> "${provider.displayName} sign-in is temporarily unavailable. Please try again later."
+            401 -> AuthUserMessage.SocialSignInFailed
+            409 -> AuthUserMessage.AccountUsesAnotherMethod
+            429 -> AuthUserMessage.TooManyAttempts
+            else -> AuthUserMessage.SocialSignInUnavailable
         }
     }
 
@@ -182,54 +175,28 @@ private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode:
 
     return when (googleError?.reason ?: googleError?.code ?: googleError?.error) {
         "forbidden", "access_denied" -> {
-            "Google sign-in is temporarily unavailable. Please try again later."
+            AuthUserMessage.GoogleSignInUnavailable
         }
         "invalid_audience" -> {
-            "Google sign-in is temporarily unavailable. Please use another sign-in option or try again later."
+            AuthUserMessage.GoogleSignInTemporarilyUnavailable
         }
         "missing_allowed_audience" -> {
-            "Google sign-in is temporarily unavailable. Please use another sign-in option or try again later."
+            AuthUserMessage.GoogleSignInTemporarilyUnavailable
         }
-        "expired_token" -> "Google returned an expired sign-in token. Please try again."
-        "missing_email" -> "Google did not share an email address for this account."
-        "unverified_email" -> "Google says this account email is not verified."
+        "expired_token" -> AuthUserMessage.GoogleSignInExpired
+        "missing_email" -> AuthUserMessage.GoogleMissingEmail
+        "unverified_email" -> AuthUserMessage.GoogleEmailUnverified
         "invalid_issuer", "invalid_signature", "malformed_token", "invalid_token" -> {
-            "Google sign-in could not be verified. Please try again."
+            AuthUserMessage.GoogleSignInCouldNotVerify
         }
         "account_link_required" -> {
-            googleError?.safeMessage() ?: "This email is already linked to another sign-in method."
+            AuthUserMessage.AccountUsesAnotherMethod
         }
         else -> when {
-            statusCode == 403 -> "Google sign-in is temporarily unavailable. Please try again later."
-            else -> googleError?.safeMessage() ?: "Google sign-in is temporarily unavailable. Please try again later."
+            statusCode == 403 -> AuthUserMessage.GoogleSignInUnavailable
+            else -> AuthUserMessage.GoogleSignInUnavailable
         }
     }
-}
-
-private fun AuthErrorResponse.safeMessage(): String? =
-    message?.takeIf { it.isSafeUserMessage() }
-
-private fun GoogleLoginErrorResponse.safeMessage(): String? =
-    message?.takeIf { it.isSafeUserMessage() }
-
-private fun String.isSafeUserMessage(): Boolean {
-    val normalized = lowercase()
-    val debugMarkers = listOf(
-        "exception",
-        "stack",
-        "trace",
-        "http ",
-        "sql",
-        "token",
-        "jwt",
-        "bearer",
-        "secret",
-        "password",
-        "client id",
-        "backend",
-        "gateway",
-    )
-    return isNotBlank() && length <= 180 && debugMarkers.none { it in normalized }
 }
 
 data class AuthApiResponse(
@@ -256,9 +223,27 @@ data class CurrentUser(
 
 class AuthApiException(
     val statusCode: Int,
-    val safeMessage: String,
+    val userMessage: AuthUserMessage,
     override val cause: Throwable? = null,
-) : Exception(safeMessage, cause)
+) : Exception(userMessage.name, cause)
+
+enum class AuthUserMessage {
+    EmailFormatInvalid,
+    EmailPasswordIncorrect,
+    AccountUsesAnotherMethod,
+    TooManyAttempts,
+    AuthenticationUnavailable,
+    SocialSignInFailed,
+    SocialSignInUnavailable,
+    GoogleSignInUnavailable,
+    GoogleSignInTemporarilyUnavailable,
+    GoogleSignInExpired,
+    GoogleMissingEmail,
+    GoogleEmailUnverified,
+    GoogleSignInCouldNotVerify,
+    ProfileLoadFailed,
+    SessionRestoreFailed,
+}
 
 @Serializable
 data class AuthSession(
