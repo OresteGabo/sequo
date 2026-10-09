@@ -49,14 +49,27 @@ private class AndroidAuthSessionStore(
             runCatching { json.decodeFromString<AuthSession>(encodedSession) }.getOrNull()
         }
 
+    override suspend fun saveRememberedUser(user: CurrentUser) {
+        preferences.edit()
+            .putString(RememberedUserKey, json.encodeToString(user))
+            .apply()
+    }
+
+    override suspend fun getRememberedUser(): CurrentUser? =
+        preferences.getString(RememberedUserKey, null)?.let { encodedUser ->
+            runCatching { json.decodeFromString<CurrentUser>(encodedUser) }.getOrNull()
+        }
+
     override suspend fun clear() {
         preferences.edit()
             .remove(AuthSessionKey)
+            .remove(RememberedUserKey)
             .apply()
     }
 
     private companion object {
         const val AuthSessionKey = "auth_session"
+        const val RememberedUserKey = "remembered_user"
     }
 }
 
@@ -71,6 +84,10 @@ private class PreviewAuthSessionStore : AuthSessionStore {
     }
 
     override suspend fun get(): AuthSession? = session
+
+    override suspend fun saveRememberedUser(user: CurrentUser) = Unit
+
+    override suspend fun getRememberedUser(): CurrentUser? = null
 
     override suspend fun clear() {
         session = null
