@@ -31,6 +31,7 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 private val EnglishStrings = mapOf(
     Res.string.auth_sign_in_with.key to "Sign in with",
     Res.string.auth_continue_guest.key to "Continue as a guest",
+    Res.string.auth_continue_as.key to "Continue as %1\$s",
     Res.string.auth_terms_prefix.key to "By continuing you accept",
     Res.string.auth_privacy_terms.key to "Privacy & Terms",
     Res.string.auth_more_options.key to "More sign-in options",
@@ -154,6 +155,7 @@ private val EnglishStrings = mapOf(
 private val FrenchStrings = mapOf(
     Res.string.auth_sign_in_with.key to "Connectez-vous avec",
     Res.string.auth_continue_guest.key to "Continuer en invite",
+    Res.string.auth_continue_as.key to "Continuer avec %1\$s",
     Res.string.auth_terms_prefix.key to "Vous acceptez",
     Res.string.auth_privacy_terms.key to "Confidentialite & conditions",
     Res.string.auth_more_options.key to "Autres options",
