@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -72,7 +73,7 @@ internal fun OrdersContent() {
             SequoErrorPanel(
                 kind = SequoErrorKind.OrderSync,
                 onRetry = {},
-                technicalNote = "No ${selectedTab.label.lowercase()} orders returned by the API yet. Orders require an authenticated customer session.",
+                technicalNote = "Your ${selectedTab.label.lowercase()} orders will appear here after checkout.",
             )
         } else {
             when (selectedTab) {
@@ -183,9 +184,9 @@ private fun ReturnPolicyNote(returnableCount: Int) {
         ) {
             SequoIconMark(Icons.AutoMirrored.Filled.AssignmentReturn, MaterialTheme.colorScheme.primary, Modifier.size(36.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Returns stay current for 72 hours", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(appText(Res.string.orders_returns_current_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Eligible delivered orders remain here until the return window closes.",
+                    appText(Res.string.orders_returns_current_detail),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
