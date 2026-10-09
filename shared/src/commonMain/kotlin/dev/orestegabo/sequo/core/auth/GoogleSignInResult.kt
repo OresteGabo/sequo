@@ -11,6 +11,14 @@ sealed interface GoogleSignInResult {
     data object Cancelled : GoogleSignInResult
 
     data class Failure(
-        val message: String,
+        val reason: GoogleSignInFailureReason,
     ) : GoogleSignInResult
+}
+
+enum class GoogleSignInFailureReason {
+    Failed,
+    Interrupted,
+    InProgress,
+    NotConfigured,
+    Unavailable,
 }
