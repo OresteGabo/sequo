@@ -101,6 +101,21 @@ class AuthApiClient(
         }
     }
 
+    suspend fun refreshSession(refreshToken: String): AuthSession {
+        return try {
+            httpClient.post("${baseUrl.trimEnd('/')}/api/auth/refresh") {
+                headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(RefreshRequest(refreshToken = refreshToken, deviceId = deviceIdProvider()))
+            }.body()
+        } catch (error: SequoApiException) {
+            throw AuthApiException(
+                statusCode = error.statusCode,
+                safeMessage = "Could not restore the saved session.",
+                cause = error,
+            )
+        }
+    }
+
     suspend fun logout(refreshToken: String) {
         try {
             httpClient.post("${baseUrl.trimEnd('/')}/api/auth/logout") {
@@ -250,6 +265,12 @@ private data class EmailSignUpRequest(
 private data class EmailLoginRequest(
     val email: String,
     val password: String,
+)
+
+@Serializable
+private data class RefreshRequest(
+    val refreshToken: String,
+    val deviceId: String,
 )
 
 @Serializable
