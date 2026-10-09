@@ -2,6 +2,7 @@
 <resources>
     <string name="auth_sign_in_with">Sign in with</string>
     <string name="auth_continue_guest">Continue as a guest</string>
+    <string name="auth_continue_as">Continue as %1$s</string>
     <string name="auth_terms_prefix">By continuing you accept</string>
     <string name="auth_privacy_terms">Privacy &amp; Terms</string>
     <string name="auth_more_options">More sign-in options</string>
