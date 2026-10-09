@@ -2,6 +2,7 @@
 <resources>
     <string name="auth_sign_in_with">Connectez-vous avec</string>
     <string name="auth_continue_guest">Continuer en invite</string>
+    <string name="auth_continue_as">Continuer avec %1$s</string>
     <string name="auth_terms_prefix">Vous acceptez</string>
     <string name="auth_privacy_terms">Confidentialite &amp; conditions</string>
     <string name="auth_more_options">Autres options</string>
