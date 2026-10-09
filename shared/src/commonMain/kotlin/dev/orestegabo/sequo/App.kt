@@ -72,7 +72,9 @@ private fun SequoApp(
     var authErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var googleSignInInProgress by rememberSaveable { mutableStateOf(false) }
     var emailAuthInProgress by rememberSaveable { mutableStateOf(false) }
+    var sessionRestoreChecked by rememberSaveable { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<CurrentUser?>(null) }
+    var rememberedUser by remember { mutableStateOf<CurrentUser?>(null) }
     val authSessionStore = rememberAuthSessionStore()
     val secureTokenStorage = rememberSecureTokenStorage()
     val biometricAuthenticator = rememberBiometricAuthenticator()
@@ -97,14 +99,32 @@ private fun SequoApp(
     }
 
     LaunchedEffect(authRepository) {
+        rememberedUser = authRepository.getRememberedUser()
+
         if (authRepository.getSavedSession() != null && !authRepository.hasCachedRefreshToken()) {
             authRepository.migrateSavedSessionToSecureCache()
+        }
+
+        val restoredUser = runCatching { authRepository.restoreSavedSession() }.getOrNull()
+        if (restoredUser != null) {
+            currentUser = restoredUser
+            rememberedUser = restoredUser
+            isAuthenticated = true
+            guestMode = false
+            authErrorMessage = null
+            sessionRestoreChecked = true
+            return@LaunchedEffect
         }
 
         if (authRepository.hasCachedRefreshToken()) {
             when (val unlockResult = authRepository.unlockCachedSession()) {
                 is SecureSessionUnlockResult.Unlocked -> {
-                    currentUser = null
+                    val user = runCatching { authRepository.restoreSavedSession() }.getOrNull()
+                    currentUser = user
+                    user?.let {
+                        rememberedUser = it
+                        authRepository.rememberUser(it)
+                    }
                     isAuthenticated = true
                     guestMode = false
                     authErrorMessage = null
@@ -130,10 +150,16 @@ private fun SequoApp(
                 }
             }
         }
+        sessionRestoreChecked = true
     }
 
     if (showSplash) {
         SplashScreen(onTimeout = { showSplash = false })
+        return
+    }
+
+    if (!sessionRestoreChecked) {
+        SplashScreen()
         return
     }
 
@@ -151,6 +177,33 @@ private fun SequoApp(
                 language = language,
                 onLanguageChange = { language = it },
                 emailAuthInProgress = emailAuthInProgress,
+                rememberedUser = rememberedUser,
+                onContinueRememberedUser = {
+                    if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
+                    scope.launch {
+                        emailAuthInProgress = true
+                        authErrorMessage = null
+                        try {
+                            runCatching {
+                                authRepository.restoreSavedSession()
+                            }.onSuccess { user ->
+                                if (user != null) {
+                                    currentUser = user
+                                    rememberedUser = user
+                                    isAuthenticated = true
+                                    guestMode = false
+                                } else {
+                                    authErrorMessage = "Please sign in again to continue."
+                                }
+                            }.onFailure { error ->
+                                if (error is CancellationException) throw error
+                                authErrorMessage = error.message ?: "Please sign in again to continue."
+                            }
+                        } finally {
+                            emailAuthInProgress = false
+                        }
+                    }
+                },
                 onEmailLogin = { email, password ->
                     if (emailAuthInProgress) return@AuthScreen
                     scope.launch {
@@ -162,6 +215,10 @@ private fun SequoApp(
                                 authRepository.currentUser()
                             }.onSuccess { user ->
                                 currentUser = user
+                                user?.let {
+                                    rememberedUser = it
+                                    authRepository.rememberUser(it)
+                                }
                                 isAuthenticated = user != null
                                 guestMode = false
                             }.onFailure { error ->
@@ -184,6 +241,10 @@ private fun SequoApp(
                                 authRepository.currentUser()
                             }.onSuccess { user ->
                                 currentUser = user
+                                user?.let {
+                                    rememberedUser = it
+                                    authRepository.rememberUser(it)
+                                }
                                 isAuthenticated = user != null
                                 guestMode = false
                             }.onFailure { error ->
@@ -217,6 +278,10 @@ private fun SequoApp(
                                     }.onSuccess {
                                         authErrorMessage = null
                                         currentUser = it
+                                        it?.let { user ->
+                                            rememberedUser = user
+                                            authRepository.rememberUser(user)
+                                        }
                                         isAuthenticated = it != null
                                         guestMode = false
                                     }.onFailure { error ->
