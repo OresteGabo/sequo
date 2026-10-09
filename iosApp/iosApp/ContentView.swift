@@ -76,6 +76,9 @@ struct ComposeView: UIViewControllerRepresentable {
                     _ = complete(result)
                 }
             },
+            onGoogleSignOut: {
+                GoogleSignInPresenter.signOut()
+            },
             onHomeEntered: { language in
                 SequoNotificationPresenter.shared.notifyHomeReached(language: language)
             },
@@ -89,6 +92,10 @@ struct ComposeView: UIViewControllerRepresentable {
 }
 
 private enum GoogleSignInPresenter {
+    static func signOut() {
+        GIDSignIn.sharedInstance.signOut()
+    }
+
     static func signIn(complete: @escaping (any GoogleSignInResult) -> Void) {
         guard let presenter = topViewController() else {
             complete(GoogleSignInResultFailure(message: "Google sign-in could not open on this device."))
