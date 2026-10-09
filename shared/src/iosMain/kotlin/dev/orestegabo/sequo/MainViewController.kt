@@ -10,10 +10,11 @@ fun MainViewController(
     onGoogleSignIn: (((GoogleSignInResult) -> Unit) -> Unit) = { complete ->
         complete(GoogleSignInResult.Failure("Google sign-in is not configured on this platform yet."))
     },
+    onGoogleSignOut: () -> Unit = {},
     onHomeEntered: (AppLanguage) -> Unit = {},
     openNotificationsRequest: Int = 0,
 ) = ComposeUIViewController {
-    App(
+        App(
         onGoogleSignIn = {
             suspendCancellableCoroutine { continuation ->
                 onGoogleSignIn { result ->
@@ -23,6 +24,7 @@ fun MainViewController(
                 }
             }
         },
+        onGoogleSignOut = { onGoogleSignOut() },
         onHomeEntered = onHomeEntered,
         openNotificationsRequest = openNotificationsRequest,
     )
