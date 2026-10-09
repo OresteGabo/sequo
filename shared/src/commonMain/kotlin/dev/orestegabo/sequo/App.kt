@@ -17,8 +17,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import dev.orestegabo.sequo.core.auth.AuthApiClient
 import dev.orestegabo.sequo.core.auth.AuthApiException
+import dev.orestegabo.sequo.core.auth.AuthUserMessage
 import dev.orestegabo.sequo.core.auth.AuthRepository
+import dev.orestegabo.sequo.core.auth.BiometricPromptConfig
 import dev.orestegabo.sequo.core.auth.CurrentUser
+import dev.orestegabo.sequo.core.auth.GoogleSignInFailureReason
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
 import dev.orestegabo.sequo.core.auth.SecureSessionCache
 import dev.orestegabo.sequo.core.auth.SecureSessionUnlockResult
@@ -39,13 +42,14 @@ import dev.orestegabo.sequo.theme.SequoTheme
 import dev.orestegabo.sequo.ui.app.SequoShell
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 import sequo.shared.generated.resources.*
 
 @Composable
 @Preview
 fun App(
     onGoogleSignIn: suspend () -> GoogleSignInResult = {
-        GoogleSignInResult.Failure("Google sign-in is not configured on this platform yet.")
+        GoogleSignInResult.Failure(GoogleSignInFailureReason.NotConfigured)
     },
     onGoogleSignOut: suspend () -> Unit = {},
     onHomeEntered: (AppLanguage) -> Unit = {},
@@ -126,6 +130,20 @@ private fun SequoApp(
         )
     }
     val scope = rememberCoroutineScope()
+    val biometricPromptTitle = appText(Res.string.biometric_prompt_title)
+    val biometricPromptSubtitle = appText(Res.string.biometric_prompt_subtitle)
+    val biometricPromptCancel = appText(Res.string.common_cancel)
+    val biometricUnavailable = appText(Res.string.auth_error_biometric_unavailable)
+    val biometricFailed = appText(Res.string.auth_error_biometric_failed)
+    val signInAgain = appText(Res.string.auth_error_sign_in_again)
+    val emailSignInFailed = appText(Res.string.auth_error_email_sign_in_failed)
+    val accountCreationFailed = appText(Res.string.auth_error_account_creation_failed)
+    val googleSignInFailed = appText(Res.string.auth_error_google_failed)
+    val appleNotReady = appText(Res.string.auth_error_apple_not_ready)
+    val facebookNotReady = appText(Res.string.auth_error_facebook_not_ready)
+    val whatsappNotReady = appText(Res.string.auth_error_whatsapp_not_ready)
+    val passkeyNotReady = appText(Res.string.auth_error_passkey_not_ready)
+    val sequoLoginNotReady = appText(Res.string.auth_error_sequo_login_not_ready)
 
     DisposableEffect(authRepository) {
         onDispose { authRepository.close() }
@@ -150,7 +168,13 @@ private fun SequoApp(
         }
 
         if (authRepository.hasCachedRefreshToken()) {
-            when (val unlockResult = authRepository.unlockCachedSession()) {
+            when (val unlockResult = authRepository.unlockCachedSession(
+                BiometricPromptConfig(
+                    title = biometricPromptTitle,
+                    subtitle = biometricPromptSubtitle,
+                    negativeButtonText = biometricPromptCancel,
+                ),
+            )) {
                 is SecureSessionUnlockResult.Unlocked -> {
                     val user = runCatching { authRepository.restoreSavedSession() }.getOrNull()
                     currentUser = user
@@ -173,13 +197,13 @@ private fun SequoApp(
                     currentUser = null
                     isAuthenticated = false
                     guestMode = false
-                    authErrorMessage = "Biometric unlock is not available on this device. Sign in again to continue."
+                    authErrorMessage = biometricUnavailable
                 }
                 is SecureSessionUnlockResult.Failed -> {
                     currentUser = null
                     isAuthenticated = false
                     guestMode = false
-                    authErrorMessage = unlockResult.message ?: "Biometric unlock failed. Sign in again to continue."
+                    authErrorMessage = biometricFailed
                 }
             }
         }
@@ -226,11 +250,11 @@ private fun SequoApp(
                                     isAuthenticated = true
                                     guestMode = false
                                 } else {
-                                    authErrorMessage = "Please sign in again to continue."
+                                    authErrorMessage = signInAgain
                                 }
                             }.onFailure { error ->
                                 if (error is CancellationException) throw error
-                                authErrorMessage = userFacingAuthError(error, "Please sign in again to continue.")
+                                authErrorMessage = userFacingAuthError(error, signInAgain, language)
                             }
                         } finally {
                             emailAuthInProgress = false
@@ -256,7 +280,7 @@ private fun SequoApp(
                                 guestMode = false
                             }.onFailure { error ->
                                 if (error is CancellationException) throw error
-                                authErrorMessage = userFacingAuthError(error, "Email sign-in could not be completed. Please try again.")
+                                authErrorMessage = userFacingAuthError(error, emailSignInFailed, language)
                             }
                         } finally {
                             emailAuthInProgress = false
@@ -282,7 +306,7 @@ private fun SequoApp(
                                 guestMode = false
                             }.onFailure { error ->
                                 if (error is CancellationException) throw error
-                                authErrorMessage = userFacingAuthError(error, "Account creation could not be completed. Please try again.")
+                                authErrorMessage = userFacingAuthError(error, accountCreationFailed, language)
                             }
                         } finally {
                             emailAuthInProgress = false
@@ -300,7 +324,7 @@ private fun SequoApp(
                                 onGoogleSignIn()
                             }.getOrElse { error ->
                                 if (error is CancellationException) throw error
-                                GoogleSignInResult.Failure("Google sign-in could not be completed. Please try again.")
+                                GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
                             }
 
                             when (result) {
@@ -319,12 +343,12 @@ private fun SequoApp(
                                         guestMode = false
                                     }.onFailure { error ->
                                         if (error is CancellationException) throw error
-                                        authErrorMessage = userFacingAuthError(error, "Google sign-in could not be completed. Please try again.")
+                                        authErrorMessage = userFacingAuthError(error, googleSignInFailed, language)
                                     }
                                 }
                                 GoogleSignInResult.Cancelled -> Unit
                                 is GoogleSignInResult.Failure -> {
-                                    authErrorMessage = result.message
+                                    authErrorMessage = appText(result.reason.stringResource(), language)
                                 }
                             }
                         } finally {
@@ -333,19 +357,19 @@ private fun SequoApp(
                     }
                 },
                 onAppleLogin = {
-                    authErrorMessage = "Apple sign-in needs native identity token wiring before it can complete."
+                    authErrorMessage = appleNotReady
                 },
                 onFacebookLogin = {
-                    authErrorMessage = "Facebook sign-in needs native provider token wiring before it can complete."
+                    authErrorMessage = facebookNotReady
                 },
                 onWhatsAppLogin = {
-                    authErrorMessage = "WhatsApp sign-in needs the OTP flow wired into this compact launcher."
+                    authErrorMessage = whatsappNotReady
                 },
                 onPasskeyLogin = {
-                    authErrorMessage = "Passkey sign-in needs native passkey assertion wiring before it can complete."
+                    authErrorMessage = passkeyNotReady
                 },
                 onSequoLogin = {
-                    authErrorMessage = "Login by Sequo needs cross-device approval wiring before it can complete."
+                    authErrorMessage = sequoLoginNotReady
                 },
                 onSkipAuth = {
                     currentUser = null
@@ -400,10 +424,38 @@ private fun SequoApp(
     }
 }
 
-private fun userFacingAuthError(error: Throwable, fallback: String): String =
+private fun userFacingAuthError(error: Throwable, fallback: String, language: AppLanguage): String =
     when (error) {
-        is AuthApiException -> error.safeMessage
+        is AuthApiException -> appText(error.userMessage.stringResource(), language)
         else -> fallback
+    }
+
+private fun GoogleSignInFailureReason.stringResource(): StringResource =
+    when (this) {
+        GoogleSignInFailureReason.Failed -> Res.string.auth_error_google_failed
+        GoogleSignInFailureReason.Interrupted -> Res.string.auth_error_google_interrupted
+        GoogleSignInFailureReason.InProgress -> Res.string.auth_error_google_in_progress
+        GoogleSignInFailureReason.NotConfigured -> Res.string.auth_error_google_not_configured
+        GoogleSignInFailureReason.Unavailable -> Res.string.auth_error_google_unavailable
+    }
+
+private fun AuthUserMessage.stringResource(): StringResource =
+    when (this) {
+        AuthUserMessage.EmailFormatInvalid -> Res.string.auth_error_email_format
+        AuthUserMessage.EmailPasswordIncorrect -> Res.string.auth_error_email_password
+        AuthUserMessage.AccountUsesAnotherMethod -> Res.string.auth_error_account_other_method
+        AuthUserMessage.TooManyAttempts -> Res.string.auth_error_too_many_attempts
+        AuthUserMessage.AuthenticationUnavailable -> Res.string.auth_error_unavailable
+        AuthUserMessage.SocialSignInFailed -> Res.string.auth_error_social_failed
+        AuthUserMessage.SocialSignInUnavailable -> Res.string.auth_error_social_unavailable
+        AuthUserMessage.GoogleSignInUnavailable -> Res.string.auth_error_google_unavailable
+        AuthUserMessage.GoogleSignInTemporarilyUnavailable -> Res.string.auth_error_google_not_configured
+        AuthUserMessage.GoogleSignInExpired -> Res.string.auth_error_google_expired
+        AuthUserMessage.GoogleMissingEmail -> Res.string.auth_error_google_missing_email
+        AuthUserMessage.GoogleEmailUnverified -> Res.string.auth_error_google_unverified_email
+        AuthUserMessage.GoogleSignInCouldNotVerify -> Res.string.auth_error_google_could_not_verify
+        AuthUserMessage.ProfileLoadFailed -> Res.string.auth_error_profile_load_failed
+        AuthUserMessage.SessionRestoreFailed -> Res.string.auth_error_session_restore_failed
     }
 
 internal expect val shouldShowInAppSplash: Boolean
