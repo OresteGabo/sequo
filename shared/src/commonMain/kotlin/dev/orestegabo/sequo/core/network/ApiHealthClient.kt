@@ -29,7 +29,7 @@ class ApiHealthClient(
             ApiHealthResult(
                 requestReachedBackend = false,
                 isHealthyResponse = false,
-                message = error.message ?: "Unable to reach Sequo API",
+                message = "Unable to reach Sequo API",
             )
         }
 
