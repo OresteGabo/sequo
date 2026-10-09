@@ -43,6 +43,8 @@ private const val GoogleSignInTag = "SequoGoogleSignIn"
 private const val SequoNotificationChannelId = "sequo_home_updates_v2"
 private const val HomeWelcomeNotificationId = 1001
 private const val OpenNotificationsAction = "dev.orestegabo.sequo.OPEN_NOTIFICATIONS"
+private const val NotificationPreferencesName = "sequo_notification_preferences"
+private const val HomeWelcomeNotificationShownKey = "home_welcome_notification_shown"
 
 class MainActivity : ComponentActivity() {
     private val credentialManager by lazy {
@@ -51,7 +53,9 @@ class MainActivity : ComponentActivity() {
     private val secureRandom = SecureRandom()
     private val openNotificationsRequest = mutableStateOf(0)
     private var legacyGoogleSignInContinuation: CancellableContinuation<GoogleSignInResult>? = null
-    private var homeNotificationShown = false
+    private val notificationPreferences by lazy {
+        getSharedPreferences(NotificationPreferencesName, Context.MODE_PRIVATE)
+    }
     private var homeNotificationPending = false
     private var homeNotificationPendingLanguage = AppLanguage.English
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -103,7 +107,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun notifyHomeReached(language: AppLanguage) {
-        if (homeNotificationShown) return
+        if (hasShownHomeWelcomeNotification()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -129,8 +133,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showHomeWelcomeNotification(language: AppLanguage = AppLanguage.English) {
-        if (homeNotificationShown) return
-        homeNotificationShown = true
+        if (hasShownHomeWelcomeNotification()) return
+        markHomeWelcomeNotificationShown()
 
         val openNotificationsIntent = Intent(this, MainActivity::class.java).apply {
             action = OpenNotificationsAction
@@ -179,6 +183,15 @@ class MainActivity : ComponentActivity() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(HomeWelcomeNotificationId, notification)
+    }
+
+    private fun hasShownHomeWelcomeNotification(): Boolean =
+        notificationPreferences.getBoolean(HomeWelcomeNotificationShownKey, false)
+
+    private fun markHomeWelcomeNotificationShown() {
+        notificationPreferences.edit()
+            .putBoolean(HomeWelcomeNotificationShownKey, true)
+            .apply()
     }
 
     private suspend fun signInWithGoogle(): GoogleSignInResult {
