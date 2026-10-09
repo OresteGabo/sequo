@@ -2,10 +2,11 @@ package dev.orestegabo.sequo.core.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ImageBitmap
+import org.jetbrains.compose.resources.StringResource
 
 internal data class ProductPhotoExportResult(
     val success: Boolean,
-    val message: String,
+    val message: StringResource,
 )
 
 internal interface ProductPhotoExporter {
