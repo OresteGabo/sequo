@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -90,15 +91,15 @@ internal fun OrderDetailAppBar(order: SequoOrder, onBack: () -> Unit) {
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back to orders",
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = appText(Res.string.orders_back_to_orders),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(21.dp),
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Order detail", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(appText(Res.string.orders_detail_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${order.id} / ${order.state.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             OrderStatusPill(order.state)
@@ -121,7 +122,7 @@ internal fun PickupCodePanel(order: SequoOrder) {
             SequoIconMark(Icons.Filled.Lock, MaterialTheme.colorScheme.primary, Modifier.size(46.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(order.pickupCode, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
-                Text("Seller pickup code", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
+                Text(appText(Res.string.orders_seller_pickup_code), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
             }
         }
     }
