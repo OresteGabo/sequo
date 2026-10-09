@@ -38,6 +38,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.designsystem.component.SequoShapes
 import dev.orestegabo.sequo.core.platform.rememberLegalPdfDownloader
+import dev.orestegabo.sequo.feature.settings.LocalAppLanguage
+import dev.orestegabo.sequo.feature.settings.appText
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.auth_privacy_terms
+import sequo.shared.generated.resources.cd_back
+import sequo.shared.generated.resources.legal_download_pdf
 
 @Composable
 fun LegalScreen(
@@ -49,6 +55,7 @@ fun LegalScreen(
     val selectedDocument = selectedTab.document
     val pdfDownloader = rememberLegalPdfDownloader()
     val colorScheme = MaterialTheme.colorScheme
+    val language = LocalAppLanguage.current
 
     Column(
         modifier = Modifier
@@ -73,14 +80,14 @@ fun LegalScreen(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = appText(Res.string.cd_back),
                         tint = colorScheme.onPrimary,
                     )
                 }
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Privacy & Terms",
+                    text = appText(Res.string.auth_privacy_terms),
                     color = colorScheme.onBackground,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
@@ -146,7 +153,7 @@ fun LegalScreen(
                     title = selectedDocument.title,
                     body = selectedDocument.toPlainText(),
                 )
-                downloadMessage = result.message
+                downloadMessage = appText(result.message, language)
             },
             shape = SequoShapes.Small,
             colors = ButtonDefaults.buttonColors(
@@ -160,7 +167,7 @@ fun LegalScreen(
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
-                text = "Download PDF",
+                text = appText(Res.string.legal_download_pdf),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
             )
