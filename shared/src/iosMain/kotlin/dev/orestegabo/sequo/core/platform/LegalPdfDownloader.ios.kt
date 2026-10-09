@@ -15,6 +15,11 @@ import platform.UIKit.UIViewController
 import platform.posix.fclose
 import platform.posix.fopen
 import platform.posix.fwrite
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.legal_pdf_create_failed
+import sequo.shared.generated.resources.legal_pdf_prepare_failed
+import sequo.shared.generated.resources.legal_pdf_share_sheet_failed
+import sequo.shared.generated.resources.legal_pdf_share_sheet_ready
 
 @Composable
 actual fun rememberLegalPdfDownloader(): LegalPdfDownloader =
@@ -32,11 +37,11 @@ private class IosLegalPdfDownloader : LegalPdfDownloader {
         val pdfText = buildSimplePdf(title = title, body = body)
         val bytes = pdfText.encodeToByteArray()
         if (!writeBytesToFile(path = path, bytes = bytes)) {
-            return LegalPdfResult(false, "Could not create the PDF file.")
+            return LegalPdfResult(false, Res.string.legal_pdf_create_failed)
         }
 
         val controller = topViewController()
-            ?: return LegalPdfResult(false, "Could not open the iOS share sheet.")
+            ?: return LegalPdfResult(false, Res.string.legal_pdf_share_sheet_failed)
         val activityController = UIActivityViewController(
             activityItems = listOf(NSURL.fileURLWithPath(path)),
             applicationActivities = null,
@@ -46,9 +51,9 @@ private class IosLegalPdfDownloader : LegalPdfDownloader {
             animated = true,
             completion = null,
         )
-        LegalPdfResult(true, "Choose Files, Messages, WhatsApp, Mail, AirDrop, or another app.")
-    }.getOrElse { error ->
-        LegalPdfResult(false, error.message ?: "Could not prepare the PDF.")
+        LegalPdfResult(true, Res.string.legal_pdf_share_sheet_ready)
+    }.getOrElse {
+        LegalPdfResult(false, Res.string.legal_pdf_prepare_failed)
     }
 }
 
