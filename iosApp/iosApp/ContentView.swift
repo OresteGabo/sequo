@@ -8,7 +8,7 @@ private let googleIosClientId = "543119759762-ehcnb5lpi883c94457ogrgqsd0nshde2.a
 
 final class SequoNotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
     static let shared = SequoNotificationPresenter()
-    private var homeNotificationShown = false
+    private let homeWelcomeNotificationShownKey = "home_welcome_notification_shown"
     var onOpenNotifications: (() -> Void)?
 
     private override init() {
@@ -16,8 +16,8 @@ final class SequoNotificationPresenter: NSObject, UNUserNotificationCenterDelega
     }
 
     func notifyHomeReached(language: AppLanguage) {
-        guard !homeNotificationShown else { return }
-        homeNotificationShown = true
+        guard !UserDefaults.standard.bool(forKey: homeWelcomeNotificationShownKey) else { return }
+        UserDefaults.standard.set(true, forKey: homeWelcomeNotificationShownKey)
 
         let center = UNUserNotificationCenter.current()
         center.delegate = self
