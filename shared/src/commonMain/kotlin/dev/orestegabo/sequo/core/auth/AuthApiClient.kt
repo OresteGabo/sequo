@@ -153,11 +153,11 @@ private fun emailAuthFailureMessage(statusCode: Int, responseBody: String?): Str
         ?.let { body -> runCatching { defaultNetworkJson.decodeFromString<AuthErrorResponse>(body) }.getOrNull() }
 
     return when (statusCode) {
-        400 -> error?.message ?: "Check the email and password format."
+        400 -> error?.safeMessage() ?: "Check the email and password format."
         401 -> "Email or password is incorrect."
-        409 -> error?.message ?: "This account must be opened with another sign-in method."
-        429 -> error?.message ?: "Too many attempts. Please wait before trying again."
-        else -> error?.message ?: "Authentication failed with HTTP $statusCode."
+        409 -> error?.safeMessage() ?: "This account must be opened with another sign-in method."
+        429 -> error?.safeMessage() ?: "Too many attempts. Please wait before trying again."
+        else -> "Authentication is temporarily unavailable. Please try again later."
     }
 }
 
@@ -167,10 +167,10 @@ private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode:
             ?.takeIf { it.isNotBlank() }
             ?.let { body -> runCatching { defaultNetworkJson.decodeFromString<AuthErrorResponse>(body) }.getOrNull() }
         return when (statusCode) {
-            401 -> error?.message ?: "${provider.displayName} sign-in could not be completed."
-            409 -> error?.message ?: "This account must be opened with another sign-in method."
-            429 -> error?.message ?: "Too many attempts. Please wait before trying again."
-            else -> error?.message ?: "${provider.displayName} login failed with HTTP $statusCode."
+            401 -> error?.safeMessage() ?: "${provider.displayName} sign-in could not be completed."
+            409 -> error?.safeMessage() ?: "This account must be opened with another sign-in method."
+            429 -> error?.safeMessage() ?: "Too many attempts. Please wait before trying again."
+            else -> "${provider.displayName} sign-in is temporarily unavailable. Please try again later."
         }
     }
 
@@ -182,29 +182,54 @@ private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode:
 
     return when (googleError?.reason ?: googleError?.code ?: googleError?.error) {
         "forbidden", "access_denied" -> {
-            "The Google request was blocked by the API gateway (HTTP $statusCode). Please try again."
+            "Google sign-in is temporarily unavailable. Please try again later."
         }
         "invalid_audience" -> {
-            "Google sign-in reached Sequo, but the backend rejected this app's Google client ID. " +
-                "Use the Web/server client ID in the Android app and allow that same client ID on the backend."
+            "Google sign-in is temporarily unavailable. Please use another sign-in option or try again later."
         }
         "missing_allowed_audience" -> {
-            "Google sign-in reached Sequo, but backend Google client IDs are not configured."
+            "Google sign-in is temporarily unavailable. Please use another sign-in option or try again later."
         }
         "expired_token" -> "Google returned an expired sign-in token. Please try again."
         "missing_email" -> "Google did not share an email address for this account."
         "unverified_email" -> "Google says this account email is not verified."
         "invalid_issuer", "invalid_signature", "malformed_token", "invalid_token" -> {
-            "Google sign-in reached Sequo, but the backend rejected the Google token (${googleError?.reason ?: googleError?.error})."
+            "Google sign-in could not be verified. Please try again."
         }
         "account_link_required" -> {
-            googleError?.message ?: "This email is already linked to another sign-in method."
+            googleError?.safeMessage() ?: "This email is already linked to another sign-in method."
         }
         else -> when {
-            statusCode == 403 -> "The Google request was blocked by the API gateway (HTTP 403). Please try again."
-            else -> googleError?.message ?: "Backend Google login failed with HTTP $statusCode."
+            statusCode == 403 -> "Google sign-in is temporarily unavailable. Please try again later."
+            else -> googleError?.safeMessage() ?: "Google sign-in is temporarily unavailable. Please try again later."
         }
     }
+}
+
+private fun AuthErrorResponse.safeMessage(): String? =
+    message?.takeIf { it.isSafeUserMessage() }
+
+private fun GoogleLoginErrorResponse.safeMessage(): String? =
+    message?.takeIf { it.isSafeUserMessage() }
+
+private fun String.isSafeUserMessage(): Boolean {
+    val normalized = lowercase()
+    val debugMarkers = listOf(
+        "exception",
+        "stack",
+        "trace",
+        "http ",
+        "sql",
+        "token",
+        "jwt",
+        "bearer",
+        "secret",
+        "password",
+        "client id",
+        "backend",
+        "gateway",
+    )
+    return isNotBlank() && length <= 180 && debugMarkers.none { it in normalized }
 }
 
 data class AuthApiResponse(
