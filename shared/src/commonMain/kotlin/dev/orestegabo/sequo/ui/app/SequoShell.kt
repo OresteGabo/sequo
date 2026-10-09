@@ -25,6 +25,8 @@ import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.catalog.CatalogApiClient
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
+import dev.orestegabo.sequo.feature.settings.AppLanguage
+import dev.orestegabo.sequo.feature.settings.AppThemePreference
 import dev.orestegabo.sequo.feature.settings.appCatalogText
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.data.*
@@ -51,6 +53,10 @@ import sequo.shared.generated.resources.*
 internal fun SequoShell(
     currentUser: CurrentUser?,
     isGuest: Boolean,
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    themePreference: AppThemePreference,
+    onThemePreferenceChange: (AppThemePreference) -> Unit,
     onOpenLegal: (LegalInitialTab) -> Unit,
     onHomeEntered: () -> Unit,
     openNotificationsRequest: Int,
@@ -112,8 +118,19 @@ internal fun SequoShell(
             SequoNavigationDrawer(
                 currentUser = currentUser,
                 isGuest = isGuest,
+                language = language,
+                onLanguageChange = onLanguageChange,
+                themePreference = themePreference,
+                onThemePreferenceChange = onThemePreferenceChange,
                 selectedMarketTypeKey = selectedMarketTypeKey,
                 shopTypes = (catalogState as? CatalogUiState.Ready)?.snapshot?.categories.orEmpty(),
+                onDestinationSelected = { destination ->
+                    currentDestination = destination
+                    notificationBackDestination = null
+                    searchVisible = false
+                    selectedProductListing = null
+                    scope.launch { drawerState.close() }
+                },
                 onMarketTypeSelected = { typeKey ->
                     categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
                     selectedMarketTypeKey = typeKey
@@ -417,8 +434,13 @@ internal fun ProductDetailScreenColumn(
 private fun SequoNavigationDrawer(
     currentUser: CurrentUser?,
     isGuest: Boolean,
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    themePreference: AppThemePreference,
+    onThemePreferenceChange: (AppThemePreference) -> Unit,
     selectedMarketTypeKey: String,
     shopTypes: List<SequoShopType>,
+    onDestinationSelected: (SequoSection) -> Unit,
     onMarketTypeSelected: (String) -> Unit,
 ) {
     ModalDrawerSheet(
@@ -429,6 +451,7 @@ private fun SequoNavigationDrawer(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 14.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -460,6 +483,31 @@ private fun SequoNavigationDrawer(
                 }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
+            Text(
+                appText(Res.string.drawer_quick_links),
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+            )
+            DrawerQuickLinkGrid(onDestinationSelected = onDestinationSelected)
+            Text(
+                appText(Res.string.drawer_settings),
+                modifier = Modifier.padding(start = 12.dp, top = 10.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+            )
+            DrawerSettingsPanel(
+                language = language,
+                onLanguageChange = onLanguageChange,
+                themePreference = themePreference,
+                onThemePreferenceChange = onThemePreferenceChange,
+            )
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 6.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f),
+            )
             Text(
                 appText(Res.string.drawer_shop_categories),
                 modifier = Modifier.padding(start = 12.dp, top = 8.dp),
@@ -706,6 +754,139 @@ private fun DrawerToolRow(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun DrawerQuickLinkGrid(
+    onDestinationSelected: (SequoSection) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            DrawerQuickLink(
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                label = appText(Res.string.drawer_orders),
+                modifier = Modifier.weight(1f),
+                onClick = { onDestinationSelected(SequoSection.Orders) },
+            )
+            DrawerQuickLink(
+                icon = Icons.Filled.ShoppingBasket,
+                label = appText(Res.string.drawer_cart),
+                modifier = Modifier.weight(1f),
+                onClick = { onDestinationSelected(SequoSection.Basket) },
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            DrawerQuickLink(
+                icon = Icons.Filled.Notifications,
+                label = appText(Res.string.drawer_alerts),
+                modifier = Modifier.weight(1f),
+                onClick = { onDestinationSelected(SequoSection.Notifications) },
+            )
+            DrawerQuickLink(
+                icon = Icons.Filled.Person,
+                label = appText(Res.string.drawer_profile),
+                modifier = Modifier.weight(1f),
+                onClick = { onDestinationSelected(SequoSection.Account) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun DrawerQuickLink(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = modifier.height(48.dp),
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.56f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun DrawerSettingsPanel(
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    themePreference: AppThemePreference,
+    onThemePreferenceChange: (AppThemePreference) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.56f))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        DrawerSegmentedSetting(
+            icon = Icons.Filled.Translate,
+            title = appText(Res.string.drawer_language),
+            options = listOf(
+                AppLanguage.English to appText(Res.string.drawer_language_en),
+                AppLanguage.French to appText(Res.string.drawer_language_fr),
+            ),
+            selected = language,
+            onSelected = onLanguageChange,
+        )
+        DrawerSegmentedSetting(
+            icon = Icons.Filled.DarkMode,
+            title = appText(Res.string.drawer_theme),
+            options = listOf(
+                AppThemePreference.System to appText(Res.string.drawer_theme_system),
+                AppThemePreference.Light to appText(Res.string.drawer_theme_light),
+                AppThemePreference.Dark to appText(Res.string.drawer_theme_dark),
+            ),
+            selected = themePreference,
+            onSelected = onThemePreferenceChange,
+        )
+    }
+}
+
+@Composable
+private fun <T> DrawerSegmentedSetting(
+    icon: ImageVector,
+    title: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    onSelected: (T) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            options.forEach { (value, label) ->
+                val isSelected = value == selected
+                Surface(
+                    modifier = Modifier.weight(1f).height(34.dp),
+                    onClick = { onSelected(value) },
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
+                    contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
+                        Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
         }
     }
 }
