@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -469,7 +470,7 @@ private fun ProductDetailInfoCard(
                     ) {
                         Icon(Icons.Filled.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Make an offer", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(appText(Res.string.home_make_offer), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                             Text(product.bargainNote ?: "Send a price proposal to the seller.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
