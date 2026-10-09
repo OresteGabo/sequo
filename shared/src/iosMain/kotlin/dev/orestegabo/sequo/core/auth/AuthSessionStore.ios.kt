@@ -26,11 +26,25 @@ private class IosAuthSessionStore(
             runCatching { json.decodeFromString<AuthSession>(encodedSession) }.getOrNull()
         }
 
+    override suspend fun saveRememberedUser(user: CurrentUser) {
+        userDefaults.setObject(
+            value = json.encodeToString(user),
+            forKey = RememberedUserKey,
+        )
+    }
+
+    override suspend fun getRememberedUser(): CurrentUser? =
+        userDefaults.stringForKey(RememberedUserKey)?.let { encodedUser ->
+            runCatching { json.decodeFromString<CurrentUser>(encodedUser) }.getOrNull()
+        }
+
     override suspend fun clear() {
         userDefaults.removeObjectForKey(AuthSessionKey)
+        userDefaults.removeObjectForKey(RememberedUserKey)
     }
 
     private companion object {
         const val AuthSessionKey = "auth_session"
+        const val RememberedUserKey = "remembered_user"
     }
 }
