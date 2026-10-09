@@ -13,7 +13,6 @@ import platform.CoreFoundation.CFRelease
 import platform.CoreFoundation.CFTypeRefVar
 import platform.Foundation.CFBridgingRetain
 import platform.Foundation.NSData
-import platform.Foundation.NSCopyingProtocol
 import platform.Foundation.NSMutableDictionary
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
@@ -24,8 +23,6 @@ import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
 import platform.Security.errSecItemNotFound
 import platform.Security.errSecSuccess
-import platform.Security.kSecAttrAccessible
-import platform.Security.kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 import platform.Security.kSecAttrAccount
 import platform.Security.kSecAttrService
 import platform.Security.kSecClass
@@ -49,11 +46,12 @@ private class IosSecureTokenStorage : SecureTokenStorage {
 
         val status = (baseQueryMap() + mapOf<Any?, Any?>(
                 kSecValueData to tokenData,
-                kSecAttrAccessible to kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
             )).useCFDictionary { query ->
                 SecItemAdd(query, null)
             }
-        check(status == errSecSuccess) { "Keychain failed to save refresh token: $status" }
+        if (status != errSecSuccess) {
+            println("Keychain failed to save refresh token: $status")
+        }
     }
 
     @Suppress("CAST_NEVER_SUCCEEDS")
@@ -111,8 +109,8 @@ private inline fun <T> Map<Any?, Any?>.useCFDictionary(block: (CFDictionaryRef) 
 private fun Map<Any?, Any?>.toRetainedCFDictionary(): CFDictionaryRef {
     val dictionary = NSMutableDictionary()
     forEach { (key, value) ->
-        if (key is NSCopyingProtocol && value != null) {
-            dictionary.setObject(value, forKey = key)
+        if (key != null && value != null) {
+            dictionary.setObject(value, forKey = key as platform.Foundation.NSCopyingProtocol)
         }
     }
     return CFBridgingRetain(dictionary) as CFDictionaryRef
