@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import dev.orestegabo.sequo.core.auth.AuthApiClient
+import dev.orestegabo.sequo.core.auth.AuthApiException
 import dev.orestegabo.sequo.core.auth.AuthRepository
 import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
@@ -229,7 +230,7 @@ private fun SequoApp(
                                 }
                             }.onFailure { error ->
                                 if (error is CancellationException) throw error
-                                authErrorMessage = error.message ?: "Please sign in again to continue."
+                                authErrorMessage = userFacingAuthError(error, "Please sign in again to continue.")
                             }
                         } finally {
                             emailAuthInProgress = false
@@ -255,7 +256,7 @@ private fun SequoApp(
                                 guestMode = false
                             }.onFailure { error ->
                                 if (error is CancellationException) throw error
-                                authErrorMessage = error.message ?: "Email sign-in failed."
+                                authErrorMessage = userFacingAuthError(error, "Email sign-in could not be completed. Please try again.")
                             }
                         } finally {
                             emailAuthInProgress = false
@@ -281,7 +282,7 @@ private fun SequoApp(
                                 guestMode = false
                             }.onFailure { error ->
                                 if (error is CancellationException) throw error
-                                authErrorMessage = error.message ?: "Email sign-up failed."
+                                authErrorMessage = userFacingAuthError(error, "Account creation could not be completed. Please try again.")
                             }
                         } finally {
                             emailAuthInProgress = false
@@ -299,7 +300,7 @@ private fun SequoApp(
                                 onGoogleSignIn()
                             }.getOrElse { error ->
                                 if (error is CancellationException) throw error
-                                GoogleSignInResult.Failure(error.message ?: "Google sign-in failed.")
+                                GoogleSignInResult.Failure("Google sign-in could not be completed. Please try again.")
                             }
 
                             when (result) {
@@ -318,7 +319,7 @@ private fun SequoApp(
                                         guestMode = false
                                     }.onFailure { error ->
                                         if (error is CancellationException) throw error
-                                        authErrorMessage = error.message ?: "Backend Google login failed."
+                                        authErrorMessage = userFacingAuthError(error, "Google sign-in could not be completed. Please try again.")
                                     }
                                 }
                                 GoogleSignInResult.Cancelled -> Unit
@@ -398,5 +399,11 @@ private fun SequoApp(
         )
     }
 }
+
+private fun userFacingAuthError(error: Throwable, fallback: String): String =
+    when (error) {
+        is AuthApiException -> error.safeMessage
+        else -> fallback
+    }
 
 internal expect val shouldShowInAppSplash: Boolean
