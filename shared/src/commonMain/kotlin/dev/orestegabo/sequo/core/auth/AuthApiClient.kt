@@ -101,6 +101,17 @@ class AuthApiClient(
         }
     }
 
+    suspend fun logout(refreshToken: String) {
+        try {
+            httpClient.post("${baseUrl.trimEnd('/')}/api/auth/logout") {
+                headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(LogoutRequest(refreshToken))
+            }
+        } catch (_: SequoApiException) {
+            // Local logout must still complete when the network is unavailable.
+        }
+    }
+
     fun close() {
         httpClient.close()
     }
@@ -155,6 +166,9 @@ private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode:
         }
 
     return when (googleError?.reason ?: googleError?.code ?: googleError?.error) {
+        "forbidden", "access_denied" -> {
+            "The Google request was blocked by the API gateway (HTTP $statusCode). Please try again."
+        }
         "invalid_audience" -> {
             "Google sign-in reached Sequo, but the backend rejected this app's Google client ID. " +
                 "Use the Web/server client ID in the Android app and allow that same client ID on the backend."
@@ -171,7 +185,10 @@ private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode:
         "account_link_required" -> {
             googleError?.message ?: "This email is already linked to another sign-in method."
         }
-        else -> googleError?.message ?: "Backend Google login failed with HTTP $statusCode."
+        else -> when {
+            statusCode == 403 -> "The Google request was blocked by the API gateway (HTTP 403). Please try again."
+            else -> googleError?.message ?: "Backend Google login failed with HTTP $statusCode."
+        }
     }
 }
 
@@ -233,6 +250,11 @@ private data class EmailSignUpRequest(
 private data class EmailLoginRequest(
     val email: String,
     val password: String,
+)
+
+@Serializable
+private data class LogoutRequest(
+    val refreshToken: String,
 )
 
 @Serializable
