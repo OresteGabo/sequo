@@ -82,6 +82,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.designsystem.component.Package2
 import dev.orestegabo.sequo.core.designsystem.component.SequoShapes
 import dev.orestegabo.sequo.feature.settings.AppLanguage
@@ -95,6 +96,8 @@ fun AuthScreen(
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
     emailAuthInProgress: Boolean = false,
+    rememberedUser: CurrentUser? = null,
+    onContinueRememberedUser: () -> Unit = {},
     onEmailLogin: (email: String, password: String) -> Unit,
     onEmailSignUp: (email: String, password: String, name: String) -> Unit,
     googleSignInInProgress: Boolean = false,
@@ -130,6 +133,8 @@ fun AuthScreen(
             onLanguageChange = onLanguageChange,
             onAppleLogin = onAppleLogin,
             googleSignInInProgress = googleSignInInProgress,
+            rememberedUser = rememberedUser,
+            onContinueRememberedUser = onContinueRememberedUser,
             onGoogleLogin = onGoogleLogin,
             onFacebookLogin = onFacebookLogin,
             onWhatsAppLogin = onWhatsAppLogin,
@@ -147,6 +152,8 @@ private fun SocialAuthPage(
     onLanguageChange: (AppLanguage) -> Unit,
     onAppleLogin: () -> Unit,
     googleSignInInProgress: Boolean,
+    rememberedUser: CurrentUser?,
+    onContinueRememberedUser: () -> Unit,
     onGoogleLogin: () -> Unit,
     onFacebookLogin: () -> Unit,
     onWhatsAppLogin: () -> Unit,
@@ -174,6 +181,14 @@ private fun SocialAuthPage(
             OnboardingPager()
             Spacer(modifier = Modifier.size(24.dp))
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                rememberedUser?.let { user ->
+                    RememberedAccountButton(
+                        user = user,
+                        enabled = !googleSignInInProgress,
+                        onClick = onContinueRememberedUser,
+                    )
+                }
+
                 Text(
                     text = appText(Res.string.auth_sign_in_with),
                     color = colorScheme.onSurfaceVariant,
@@ -995,6 +1010,65 @@ private fun ProviderIconRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RememberedAccountButton(
+    user: CurrentUser,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val provider = user.provider.lowercase()
+    val accountLabel = user.email?.takeIf { it.isNotBlank() } ?: user.displayName
+
+    Button(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        enabled = enabled,
+        onClick = onClick,
+        shape = SequoShapes.Small,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colorScheme.primary,
+            contentColor = colorScheme.onPrimary,
+        ),
+    ) {
+        when (provider) {
+            "google" -> Icon(
+                imageVector = GoogleIcon,
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier = Modifier.size(22.dp),
+            )
+            "apple" -> Icon(
+                imageVector = AppleIcon,
+                contentDescription = null,
+                tint = colorScheme.onPrimary,
+                modifier = Modifier.size(22.dp),
+            )
+            "facebook" -> Image(
+                painter = painterResource(Res.drawable.auth_facebook_icon),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(22.dp),
+            )
+            else -> Icon(
+                imageVector = Icons.Filled.Person,
+                contentDescription = null,
+                tint = colorScheme.onPrimary,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = appText(Res.string.auth_continue_as).replace("%1\$s", accountLabel),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
