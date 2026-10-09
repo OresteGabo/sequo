@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -76,13 +77,13 @@ internal fun SequoPassCard() {
                 drawRoundRect(Color(0x14FFF9F0), Offset(-34.dp.toPx(), size.height - 74.dp.toPx()), Size(180.dp.toPx(), 82.dp.toPx()), CornerRadius(44.dp.toPx(), 24.dp.toPx()))
             }
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("SEQUO ACCESS", style = MaterialTheme.typography.labelSmall, color = Color(0xCCFFF8EE))
+                Text(appText(Res.string.pass_access_title), style = MaterialTheme.typography.labelSmall, color = Color(0xCCFFF8EE))
                 Text("Afi K.", style = MaterialTheme.typography.headlineLarge, color = Color(0xFFFFFBF5), fontWeight = FontWeight.SemiBold)
-                Text("Lome subscriber / 15% delivery discount", style = MaterialTheme.typography.bodyMedium, color = Color(0xCCFFF8EE))
+                Text(appText(Res.string.pass_subscriber_detail), style = MaterialTheme.typography.bodyMedium, color = Color(0xCCFFF8EE))
                 Box(Modifier.height(44.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MetaPill("500 CFA credit", SequoAccent, inverse = true)
-                    MetaPill("3 Lome addresses", SequoPrimary, inverse = true)
+                    MetaPill(appText(Res.string.pass_credit), SequoAccent, inverse = true)
+                    MetaPill(appText(Res.string.pass_addresses), SequoPrimary, inverse = true)
                 }
             }
         }
