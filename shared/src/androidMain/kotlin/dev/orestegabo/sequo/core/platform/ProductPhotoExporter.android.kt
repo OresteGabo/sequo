@@ -18,6 +18,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalContext
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.photo_export_opening_share
+import sequo.shared.generated.resources.photo_export_prepare_failed
+import sequo.shared.generated.resources.photo_export_save_failed
+import sequo.shared.generated.resources.photo_export_saved
+import sequo.shared.generated.resources.photo_export_share_failed
 
 @Composable
 internal actual fun rememberProductPhotoExporter(): ProductPhotoExporter {
@@ -37,10 +43,10 @@ private class AndroidProductPhotoExporter(
         val watermarked = bitmap.withSequoWatermark(productName)
         val safeName = fileName.safeImageFileName()
         context.writeWatermarkedImage(watermarked, safeName)
-            ?: return ProductPhotoExportResult(false, "Could not save the photo.")
-        ProductPhotoExportResult(true, "Saved with Sequo watermark.")
-    }.getOrElse { error ->
-        ProductPhotoExportResult(false, error.message ?: "Could not save the photo.")
+            ?: return ProductPhotoExportResult(false, Res.string.photo_export_save_failed)
+        ProductPhotoExportResult(true, Res.string.photo_export_saved)
+    }.getOrElse {
+        ProductPhotoExportResult(false, Res.string.photo_export_save_failed)
     }
 
     override suspend fun sharePhoto(
@@ -52,7 +58,7 @@ private class AndroidProductPhotoExporter(
         val watermarked = bitmap.withSequoWatermark(productName)
         val safeName = fileName.safeImageFileName()
         val uri = context.writeWatermarkedImage(watermarked, safeName)
-            ?: return ProductPhotoExportResult(false, "Could not prepare the photo.")
+            ?: return ProductPhotoExportResult(false, Res.string.photo_export_prepare_failed)
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_STREAM, uri)
@@ -61,9 +67,9 @@ private class AndroidProductPhotoExporter(
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(Intent.createChooser(shareIntent, "Share photo").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        ProductPhotoExportResult(true, "Opening share options.")
-    }.getOrElse { error ->
-        ProductPhotoExportResult(false, error.message ?: "Could not share the photo.")
+        ProductPhotoExportResult(true, Res.string.photo_export_opening_share)
+    }.getOrElse {
+        ProductPhotoExportResult(false, Res.string.photo_export_share_failed)
     }
 }
 
