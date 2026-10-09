@@ -76,14 +76,14 @@ private class AndroidBiometricAuthenticator(
                             BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED,
                             BiometricPrompt.BIOMETRIC_ERROR_CANCELED,
                             -> BiometricAuthResult.Cancelled
-                            else -> BiometricAuthResult.Failed(errString?.toString())
+                            else -> BiometricAuthResult.Failed()
                         }
                         continuation.resume(result)
                     }
 
                     override fun onAuthenticationFailed() {
                         if (continuation.isActive) {
-                            continuation.resume(BiometricAuthResult.Failed("Biometric authentication failed."))
+                            continuation.resume(BiometricAuthResult.Failed())
                         }
                     }
                 },
