@@ -98,7 +98,7 @@ private enum GoogleSignInPresenter {
 
     static func signIn(complete: @escaping (any GoogleSignInResult) -> Void) {
         guard let presenter = topViewController() else {
-            complete(GoogleSignInResultFailure(message: "Google sign-in could not open on this device."))
+            complete(GoogleSignInResultFailure(reason: GoogleSignInFailureReason.unavailable))
             return
         }
 
@@ -108,13 +108,13 @@ private enum GoogleSignInPresenter {
                 if error.domain == kGIDSignInErrorDomain && error.code == GIDSignInError.canceled.rawValue {
                     complete(GoogleSignInResultCancelled.shared)
                 } else {
-                    complete(GoogleSignInResultFailure(message: error.localizedDescription))
+                    complete(GoogleSignInResultFailure(reason: GoogleSignInFailureReason.failed))
                 }
                 return
             }
 
             guard let user = result?.user, let idToken = user.idToken?.tokenString, !idToken.isEmpty else {
-                complete(GoogleSignInResultFailure(message: "Google ID token missing. Check iOS OAuth client configuration."))
+                complete(GoogleSignInResultFailure(reason: GoogleSignInFailureReason.unavailable))
                 return
             }
 
