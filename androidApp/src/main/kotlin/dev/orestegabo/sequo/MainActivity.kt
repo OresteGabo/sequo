@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,13 +25,19 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
 import dev.orestegabo.sequo.feature.settings.AppLanguage
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.json.JSONObject
 import java.security.SecureRandom
+import kotlin.coroutines.resume
 
 private const val GoogleSignInTag = "SequoGoogleSignIn"
 private const val SequoNotificationChannelId = "sequo_home_updates_v2"
@@ -43,6 +50,7 @@ class MainActivity : ComponentActivity() {
     }
     private val secureRandom = SecureRandom()
     private val openNotificationsRequest = mutableStateOf(0)
+    private var legacyGoogleSignInContinuation: CancellableContinuation<GoogleSignInResult>? = null
     private var homeNotificationShown = false
     private var homeNotificationPending = false
     private var homeNotificationPendingLanguage = AppLanguage.English
@@ -53,6 +61,11 @@ class MainActivity : ComponentActivity() {
             homeNotificationPending = false
             showHomeWelcomeNotification(homeNotificationPendingLanguage)
         }
+    }
+    private val legacyGoogleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        completeLegacyGoogleSignIn(result)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -170,7 +183,7 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun signInWithGoogle(): GoogleSignInResult {
         val googleIdOption = GetSignInWithGoogleOption.Builder(
-            getString(R.string.google_client_id),
+            getString(R.string.google_server_client_id),
         )
             .setNonce(generateGoogleSignInNonce())
             .build()
@@ -209,9 +222,17 @@ class MainActivity : ComponentActivity() {
             } else {
                 GoogleSignInResult.Failure("Google returned an unsupported credential.")
             }
-        } catch (_: GetCredentialCancellationException) {
-            Log.d(GoogleSignInTag, "Google sign-in was cancelled.")
-            GoogleSignInResult.Failure("Google sign-in was cancelled or interrupted. Please try again.")
+        } catch (error: GetCredentialCancellationException) {
+            Log.e(GoogleSignInTag, "Credential Manager cancelled Google sign-in after account selection.", error)
+            if (error.message?.contains("Account reauth failed", ignoreCase = true) == true) {
+                Log.w(GoogleSignInTag, "Retrying Google sign-in with Play Services fallback.")
+                signInWithLegacyGoogleClient()
+            } else {
+                GoogleSignInResult.Failure(
+                    error.message?.takeIf { it.isNotBlank() }
+                        ?: "Google sign-in was cancelled or interrupted. Please try again.",
+                )
+            }
         } catch (error: GoogleIdTokenParsingException) {
             Log.e(GoogleSignInTag, "Google returned an invalid ID token credential.", error)
             GoogleSignInResult.Failure("Google returned an invalid sign-in response. Please update Google Play services and try again.")
@@ -225,6 +246,87 @@ class MainActivity : ComponentActivity() {
             Log.e(GoogleSignInTag, "Unexpected Google sign-in failure.", error)
             GoogleSignInResult.Failure(error.message ?: "Google sign-in failed unexpectedly.")
         }
+    }
+
+    private suspend fun signInWithLegacyGoogleClient(): GoogleSignInResult =
+        suspendCancellableCoroutine { continuation ->
+            if (legacyGoogleSignInContinuation != null) {
+                continuation.resume(GoogleSignInResult.Failure("Google sign-in is already running."))
+                return@suspendCancellableCoroutine
+            }
+
+            val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.google_server_client_id))
+                .requestEmail()
+                .requestProfile()
+                .build()
+            val googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions)
+
+            continuation.invokeOnCancellation {
+                if (legacyGoogleSignInContinuation === continuation) {
+                    legacyGoogleSignInContinuation = null
+                }
+            }
+
+            googleSignInClient.signOut().addOnCompleteListener {
+                if (!continuation.isActive) return@addOnCompleteListener
+                legacyGoogleSignInContinuation = continuation
+                runCatching {
+                    legacyGoogleSignInLauncher.launch(googleSignInClient.signInIntent)
+                }.onFailure { error ->
+                    if (legacyGoogleSignInContinuation === continuation) {
+                        legacyGoogleSignInContinuation = null
+                    }
+                    Log.e(GoogleSignInTag, "Could not launch Play Services Google sign-in fallback.", error)
+                    continuation.resume(
+                        GoogleSignInResult.Failure(error.message ?: "Google sign-in could not be opened."),
+                    )
+                }
+            }
+        }
+
+    private fun completeLegacyGoogleSignIn(result: ActivityResult) {
+        val continuation = legacyGoogleSignInContinuation ?: return
+        legacyGoogleSignInContinuation = null
+        if (!continuation.isActive) return
+
+        val account = try {
+            GoogleSignIn.getSignedInAccountFromIntent(result.data).getResult(ApiException::class.java)
+        } catch (error: ApiException) {
+            Log.e(GoogleSignInTag, "Play Services Google sign-in failed with status ${error.statusCode}.", error)
+            continuation.resume(
+                if (result.data == null) {
+                    GoogleSignInResult.Cancelled
+                } else {
+                    GoogleSignInResult.Failure(error.message ?: "Google sign-in failed.")
+                },
+            )
+            return
+        } catch (error: Throwable) {
+            Log.e(GoogleSignInTag, "Play Services Google sign-in failed.", error)
+            continuation.resume(GoogleSignInResult.Failure(error.message ?: "Google sign-in failed."))
+            return
+        }
+
+        val idToken = account.idToken
+        if (idToken.isNullOrBlank()) {
+            Log.w(GoogleSignInTag, "Play Services Google sign-in did not return an ID token.")
+            continuation.resume(GoogleSignInResult.Failure("Google ID token missing. Check OAuth client configuration."))
+            return
+        }
+
+        Log.d(
+            GoogleSignInTag,
+            "Play Services Google ID token received for ${account.email}; length=${idToken.length}; ${idToken.safeGoogleTokenSummary()}",
+        )
+        continuation.resume(
+            GoogleSignInResult.Success(
+                idToken = idToken,
+                displayName = account.displayName,
+                email = account.email,
+                profilePictureUri = account.photoUrl?.toString(),
+            ),
+        )
     }
 
     private fun generateGoogleSignInNonce(): String {
