@@ -88,7 +88,7 @@ internal fun SequoShell(
                         if (selectedMarketTypeKey.isBlank()) selectedMarketTypeKey = snapshot.defaultCategoryKey
                         CatalogUiState.Ready(snapshot)
                     },
-                    onFailure = { CatalogUiState.Failed(it.message ?: catalogLoadError) },
+                    onFailure = { CatalogUiState.Failed(catalogLoadError) },
                 )
         }
     }
@@ -137,6 +137,7 @@ internal fun SequoShell(
                     currentDestination = SequoSection.Markets
                     notificationBackDestination = null
                     searchVisible = false
+                    selectedProductListing = null
                     scope.launch { drawerState.close() }
                 },
             )
@@ -263,7 +264,6 @@ internal fun SequoContentStage(
             SequoErrorPanel(
                 kind = SequoErrorKind.Server,
                 onRetry = onReloadCatalog,
-                technicalNote = catalogState.message,
             )
         }
     } else if (selectedProductListing != null && catalog != null) {
