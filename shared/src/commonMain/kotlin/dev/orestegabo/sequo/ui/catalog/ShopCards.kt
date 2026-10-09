@@ -28,6 +28,7 @@ import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.core.platform.*
+import dev.orestegabo.sequo.feature.settings.LocalAppLanguage
 import dev.orestegabo.sequo.feature.settings.appCatalogText
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.theme.*
@@ -482,6 +483,7 @@ internal fun ProductPhotoActionDialog(
     val exporter = rememberProductPhotoExporter()
     val scope = rememberCoroutineScope()
     val image = imageResource(productImageResource(product))
+    val language = LocalAppLanguage.current
     var statusMessage by remember(product.id, product.name) { mutableStateOf<String?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -525,13 +527,13 @@ internal fun ProductPhotoActionDialog(
                     ProductPhotoActionRow(
                         label = "Post Photo",
                         icon = Icons.Filled.AddPhotoAlternate,
-                        onClick = { statusMessage = "Posting photos will connect to seller tools next." },
+                        onClick = { statusMessage = appText(Res.string.photo_action_post_pending, language) },
                     )
                     ProductPhotoActionDivider()
                     ProductPhotoActionRow(
                         label = "Copy Photo",
                         icon = Icons.Filled.ContentCopy,
-                        onClick = { statusMessage = "Image copy needs native clipboard support next." },
+                        onClick = { statusMessage = appText(Res.string.photo_action_copy_pending, language) },
                     )
                     ProductPhotoActionDivider()
                     ProductPhotoActionRow(
@@ -539,12 +541,12 @@ internal fun ProductPhotoActionDialog(
                         icon = Icons.Filled.Download,
                         onClick = {
                             scope.launch {
-                                statusMessage = "Saving watermarked photo..."
+                                statusMessage = appText(Res.string.photo_action_saving, language)
                                 statusMessage = exporter.saveWatermarkedPhoto(
                                     image = image,
                                     fileName = product.photoExportFileName(),
                                     productName = product.name,
-                                ).message
+                                ).message.let { appText(it, language) }
                             }
                         },
                     )
@@ -552,7 +554,7 @@ internal fun ProductPhotoActionDialog(
                     ProductPhotoActionRow(
                         label = "Edit photo",
                         icon = Icons.Filled.Edit,
-                        onClick = { statusMessage = "Photo editing will open from this menu next." },
+                        onClick = { statusMessage = appText(Res.string.photo_action_edit_pending, language) },
                     )
                     ProductPhotoActionDivider()
                     ProductPhotoActionRow(
@@ -560,12 +562,12 @@ internal fun ProductPhotoActionDialog(
                         icon = Icons.Filled.Share,
                         onClick = {
                             scope.launch {
-                                statusMessage = "Preparing watermarked share..."
+                                statusMessage = appText(Res.string.photo_action_preparing_share, language)
                                 statusMessage = exporter.sharePhoto(
                                     image = image,
                                     fileName = product.photoExportFileName(),
                                     productName = product.name,
-                                ).message
+                                ).message.let { appText(it, language) }
                             }
                         },
                     )
