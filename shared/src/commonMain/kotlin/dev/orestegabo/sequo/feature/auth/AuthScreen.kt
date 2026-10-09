@@ -720,7 +720,7 @@ private fun EmailFallbackPage(
                             authStep = AuthStep.Email
                         },
                         singleLine = true,
-                        label = { Text("Email address") },
+                        label = { Text(appText(Res.string.auth_email_address)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.AlternateEmail,
@@ -1169,7 +1169,7 @@ private fun EmailCredentialsForm(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = if (isSignUp) "Email sign-up" else "Email sign-in",
+                text = if (isSignUp) appText(Res.string.auth_email_sign_up) else appText(Res.string.auth_email_sign_in),
                 color = colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium,
             )
@@ -1182,7 +1182,7 @@ private fun EmailCredentialsForm(
             value = name,
             onValueChange = onNameChange,
             singleLine = true,
-            label = { Text("Full name") },
+            label = { Text(appText(Res.string.auth_full_name)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Filled.Person,
@@ -1210,8 +1210,8 @@ private fun EmailCredentialsForm(
             value = birthDate,
             onValueChange = onBirthDateChange,
             singleLine = true,
-            label = { Text("Birth date") },
-            placeholder = { Text("JJ/MM/AAAA") },
+            label = { Text(appText(Res.string.auth_birth_date)) },
+            placeholder = { Text(appText(Res.string.auth_birth_date_placeholder)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Filled.CalendarMonth,
@@ -1509,7 +1509,7 @@ private fun EmailHeader(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = appText(Res.string.cd_back),
                         tint = colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp),
                     )
