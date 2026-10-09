@@ -107,11 +107,11 @@ class AuthRepository(
 }
 
 class GoogleIdTokenMissingException : Exception(
-    "Google ID token missing. Check OAuth client configuration.",
+    "Google sign-in is temporarily unavailable. Please use another sign-in option or try again later.",
 )
 
 class FacebookAccessTokenMissingException : Exception(
-    "Facebook access token missing. Check native Facebook Login SDK configuration.",
+    "Facebook sign-in is temporarily unavailable. Please use another sign-in option or try again later.",
 )
 
 object AuthDebugLogger {
