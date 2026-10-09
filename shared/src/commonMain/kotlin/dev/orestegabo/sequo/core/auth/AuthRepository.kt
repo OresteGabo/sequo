@@ -66,6 +66,9 @@ class AuthRepository(
         )
 
     suspend fun logout() {
+        sessionStore.get()?.let { session ->
+            authApiClient.logout(session.refreshToken)
+        }
         sessionStore.clear()
         secureSessionCache.clearSession()
     }
