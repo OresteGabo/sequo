@@ -3,6 +3,9 @@ package dev.orestegabo.sequo.core.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.photo_export_ios_save_pending
+import sequo.shared.generated.resources.photo_export_ios_share_pending
 
 @Composable
 internal actual fun rememberProductPhotoExporter(): ProductPhotoExporter =
@@ -16,7 +19,7 @@ private class IosProductPhotoExporter : ProductPhotoExporter {
     ): ProductPhotoExportResult =
         ProductPhotoExportResult(
             success = false,
-            message = "Photo saving is ready in the menu; iOS needs the native Photos exporter pass next.",
+            message = Res.string.photo_export_ios_save_pending,
         )
 
     override suspend fun sharePhoto(
@@ -26,6 +29,6 @@ private class IosProductPhotoExporter : ProductPhotoExporter {
     ): ProductPhotoExportResult =
         ProductPhotoExportResult(
             success = false,
-            message = "Sharing is ready in the menu; iOS needs the native share exporter pass next.",
+            message = Res.string.photo_export_ios_share_pending,
         )
 }
