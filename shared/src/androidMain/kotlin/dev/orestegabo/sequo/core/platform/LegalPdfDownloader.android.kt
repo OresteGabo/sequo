@@ -11,6 +11,11 @@ import android.provider.MediaStore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.legal_pdf_create_failed
+import sequo.shared.generated.resources.legal_pdf_open_failed
+import sequo.shared.generated.resources.legal_pdf_save_failed
+import sequo.shared.generated.resources.legal_pdf_saved
 
 @Composable
 actual fun rememberLegalPdfDownloader(): LegalPdfDownloader {
@@ -82,11 +87,11 @@ private class AndroidLegalPdfDownloader(
             }
         }
         val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            ?: return LegalPdfResult(false, "Could not create the PDF file.")
+            ?: return LegalPdfResult(false, Res.string.legal_pdf_create_failed)
 
         resolver.openOutputStream(uri)?.use { output ->
             document.writeTo(output)
-        } ?: return LegalPdfResult(false, "Could not open the PDF file.")
+        } ?: return LegalPdfResult(false, Res.string.legal_pdf_open_failed)
         document.close()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -95,9 +100,9 @@ private class AndroidLegalPdfDownloader(
             resolver.update(uri, values, null, null)
         }
 
-        LegalPdfResult(true, "Saved to Downloads as $safeName")
-    }.getOrElse { error ->
-        LegalPdfResult(false, error.message ?: "Could not save the PDF.")
+        LegalPdfResult(true, Res.string.legal_pdf_saved)
+    }.getOrElse {
+        LegalPdfResult(false, Res.string.legal_pdf_save_failed)
     }
 }
 
