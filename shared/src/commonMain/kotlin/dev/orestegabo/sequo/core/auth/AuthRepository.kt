@@ -80,13 +80,8 @@ class AuthRepository(
         secureSessionCache.cache(session)
     }
 
-    suspend fun unlockCachedSession(): SecureSessionUnlockResult =
-        secureSessionCache.unlockCachedSession(
-            BiometricPromptConfig(
-                title = "Unlock Sequo",
-                subtitle = "Use biometrics to restore your saved session.",
-            ),
-        )
+    suspend fun unlockCachedSession(promptConfig: BiometricPromptConfig = BiometricPromptConfig()): SecureSessionUnlockResult =
+        secureSessionCache.unlockCachedSession(promptConfig)
 
     suspend fun logout() {
         sessionStore.get()?.let { session ->
@@ -107,11 +102,11 @@ class AuthRepository(
 }
 
 class GoogleIdTokenMissingException : Exception(
-    "Google sign-in is temporarily unavailable. Please use another sign-in option or try again later.",
+    AuthUserMessage.GoogleSignInTemporarilyUnavailable.name,
 )
 
 class FacebookAccessTokenMissingException : Exception(
-    "Facebook sign-in is temporarily unavailable. Please use another sign-in option or try again later.",
+    AuthUserMessage.SocialSignInUnavailable.name,
 )
 
 object AuthDebugLogger {
