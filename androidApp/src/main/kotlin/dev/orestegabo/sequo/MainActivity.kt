@@ -203,7 +203,7 @@ class MainActivity : ComponentActivity() {
             }
         } catch (_: GetCredentialCancellationException) {
             Log.d(GoogleSignInTag, "Google sign-in was cancelled.")
-            GoogleSignInResult.Cancelled
+            GoogleSignInResult.Failure("Google sign-in was cancelled or interrupted. Please try again.")
         } catch (error: GoogleIdTokenParsingException) {
             Log.e(GoogleSignInTag, "Google returned an invalid ID token credential.", error)
             GoogleSignInResult.Failure("Google returned an invalid sign-in response. Please update Google Play services and try again.")
@@ -213,6 +213,9 @@ class MainActivity : ComponentActivity() {
         } catch (error: IllegalArgumentException) {
             Log.e(GoogleSignInTag, "Google sign-in response was invalid.", error)
             GoogleSignInResult.Failure(error.message ?: "Google sign-in response was invalid.")
+        } catch (error: Throwable) {
+            Log.e(GoogleSignInTag, "Unexpected Google sign-in failure.", error)
+            GoogleSignInResult.Failure(error.message ?: "Google sign-in failed unexpectedly.")
         }
     }
 
