@@ -43,12 +43,14 @@ fun App(
     onGoogleSignIn: suspend () -> GoogleSignInResult = {
         GoogleSignInResult.Failure("Google sign-in is not configured on this platform yet.")
     },
+    onGoogleSignOut: suspend () -> Unit = {},
     onHomeEntered: (AppLanguage) -> Unit = {},
     openNotificationsRequest: Int = 0,
 ) {
     SequoTheme {
         SequoApp(
             onGoogleSignIn = onGoogleSignIn,
+            onGoogleSignOut = onGoogleSignOut,
             onHomeEntered = onHomeEntered,
             openNotificationsRequest = openNotificationsRequest,
         )
@@ -58,6 +60,7 @@ fun App(
 @Composable
 private fun SequoApp(
     onGoogleSignIn: suspend () -> GoogleSignInResult,
+    onGoogleSignOut: suspend () -> Unit,
     onHomeEntered: (AppLanguage) -> Unit,
     openNotificationsRequest: Int,
 ) {
@@ -285,6 +288,7 @@ private fun SequoApp(
             onLogout = {
                 scope.launch {
                     authRepository.logout()
+                    onGoogleSignOut()
                     currentUser = null
                     isAuthenticated = false
                     guestMode = false
