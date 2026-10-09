@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.credentials.CredentialManager
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -63,6 +64,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             App(
                 onGoogleSignIn = ::signInWithGoogle,
+                onGoogleSignOut = {
+                    try {
+                        credentialManager.clearCredentialState(ClearCredentialStateRequest())
+                    } catch (error: Throwable) {
+                        Log.w(GoogleSignInTag, "Could not clear Google credential state.", error)
+                    }
+                },
                 onHomeEntered = ::notifyHomeReached,
                 openNotificationsRequest = openNotificationsRequest.value,
             )
