@@ -46,6 +46,29 @@ class AuthRepository(
         return authApiClient.currentUser(session.accessToken)
     }
 
+    suspend fun restoreSavedSession(): CurrentUser? {
+        val session = sessionStore.get() ?: return null
+
+        return runCatching {
+            authApiClient.currentUser(session.accessToken)
+        }.getOrElse { firstError ->
+            if ((firstError as? AuthApiException)?.statusCode != 401) throw firstError
+
+            val refreshedSession = authApiClient.refreshSession(session.refreshToken)
+            saveSession(refreshedSession)
+            authApiClient.currentUser(refreshedSession.accessToken)
+        }.also { user ->
+            sessionStore.saveRememberedUser(user)
+        }
+    }
+
+    suspend fun getRememberedUser(): CurrentUser? =
+        sessionStore.getRememberedUser()
+
+    suspend fun rememberUser(user: CurrentUser) {
+        sessionStore.saveRememberedUser(user)
+    }
+
     suspend fun getSavedSession(): AuthSession? =
         sessionStore.get()
 
