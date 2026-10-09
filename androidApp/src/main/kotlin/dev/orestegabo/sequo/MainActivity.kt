@@ -31,6 +31,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import dev.orestegabo.sequo.core.auth.GoogleSignInFailureReason
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
 import dev.orestegabo.sequo.feature.settings.AppLanguage
 import kotlinx.coroutines.CancellableContinuation
@@ -45,7 +46,6 @@ private const val HomeWelcomeNotificationId = 1001
 private const val OpenNotificationsAction = "dev.orestegabo.sequo.OPEN_NOTIFICATIONS"
 private const val NotificationPreferencesName = "sequo_notification_preferences"
 private const val HomeWelcomeNotificationShownKey = "home_welcome_notification_shown"
-
 class MainActivity : ComponentActivity() {
     private val credentialManager by lazy {
         CredentialManager.create(this)
@@ -220,7 +220,7 @@ class MainActivity : ComponentActivity() {
                 val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 if (googleCredential.idToken.isBlank()) {
                     Log.w(GoogleSignInTag, "Google credential did not include an ID token.")
-                    return GoogleSignInResult.Failure("Google ID token missing. Check OAuth client configuration.")
+                    return GoogleSignInResult.Failure(GoogleSignInFailureReason.Unavailable)
                 }
                 Log.d(
                     GoogleSignInTag,
@@ -233,7 +233,8 @@ class MainActivity : ComponentActivity() {
                     profilePictureUri = googleCredential.profilePictureUri?.toString(),
                 )
             } else {
-                GoogleSignInResult.Failure("Google returned an unsupported credential.")
+                Log.w(GoogleSignInTag, "Google returned unsupported credential type=${credential.type}.")
+                GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
             }
         } catch (error: GetCredentialCancellationException) {
             Log.e(GoogleSignInTag, "Credential Manager cancelled Google sign-in after account selection.", error)
@@ -241,30 +242,27 @@ class MainActivity : ComponentActivity() {
                 Log.w(GoogleSignInTag, "Retrying Google sign-in with Play Services fallback.")
                 signInWithLegacyGoogleClient()
             } else {
-                GoogleSignInResult.Failure(
-                    error.message?.takeIf { it.isNotBlank() }
-                        ?: "Google sign-in was cancelled or interrupted. Please try again.",
-                )
+                GoogleSignInResult.Failure(GoogleSignInFailureReason.Interrupted)
             }
         } catch (error: GoogleIdTokenParsingException) {
             Log.e(GoogleSignInTag, "Google returned an invalid ID token credential.", error)
-            GoogleSignInResult.Failure("Google returned an invalid sign-in response. Please update Google Play services and try again.")
+            GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         } catch (error: GetCredentialException) {
             Log.e(GoogleSignInTag, "Credential Manager failed.", error)
-            GoogleSignInResult.Failure(error.message ?: "Google sign-in failed.")
+            GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         } catch (error: IllegalArgumentException) {
             Log.e(GoogleSignInTag, "Google sign-in response was invalid.", error)
-            GoogleSignInResult.Failure(error.message ?: "Google sign-in response was invalid.")
+            GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         } catch (error: Throwable) {
             Log.e(GoogleSignInTag, "Unexpected Google sign-in failure.", error)
-            GoogleSignInResult.Failure(error.message ?: "Google sign-in failed unexpectedly.")
+            GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         }
     }
 
     private suspend fun signInWithLegacyGoogleClient(): GoogleSignInResult =
         suspendCancellableCoroutine { continuation ->
             if (legacyGoogleSignInContinuation != null) {
-                continuation.resume(GoogleSignInResult.Failure("Google sign-in is already running."))
+                continuation.resume(GoogleSignInResult.Failure(GoogleSignInFailureReason.InProgress))
                 return@suspendCancellableCoroutine
             }
 
@@ -292,7 +290,7 @@ class MainActivity : ComponentActivity() {
                     }
                     Log.e(GoogleSignInTag, "Could not launch Play Services Google sign-in fallback.", error)
                     continuation.resume(
-                        GoogleSignInResult.Failure(error.message ?: "Google sign-in could not be opened."),
+                        GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed),
                     )
                 }
             }
@@ -311,20 +309,20 @@ class MainActivity : ComponentActivity() {
                 if (result.data == null) {
                     GoogleSignInResult.Cancelled
                 } else {
-                    GoogleSignInResult.Failure(error.message ?: "Google sign-in failed.")
+                    GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
                 },
             )
             return
         } catch (error: Throwable) {
             Log.e(GoogleSignInTag, "Play Services Google sign-in failed.", error)
-            continuation.resume(GoogleSignInResult.Failure(error.message ?: "Google sign-in failed."))
+            continuation.resume(GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed))
             return
         }
 
         val idToken = account.idToken
         if (idToken.isNullOrBlank()) {
             Log.w(GoogleSignInTag, "Play Services Google sign-in did not return an ID token.")
-            continuation.resume(GoogleSignInResult.Failure("Google ID token missing. Check OAuth client configuration."))
+            continuation.resume(GoogleSignInResult.Failure(GoogleSignInFailureReason.Unavailable))
             return
         }
 
