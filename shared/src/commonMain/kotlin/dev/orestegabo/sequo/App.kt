@@ -3,6 +3,7 @@ package dev.orestegabo.sequo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -28,8 +29,10 @@ import dev.orestegabo.sequo.feature.auth.AuthScreen
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
 import dev.orestegabo.sequo.feature.legal.LegalScreen
 import dev.orestegabo.sequo.feature.settings.AppLanguage
+import dev.orestegabo.sequo.feature.settings.AppThemePreference
 import dev.orestegabo.sequo.feature.settings.LocalAppLanguage
 import dev.orestegabo.sequo.feature.settings.appText
+import dev.orestegabo.sequo.feature.settings.rememberAppPreferencesStore
 import dev.orestegabo.sequo.feature.splash.SplashScreen
 import dev.orestegabo.sequo.theme.SequoTheme
 import dev.orestegabo.sequo.ui.app.SequoShell
@@ -47,8 +50,34 @@ fun App(
     onHomeEntered: (AppLanguage) -> Unit = {},
     openNotificationsRequest: Int = 0,
 ) {
-    SequoTheme {
+    val appPreferencesStore = rememberAppPreferencesStore()
+    val appScope = rememberCoroutineScope()
+    var language by rememberSaveable { mutableStateOf(AppLanguage.English) }
+    var themePreference by rememberSaveable { mutableStateOf(AppThemePreference.System) }
+    val systemDarkTheme = isSystemInDarkTheme()
+    val darkTheme = when (themePreference) {
+        AppThemePreference.System -> systemDarkTheme
+        AppThemePreference.Light -> false
+        AppThemePreference.Dark -> true
+    }
+
+    LaunchedEffect(appPreferencesStore) {
+        appPreferencesStore.getLanguage()?.let { language = it }
+        appPreferencesStore.getThemePreference()?.let { themePreference = it }
+    }
+
+    SequoTheme(darkTheme = darkTheme) {
         SequoApp(
+            language = language,
+            onLanguageChange = { selectedLanguage ->
+                language = selectedLanguage
+                appScope.launch { appPreferencesStore.saveLanguage(selectedLanguage) }
+            },
+            themePreference = themePreference,
+            onThemePreferenceChange = { selectedTheme ->
+                themePreference = selectedTheme
+                appScope.launch { appPreferencesStore.saveThemePreference(selectedTheme) }
+            },
             onGoogleSignIn = onGoogleSignIn,
             onGoogleSignOut = onGoogleSignOut,
             onHomeEntered = onHomeEntered,
@@ -59,6 +88,10 @@ fun App(
 
 @Composable
 private fun SequoApp(
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    themePreference: AppThemePreference,
+    onThemePreferenceChange: (AppThemePreference) -> Unit,
     onGoogleSignIn: suspend () -> GoogleSignInResult,
     onGoogleSignOut: suspend () -> Unit,
     onHomeEntered: (AppLanguage) -> Unit,
@@ -68,7 +101,6 @@ private fun SequoApp(
     var isAuthenticated by rememberSaveable { mutableStateOf(false) }
     var guestMode by rememberSaveable { mutableStateOf(false) }
     var legalScreenTab by rememberSaveable { mutableStateOf<LegalInitialTab?>(null) }
-    var language by rememberSaveable { mutableStateOf(AppLanguage.English) }
     var authErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var googleSignInInProgress by rememberSaveable { mutableStateOf(false) }
     var emailAuthInProgress by rememberSaveable { mutableStateOf(false) }
@@ -175,7 +207,7 @@ private fun SequoApp(
         CompositionLocalProvider(LocalAppLanguage provides language) {
             AuthScreen(
                 language = language,
-                onLanguageChange = { language = it },
+                onLanguageChange = onLanguageChange,
                 emailAuthInProgress = emailAuthInProgress,
                 rememberedUser = rememberedUser,
                 onContinueRememberedUser = {
@@ -342,6 +374,10 @@ private fun SequoApp(
         SequoShell(
             currentUser = currentUser,
             isGuest = guestMode,
+            language = language,
+            onLanguageChange = onLanguageChange,
+            themePreference = themePreference,
+            onThemePreferenceChange = onThemePreferenceChange,
             onOpenLegal = { legalScreenTab = it },
             onHomeEntered = { onHomeEntered(language) },
             openNotificationsRequest = openNotificationsRequest,
