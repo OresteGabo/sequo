@@ -50,7 +50,7 @@ private class IosBiometricAuthenticator : BiometricAuthenticator {
                         error?.code == LAErrorUserCancel || error?.code == LAErrorUserFallback -> {
                             BiometricAuthResult.Cancelled
                         }
-                        else -> BiometricAuthResult.Failed(error?.localizedDescription)
+                        else -> BiometricAuthResult.Failed()
                     }
                     continuation.resume(result)
                 }
