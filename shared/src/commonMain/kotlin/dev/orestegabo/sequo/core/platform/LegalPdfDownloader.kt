@@ -1,10 +1,11 @@
 package dev.orestegabo.sequo.core.platform
 
 import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.StringResource
 
 data class LegalPdfResult(
     val success: Boolean,
-    val message: String,
+    val message: StringResource,
 )
 
 interface LegalPdfDownloader {
