@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
+import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -234,8 +235,8 @@ internal fun BasketAddedLine(count: Int) {
             }
         },
         content = {
-            Text("Added while browsing", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text("Temporary basket item", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(appText(Res.string.basket_added_browsing), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(appText(Res.string.basket_temporary_item), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(formatCfa(count * 3500), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Black)
         },
         trailing = { QuantityStepper(count) },
@@ -316,20 +317,20 @@ internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
                     }
                 }
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Delivery & packaging", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(appText(Res.string.basket_delivery_packaging), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Text(
-                        "${packages.size} packages with item and delivery details",
+                        appText(Res.string.basket_packages_detail).replace("%1\$d", packages.size.toString()),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Delivery", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(appText(Res.string.basket_delivery), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(formatCfa(totalDelivery), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Collapse delivery fees" else "Show delivery fees",
+                    contentDescription = if (expanded) appText(Res.string.basket_collapse_delivery_fees) else appText(Res.string.basket_show_delivery_fees),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp),
                 )
@@ -361,7 +362,7 @@ internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
                         }
                     }
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Package ${('A'.code + index).toChar()}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text(appText(Res.string.basket_package_label).replace("%1\$s", ('A'.code + index).toChar().toString()), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         Text(
                             "${shop.area}  |  $itemCount item${if (itemCount == 1) "" else "s"}",
                             style = MaterialTheme.typography.labelSmall,
