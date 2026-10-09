@@ -6,6 +6,9 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.StringResource
+import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.api_health_unreachable
 
 class ApiHealthClient(
     private val baseUrl: String = NetworkConfig.ProductionBaseUrl,
@@ -29,7 +32,7 @@ class ApiHealthClient(
             ApiHealthResult(
                 requestReachedBackend = false,
                 isHealthyResponse = false,
-                message = "Unable to reach Sequo API",
+                userMessage = Res.string.api_health_unreachable,
             )
         }
 
@@ -52,7 +55,8 @@ data class ApiHealthResult(
     val isHealthyResponse: Boolean,
     val statusCode: Int? = null,
     val actuatorStatus: String? = null,
-    val message: String,
+    val message: String? = null,
+    val userMessage: StringResource? = null,
 )
 
 @Serializable
