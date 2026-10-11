@@ -665,6 +665,7 @@ internal fun OrderDetailScreen(order: SequoOrder, onBack: () -> Unit) {
             SequoSectionCard(title = "Next step", action = orderNextStepTag(order.state)) {
                 RuleRow(orderNextStepTitle(order.state), orderNextStepDetail(order.state))
             }
+            ReturnRequestPanel(order)
         }
         OrderDetailTab.Details -> {
             SequoSectionCard(title = "Receipt", action = order.state.label) {
@@ -682,3 +683,90 @@ internal fun OrderDetailScreen(order: SequoOrder, onBack: () -> Unit) {
         }
     }
 }
+
+@Composable
+private fun ReturnRequestPanel(order: SequoOrder) {
+    if (order.state != SequoOrderState.Delivered && order.state !in activeReturnStates) return
+
+    var selectedItemIndexes by remember(order.id) { mutableStateOf(order.items.indices.toSet()) }
+    var selectedReason by remember(order.id) { mutableStateOf(ReturnReason.WrongProduct) }
+    var requestCreated by remember(order.id) { mutableStateOf(order.state in activeReturnStates) }
+    val returnReference = remember(order.id) { "RET-${order.id.removePrefix("SQ-")}" }
+    val returnPin = remember(order.id) { order.pickupCode.filter(Char::isDigit).take(6).padEnd(6, '0') }
+    val eligible = order.isInsideReturnWindow || order.state in activeReturnStates
+
+    SequoSectionCard(
+        title = appText(Res.string.orders_return_request_title),
+        action = if (eligible) "72h" else "closed",
+    ) {
+        RuleRow(
+            appText(if (eligible) Res.string.orders_return_available else Res.string.orders_return_expired),
+            appText(Res.string.orders_return_relay_detail),
+        )
+        Text(
+            appText(Res.string.orders_return_local_mock),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (eligible) {
+            Text(appText(Res.string.orders_return_select_items), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            order.items.forEachIndexed { index, item ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = index in selectedItemIndexes,
+                        onCheckedChange = { checked ->
+                            selectedItemIndexes = if (checked) selectedItemIndexes + index else selectedItemIndexes - index
+                        },
+                    )
+                    Text("${item.quantity} x ${item.name}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Text(appText(Res.string.orders_return_reason), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ReturnReason.entries.forEach { reason ->
+                    FilterChip(
+                        selected = selectedReason == reason,
+                        onClick = { selectedReason = reason },
+                        label = { Text(reason.label()) },
+                    )
+                }
+            }
+            RuleRow(appText(Res.string.orders_return_relay_dropoff), appText(Res.string.orders_return_relay_detail))
+            if (requestCreated) {
+                ValueRow(appText(Res.string.orders_return_reference), returnReference, strong = true)
+                ValueRow(appText(Res.string.orders_return_pin), returnPin, strong = true)
+            } else {
+                Button(
+                    onClick = { requestCreated = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = selectedItemIndexes.isNotEmpty(),
+                ) {
+                    Text(appText(Res.string.orders_return_confirm))
+                }
+            }
+        }
+    }
+}
+
+private enum class ReturnReason {
+    WrongProduct,
+    Damaged,
+    MissingItem,
+    VariantIssue,
+    NotDescribed,
+}
+
+@Composable
+private fun ReturnReason.label(): String =
+    when (this) {
+        ReturnReason.WrongProduct -> appText(Res.string.orders_return_wrong_product)
+        ReturnReason.Damaged -> appText(Res.string.orders_return_damaged)
+        ReturnReason.MissingItem -> appText(Res.string.orders_return_missing_item)
+        ReturnReason.VariantIssue -> appText(Res.string.orders_return_variant_issue)
+        ReturnReason.NotDescribed -> appText(Res.string.orders_return_not_described)
+    }
