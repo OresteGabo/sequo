@@ -143,6 +143,12 @@ iOS simulator tests:
 6. Add return request flow with 72-hour eligibility checks and Point de Relai drop-off details.
 7. Add robust loading, offline, retry, duplicate-submit protection, and payment-pending states.
 
+## Checkout Delivery Mode Notes
+
+- Basket checkout now lets the customer choose home delivery or relay pickup locally.
+- Food, perishables, and sensitive basket entries are kept on home delivery until backend policy exposes item-level relay eligibility.
+- The backend order route enum already includes `PointDeRelai`; the remaining mobile integration work is to pass the selected route when the real checkout/order draft submission is wired.
+
 ## Security And Privacy
 
 - Do not commit real API keys, payment keys, signing keys, OAuth secrets, database credentials, or private local paths.

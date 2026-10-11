@@ -154,6 +154,14 @@
     <string name="basket_collapse_delivery_fees">Masquer les frais de livraison</string>
     <string name="basket_show_delivery_fees">Afficher les frais de livraison</string>
     <string name="basket_package_label">Colis %1$s</string>
+    <string name="basket_delivery_choice_title">Choix livraison</string>
+    <string name="basket_delivery_home">Livraison domicile</string>
+    <string name="basket_delivery_relay">Retrait relais</string>
+    <string name="basket_delivery_home_detail">Un livreur apporte la commande a votre adresse.</string>
+    <string name="basket_delivery_relay_detail">Retrait avec code ou QR et verification d'identite.</string>
+    <string name="basket_delivery_relay_note">Le retrait relais utilise code/QR et verification d'identite a la remise.</string>
+    <string name="basket_delivery_relay_ineligible">Repas, perissables et articles sensibles restent en livraison domicile pour l'instant.</string>
+    <string name="basket_delivery_local_only">Enregistre localement jusqu'a l'envoi de la route commande au backend.</string>
     <string name="orders_returns_current_title">Les retours restent actifs pendant 72 heures</string>
     <string name="orders_returns_current_detail">Les commandes livrees eligibles restent ici jusqu'a la fin du delai de retour.</string>
     <string name="orders_back_to_orders">Retour aux commandes</string>

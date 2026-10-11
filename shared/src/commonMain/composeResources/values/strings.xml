@@ -154,6 +154,14 @@
     <string name="basket_collapse_delivery_fees">Collapse delivery fees</string>
     <string name="basket_show_delivery_fees">Show delivery fees</string>
     <string name="basket_package_label">Package %1$s</string>
+    <string name="basket_delivery_choice_title">Delivery choice</string>
+    <string name="basket_delivery_home">Home delivery</string>
+    <string name="basket_delivery_relay">Relay pickup</string>
+    <string name="basket_delivery_home_detail">Rider brings the order to your saved address.</string>
+    <string name="basket_delivery_relay_detail">Pick up with code or QR plus ID verification.</string>
+    <string name="basket_delivery_relay_note">Relay pickup uses code/QR and identity verification at handoff.</string>
+    <string name="basket_delivery_relay_ineligible">Food, perishables, and sensitive items must use home delivery for now.</string>
+    <string name="basket_delivery_local_only">Stored locally until checkout submission sends the backend order route.</string>
     <string name="orders_returns_current_title">Returns stay current for 72 hours</string>
     <string name="orders_returns_current_detail">Eligible delivered orders remain here until the return window closes.</string>
     <string name="orders_back_to_orders">Back to orders</string>

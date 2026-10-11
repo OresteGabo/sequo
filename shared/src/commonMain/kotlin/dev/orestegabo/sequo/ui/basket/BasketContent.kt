@@ -41,10 +41,26 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun BasketContent(extraBasketItems: Int) {
     var selectedPayment by remember { mutableStateOf("Yas Togo") }
+    var selectedDeliveryMode by remember { mutableStateOf(CheckoutDeliveryMode.HomeDelivery) }
     val basketEntries = emptyList<BasketEntry>()
+    val relayEligible = isRelayPickupEligible(basketEntries)
 
-    DeliveryAddressCard(packageCount = basketEntries.groupBy { it.shop.area }.size)
+    LaunchedEffect(relayEligible) {
+        if (!relayEligible && selectedDeliveryMode == CheckoutDeliveryMode.RelayPickup) {
+            selectedDeliveryMode = CheckoutDeliveryMode.HomeDelivery
+        }
+    }
+
+    DeliveryAddressCard(packageCount = basketEntries.groupBy { it.shop.area }.size, deliveryMode = selectedDeliveryMode)
     CartItemsPanel(basketEntries, extraBasketItems)
     CartDeliveryPackagesCard(basketEntries)
-    SequoCheckoutCard(basketEntries, extraBasketItems, selectedPayment, onPaymentSelected = { selectedPayment = it })
+    SequoCheckoutCard(
+        entries = basketEntries,
+        extraBasketItems = extraBasketItems,
+        selectedPayment = selectedPayment,
+        selectedDeliveryMode = selectedDeliveryMode,
+        relayEligible = relayEligible,
+        onPaymentSelected = { selectedPayment = it },
+        onDeliveryModeSelected = { selectedDeliveryMode = it },
+    )
 }

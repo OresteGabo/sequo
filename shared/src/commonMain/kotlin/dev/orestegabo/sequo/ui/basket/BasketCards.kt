@@ -243,8 +243,13 @@ internal fun BasketAddedLine(count: Int) {
     )
 }
 
+internal enum class CheckoutDeliveryMode {
+    HomeDelivery,
+    RelayPickup,
+}
+
 @Composable
-internal fun DeliveryAddressCard(packageCount: Int) {
+internal fun DeliveryAddressCard(packageCount: Int, deliveryMode: CheckoutDeliveryMode) {
     Surface(
         modifier = Modifier.fillMaxWidth().height(78.dp),
         shape = RoundedCornerShape(18.dp),
@@ -266,7 +271,7 @@ internal fun DeliveryAddressCard(packageCount: Int) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Delivery in 35-45 min  |  $packageCount packages from shopping locations",
+                    "${deliveryMode.label()}  |  $packageCount packages from shopping locations",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -421,6 +426,29 @@ private fun isFoodBasketEntry(entry: BasketEntry): Boolean =
         entry.product.label.contains("food", ignoreCase = true) ||
         entry.product.label.contains("hot", ignoreCase = true)
 
+internal fun isRelayPickupEligible(entries: List<BasketEntry>): Boolean =
+    entries.none(::isFoodBasketEntry)
+
+@Composable
+private fun CheckoutDeliveryMode.label(): String =
+    when (this) {
+        CheckoutDeliveryMode.HomeDelivery -> appText(Res.string.basket_delivery_home)
+        CheckoutDeliveryMode.RelayPickup -> appText(Res.string.basket_delivery_relay)
+    }
+
+@Composable
+private fun CheckoutDeliveryMode.detail(): String =
+    when (this) {
+        CheckoutDeliveryMode.HomeDelivery -> appText(Res.string.basket_delivery_home_detail)
+        CheckoutDeliveryMode.RelayPickup -> appText(Res.string.basket_delivery_relay_detail)
+    }
+
+private fun CheckoutDeliveryMode.icon(): ImageVector =
+    when (this) {
+        CheckoutDeliveryMode.HomeDelivery -> Icons.Filled.Home
+        CheckoutDeliveryMode.RelayPickup -> Icons.Filled.Storefront
+    }
+
 private fun cartPackageDeliveryFees(entries: List<BasketEntry>): List<Int> =
     entries
         .groupBy { it.shop.area }
@@ -470,7 +498,10 @@ internal fun SequoCheckoutCard(
     entries: List<BasketEntry>,
     extraBasketItems: Int,
     selectedPayment: String,
+    selectedDeliveryMode: CheckoutDeliveryMode,
+    relayEligible: Boolean,
     onPaymentSelected: (String) -> Unit,
+    onDeliveryModeSelected: (CheckoutDeliveryMode) -> Unit,
 ) {
     val subtotal = entries.sumOf { it.product.priceCfa * it.quantity } + (extraBasketItems * 3500)
     val packageDelivery = cartPackageDeliveryFees(entries).sum()
@@ -481,6 +512,11 @@ internal fun SequoCheckoutCard(
     val total = subtotal + finalDelivery
 
     SequoSectionCard(title = "Pay securely", action = selectedPayment) {
+        CheckoutDeliveryModeSelector(
+            selectedDeliveryMode = selectedDeliveryMode,
+            relayEligible = relayEligible,
+            onDeliveryModeSelected = onDeliveryModeSelected,
+        )
         ValueRow("Items", formatCfa(subtotal))
         ValueRow("Delivery", formatCfa(packageDelivery))
         ValueRow("Subscriber", "-${formatCfa(subscriptionDiscount)}")
@@ -491,6 +527,79 @@ internal fun SequoCheckoutCard(
             PaymentChoice("Moov Africa", selectedPayment, onPaymentSelected, Modifier.weight(1f))
         }
         SequoPrimaryButton("Pay ${formatCfa(total)}", {}, Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun CheckoutDeliveryModeSelector(
+    selectedDeliveryMode: CheckoutDeliveryMode,
+    relayEligible: Boolean,
+    onDeliveryModeSelected: (CheckoutDeliveryMode) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(appText(Res.string.basket_delivery_choice_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            DeliveryModeChoice(
+                mode = CheckoutDeliveryMode.HomeDelivery,
+                selected = selectedDeliveryMode == CheckoutDeliveryMode.HomeDelivery,
+                enabled = true,
+                onClick = { onDeliveryModeSelected(CheckoutDeliveryMode.HomeDelivery) },
+                modifier = Modifier.weight(1f),
+            )
+            DeliveryModeChoice(
+                mode = CheckoutDeliveryMode.RelayPickup,
+                selected = selectedDeliveryMode == CheckoutDeliveryMode.RelayPickup,
+                enabled = relayEligible,
+                onClick = { onDeliveryModeSelected(CheckoutDeliveryMode.RelayPickup) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Text(
+            if (relayEligible) appText(Res.string.basket_delivery_relay_note) else appText(Res.string.basket_delivery_relay_ineligible),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            appText(Res.string.basket_delivery_local_only),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+@Composable
+private fun DeliveryModeChoice(
+    mode: CheckoutDeliveryMode,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val borderColor = when {
+        selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.52f)
+        enabled -> MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)
+    }
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+
+    Surface(
+        modifier = modifier
+            .heightIn(min = 86.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(enabled = enabled, onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        color = backgroundColor,
+        border = BorderStroke(1.dp, borderColor),
+        contentColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(mode.icon(), contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(mode.label(), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            }
+            Text(mode.detail(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
