@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.bargaining.*
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appText
@@ -457,30 +458,118 @@ private fun ProductDetailInfoCard(
             }
             ProductConcernPanel(product = product)
             if (product.isNegotiable) {
-                Surface(
-                    onClick = onNegotiateClick,
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(appText(Res.string.home_make_offer), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                            Text(product.bargainNote ?: "Send a price proposal to the seller.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
+                ProductBargainingPanel(product = product, onNegotiateClick = onNegotiateClick)
             }
             SequoPrimaryButton("Add to cart", onAddProduct, Modifier.fillMaxWidth())
         }
     }
 }
+@Composable
+private fun ProductBargainingPanel(
+    product: SequoProduct,
+    onNegotiateClick: () -> Unit,
+    repository: BargainingRepository = remember { LocalBargainingRepository() },
+) {
+    var state by remember(product.id) { mutableStateOf(repository.stateFor(product)) }
+    var offerText by remember(product.id) { mutableStateOf("") }
+    var isSubmitting by remember(product.id) { mutableStateOf(false) }
+    var feedback by remember(product.id) { mutableStateOf<String?>(null) }
+    val offerAmount = offerText.toIntOrNull()
+    val canSubmit = !isSubmitting && offerAmount != null && offerAmount in 1..product.priceCfa && state.attemptsRemaining > 0
+    val offerSavedText = appText(Res.string.bargain_offer_saved)
+    val disabledText = appText(Res.string.bargain_disabled)
+    val attemptsExhaustedText = appText(Res.string.bargain_attempts_exhausted)
+    val invalidAmountText = appText(Res.string.bargain_invalid_amount)
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(appText(Res.string.home_make_offer), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(product.bargainNote ?: appText(Res.string.bargain_detail_default), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = onNegotiateClick) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = appText(Res.string.home_make_offer), tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+            BargainInfoLine(appText(Res.string.bargain_attempts_remaining), state.attemptsRemaining.toString())
+            BargainInfoLine(
+                appText(Res.string.bargain_lowest_accepted),
+                state.historicalMinimumAcceptedCfa?.let(::formatCfa) ?: appText(Res.string.bargain_no_history),
+            )
+            state.acceptedLockedPriceCfa?.let { lockedPrice ->
+                BargainInfoLine(
+                    appText(Res.string.bargain_locked_price),
+                    "${formatCfa(lockedPrice)} / ${state.lockedPriceExpiresLabel ?: "24h"}",
+                )
+            }
+            OutlinedTextField(
+                value = offerText,
+                onValueChange = { next ->
+                    offerText = next.filter(Char::isDigit).take(9)
+                    feedback = null
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text(appText(Res.string.bargain_offer_label)) },
+                suffix = { Text("CFA") },
+                supportingText = {
+                    Text(
+                        appText(Res.string.bargain_local_mock),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+            )
+            feedback?.let {
+                Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            }
+            Button(
+                onClick = {
+                    val amount = offerAmount ?: return@Button
+                    isSubmitting = true
+                    when (val result = repository.submitCustomerOffer(product, amount, state)) {
+                        is BargainingSubmitResult.Accepted -> {
+                            state = result.state
+                            feedback = offerSavedText
+                        }
+                        BargainingSubmitResult.Disabled -> feedback = disabledText
+                        BargainingSubmitResult.AttemptsExhausted -> feedback = attemptsExhaustedText
+                        BargainingSubmitResult.InvalidAmount -> feedback = invalidAmountText
+                    }
+                    isSubmitting = false
+                },
+                enabled = canSubmit,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(appText(Res.string.bargain_submit_offer))
+            }
+        }
+    }
+}
+
+@Composable
+private fun BargainInfoLine(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+    }
+}
+
 @Composable
 private fun ProductConcernPanel(product: SequoProduct) {
     val isFood = product.isFoodOrGrocery()
