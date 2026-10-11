@@ -149,6 +149,16 @@ private fun SequoApp(
         onDispose { authRepository.close() }
     }
 
+    suspend fun clearSuggestedAccountSession() {
+        currentUser = null
+        rememberedUser = null
+        isAuthenticated = false
+        guestMode = false
+        authErrorMessage = null
+        runCatching { authRepository.logout() }
+        runCatching { onGoogleSignOut() }
+    }
+
     LaunchedEffect(authRepository) {
         rememberedUser = authRepository.getRememberedUser()
 
@@ -267,6 +277,7 @@ private fun SequoApp(
                         emailAuthInProgress = true
                         authErrorMessage = null
                         try {
+                            clearSuggestedAccountSession()
                             runCatching {
                                 authRepository.loginWithEmail(email, password)
                                 authRepository.currentUser()
@@ -293,6 +304,7 @@ private fun SequoApp(
                         emailAuthInProgress = true
                         authErrorMessage = null
                         try {
+                            clearSuggestedAccountSession()
                             runCatching {
                                 authRepository.signUpWithEmail(email, password, name)
                                 authRepository.currentUser()
@@ -320,6 +332,7 @@ private fun SequoApp(
                         googleSignInInProgress = true
                         authErrorMessage = null
                         try {
+                            clearSuggestedAccountSession()
                             val result = runCatching {
                                 onGoogleSignIn()
                             }.getOrElse { error ->
@@ -357,25 +370,44 @@ private fun SequoApp(
                     }
                 },
                 onAppleLogin = {
-                    authErrorMessage = appleNotReady
+                    scope.launch {
+                        clearSuggestedAccountSession()
+                        authErrorMessage = appleNotReady
+                    }
                 },
                 onFacebookLogin = {
-                    authErrorMessage = facebookNotReady
+                    scope.launch {
+                        clearSuggestedAccountSession()
+                        authErrorMessage = facebookNotReady
+                    }
                 },
                 onWhatsAppLogin = {
-                    authErrorMessage = whatsappNotReady
+                    scope.launch {
+                        clearSuggestedAccountSession()
+                        authErrorMessage = whatsappNotReady
+                    }
                 },
                 onPasskeyLogin = {
-                    authErrorMessage = passkeyNotReady
+                    scope.launch {
+                        clearSuggestedAccountSession()
+                        authErrorMessage = passkeyNotReady
+                    }
                 },
                 onSequoLogin = {
-                    authErrorMessage = sequoLoginNotReady
+                    scope.launch {
+                        clearSuggestedAccountSession()
+                        authErrorMessage = sequoLoginNotReady
+                    }
                 },
                 onSkipAuth = {
-                    currentUser = null
-                    isAuthenticated = false
-                    guestMode = true
-                    authErrorMessage = null
+                    if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
+                    scope.launch {
+                        clearSuggestedAccountSession()
+                        currentUser = null
+                        isAuthenticated = false
+                        guestMode = true
+                        authErrorMessage = null
+                    }
                 },
                 onPrivacyTermsClick = { legalScreenTab = LegalInitialTab.Privacy },
             )
@@ -413,8 +445,7 @@ private fun SequoApp(
             },
             onLogout = {
                 scope.launch {
-                    authRepository.logout()
-                    onGoogleSignOut()
+                    clearSuggestedAccountSession()
                     currentUser = null
                     isAuthenticated = false
                     guestMode = false

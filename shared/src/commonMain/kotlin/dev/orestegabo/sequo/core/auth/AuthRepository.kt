@@ -84,8 +84,11 @@ class AuthRepository(
         secureSessionCache.unlockCachedSession(promptConfig)
 
     suspend fun logout() {
-        sessionStore.get()?.let { session ->
-            authApiClient.logout(session.refreshToken)
+        val session = sessionStore.get()
+        if (session != null) {
+            runCatching {
+                authApiClient.logout(session.refreshToken)
+            }
         }
         sessionStore.clear()
         secureSessionCache.clearSession()
