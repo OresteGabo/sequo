@@ -248,6 +248,14 @@ internal enum class CheckoutDeliveryMode {
     RelayPickup,
 }
 
+internal enum class CheckoutPaymentState {
+    ProviderNotConfigured,
+    Pending,
+    Validated,
+    Failed,
+    Cancelled,
+}
+
 @Composable
 internal fun DeliveryAddressCard(packageCount: Int, deliveryMode: CheckoutDeliveryMode) {
     Surface(
@@ -500,8 +508,10 @@ internal fun SequoCheckoutCard(
     selectedPayment: String,
     selectedDeliveryMode: CheckoutDeliveryMode,
     relayEligible: Boolean,
+    paymentState: CheckoutPaymentState,
     onPaymentSelected: (String) -> Unit,
     onDeliveryModeSelected: (CheckoutDeliveryMode) -> Unit,
+    onRefreshPaymentStatus: () -> Unit,
 ) {
     val subtotal = entries.sumOf { it.product.priceCfa * it.quantity } + (extraBasketItems * 3500)
     val packageDelivery = cartPackageDeliveryFees(entries).sum()
@@ -511,22 +521,87 @@ internal fun SequoCheckoutCard(
     val finalDelivery = deliveryAfterSubscription - referralCredit
     val total = subtotal + finalDelivery
 
-    SequoSectionCard(title = "Pay securely", action = selectedPayment) {
+    SequoSectionCard(title = appText(Res.string.basket_payment_section_title), action = selectedPayment) {
         CheckoutDeliveryModeSelector(
             selectedDeliveryMode = selectedDeliveryMode,
             relayEligible = relayEligible,
             onDeliveryModeSelected = onDeliveryModeSelected,
         )
-        ValueRow("Items", formatCfa(subtotal))
-        ValueRow("Delivery", formatCfa(packageDelivery))
-        ValueRow("Subscriber", "-${formatCfa(subscriptionDiscount)}")
-        ValueRow("Parrainage", "-${formatCfa(referralCredit)}")
-        ValueRow("Total", formatCfa(total), strong = true)
+        ValueRow(appText(Res.string.basket_payment_items), formatCfa(subtotal))
+        ValueRow(appText(Res.string.basket_delivery), formatCfa(packageDelivery))
+        ValueRow(appText(Res.string.basket_payment_subscriber), "-${formatCfa(subscriptionDiscount)}")
+        ValueRow(appText(Res.string.basket_payment_referral), "-${formatCfa(referralCredit)}")
+        ValueRow(appText(Res.string.basket_payment_total), formatCfa(total), strong = true)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PaymentChoice("Yas Togo", selectedPayment, onPaymentSelected, Modifier.weight(1f))
-            PaymentChoice("Moov Africa", selectedPayment, onPaymentSelected, Modifier.weight(1f))
+            PaymentChoice(
+                label = "Yas Togo",
+                selectedPayment = selectedPayment,
+                state = if (selectedPayment == "Yas Togo") paymentState else CheckoutPaymentState.ProviderNotConfigured,
+                onPaymentSelected = onPaymentSelected,
+                modifier = Modifier.weight(1f),
+            )
+            PaymentChoice(
+                label = "Moov Africa",
+                selectedPayment = selectedPayment,
+                state = if (selectedPayment == "Moov Africa") paymentState else CheckoutPaymentState.ProviderNotConfigured,
+                onPaymentSelected = onPaymentSelected,
+                modifier = Modifier.weight(1f),
+            )
         }
-        SequoPrimaryButton("Pay ${formatCfa(total)}", {}, Modifier.fillMaxWidth())
+        PaymentStatePanel(
+            state = paymentState,
+            onRefreshPaymentStatus = onRefreshPaymentStatus,
+        )
+        SequoPrimaryButton(
+            if (paymentState == CheckoutPaymentState.Validated) {
+                appText(Res.string.basket_payment_confirm_order)
+            } else {
+                appText(Res.string.basket_payment_waiting_validation)
+            },
+            {},
+            Modifier.fillMaxWidth(),
+            enabled = paymentState == CheckoutPaymentState.Validated,
+        )
+    }
+}
+
+@Composable
+private fun PaymentStatePanel(
+    state: CheckoutPaymentState,
+    onRefreshPaymentStatus: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = state.icon(),
+                    contentDescription = null,
+                    tint = state.color(),
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    appText(Res.string.basket_payment_status_title),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                MetaPill(state.label(), state.color())
+            }
+            Text(
+                state.detail(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onRefreshPaymentStatus) {
+                Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(appText(Res.string.basket_payment_check_status))
+            }
+        }
     }
 }
 
@@ -607,6 +682,7 @@ private fun DeliveryModeChoice(
 internal fun PaymentChoice(
     label: String,
     selectedPayment: String,
+    state: CheckoutPaymentState,
     onPaymentSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -637,14 +713,49 @@ internal fun PaymentChoice(
             )
             if (selected) {
                 Icon(
-                    imageVector = Icons.Filled.CheckCircle,
+                    imageVector = state.icon(),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = state.color(),
                     modifier = Modifier.size(18.dp),
                 )
             }
         }
     }
+}
+
+@Composable
+private fun CheckoutPaymentState.label(): String = when (this) {
+    CheckoutPaymentState.ProviderNotConfigured -> appText(Res.string.basket_payment_not_configured)
+    CheckoutPaymentState.Pending -> appText(Res.string.basket_payment_pending)
+    CheckoutPaymentState.Validated -> appText(Res.string.basket_payment_validated)
+    CheckoutPaymentState.Failed -> appText(Res.string.basket_payment_failed)
+    CheckoutPaymentState.Cancelled -> appText(Res.string.basket_payment_cancelled)
+}
+
+@Composable
+private fun CheckoutPaymentState.detail(): String = when (this) {
+    CheckoutPaymentState.ProviderNotConfigured -> appText(Res.string.basket_payment_not_configured_detail)
+    CheckoutPaymentState.Pending -> appText(Res.string.basket_payment_pending_detail)
+    CheckoutPaymentState.Validated -> appText(Res.string.basket_payment_validated_detail)
+    CheckoutPaymentState.Failed -> appText(Res.string.basket_payment_failed_detail)
+    CheckoutPaymentState.Cancelled -> appText(Res.string.basket_payment_cancelled_detail)
+}
+
+@Composable
+private fun CheckoutPaymentState.color(): Color = when (this) {
+    CheckoutPaymentState.ProviderNotConfigured -> MaterialTheme.colorScheme.tertiary
+    CheckoutPaymentState.Pending -> MaterialTheme.colorScheme.primary
+    CheckoutPaymentState.Validated -> Color(0xFF16A36A)
+    CheckoutPaymentState.Failed -> MaterialTheme.colorScheme.error
+    CheckoutPaymentState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+private fun CheckoutPaymentState.icon(): ImageVector = when (this) {
+    CheckoutPaymentState.ProviderNotConfigured -> Icons.Filled.Settings
+    CheckoutPaymentState.Pending -> Icons.Filled.Schedule
+    CheckoutPaymentState.Validated -> Icons.Filled.CheckCircle
+    CheckoutPaymentState.Failed -> Icons.Filled.Error
+    CheckoutPaymentState.Cancelled -> Icons.Filled.Cancel
 }
 
 @Composable
