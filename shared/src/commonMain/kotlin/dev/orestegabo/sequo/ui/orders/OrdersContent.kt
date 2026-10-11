@@ -740,7 +740,9 @@ private fun ReturnRequestPanel(order: SequoOrder) {
             if (requestCreated) {
                 ValueRow(appText(Res.string.orders_return_reference), returnReference, strong = true)
                 ValueRow(appText(Res.string.orders_return_pin), returnPin, strong = true)
+                ReturnStatusTracker(order = order, requestCreated = true)
             } else {
+                ReturnStatusTracker(order = order, requestCreated = false)
                 Button(
                     onClick = { requestCreated = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -752,6 +754,135 @@ private fun ReturnRequestPanel(order: SequoOrder) {
         }
     }
 }
+
+private enum class CustomerReturnStatus {
+    Requested,
+    DropoffPending,
+    DroppedAtRelay,
+    CollectedBySequo,
+    UnderInspection,
+    RefundProcessing,
+    RefundCompleted,
+    Rejected,
+    Expired,
+}
+
+@Composable
+private fun ReturnStatusTracker(order: SequoOrder, requestCreated: Boolean) {
+    val statuses = remember(order.id, order.state, requestCreated, order.isInsideReturnWindow) {
+        returnStatusesFor(order, requestCreated)
+    }
+    if (statuses.isEmpty()) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            appText(Res.string.orders_return_status_title),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            appText(Res.string.orders_return_status_local_demo),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        statuses.forEachIndexed { index, status ->
+            val isCurrent = index == statuses.lastIndex
+            ReturnStatusRow(status = status, isCurrent = isCurrent)
+        }
+    }
+}
+
+@Composable
+private fun ReturnStatusRow(status: CustomerReturnStatus, isCurrent: Boolean) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(status.title(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text(status.detail(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+private fun returnStatusesFor(order: SequoOrder, requestCreated: Boolean): List<CustomerReturnStatus> =
+    when (order.state) {
+        SequoOrderState.ReturnRequested -> listOf(
+            CustomerReturnStatus.Requested,
+            CustomerReturnStatus.DropoffPending,
+        )
+        SequoOrderState.ReturnInInspection -> listOf(
+            CustomerReturnStatus.Requested,
+            CustomerReturnStatus.DropoffPending,
+            CustomerReturnStatus.DroppedAtRelay,
+            CustomerReturnStatus.CollectedBySequo,
+            CustomerReturnStatus.UnderInspection,
+        )
+        SequoOrderState.RefundIssued -> listOf(
+            CustomerReturnStatus.Requested,
+            CustomerReturnStatus.DropoffPending,
+            CustomerReturnStatus.DroppedAtRelay,
+            CustomerReturnStatus.CollectedBySequo,
+            CustomerReturnStatus.UnderInspection,
+            CustomerReturnStatus.RefundProcessing,
+            CustomerReturnStatus.RefundCompleted,
+        )
+        SequoOrderState.ReturnRejected -> listOf(
+            CustomerReturnStatus.Requested,
+            CustomerReturnStatus.DropoffPending,
+            CustomerReturnStatus.DroppedAtRelay,
+            CustomerReturnStatus.CollectedBySequo,
+            CustomerReturnStatus.UnderInspection,
+            CustomerReturnStatus.Rejected,
+        )
+        SequoOrderState.Delivered -> when {
+            requestCreated -> listOf(CustomerReturnStatus.Requested, CustomerReturnStatus.DropoffPending)
+            !order.isInsideReturnWindow -> listOf(CustomerReturnStatus.Expired)
+            else -> emptyList()
+        }
+        else -> emptyList()
+    }
+
+@Composable
+private fun CustomerReturnStatus.title(): String =
+    when (this) {
+        CustomerReturnStatus.Requested -> appText(Res.string.orders_return_status_requested)
+        CustomerReturnStatus.DropoffPending -> appText(Res.string.orders_return_status_dropoff_pending)
+        CustomerReturnStatus.DroppedAtRelay -> appText(Res.string.orders_return_status_dropped_relay)
+        CustomerReturnStatus.CollectedBySequo -> appText(Res.string.orders_return_status_collected_sequo)
+        CustomerReturnStatus.UnderInspection -> appText(Res.string.orders_return_status_under_inspection)
+        CustomerReturnStatus.RefundProcessing -> appText(Res.string.orders_return_status_refund_processing)
+        CustomerReturnStatus.RefundCompleted -> appText(Res.string.orders_return_status_refund_completed)
+        CustomerReturnStatus.Rejected -> appText(Res.string.orders_return_status_rejected)
+        CustomerReturnStatus.Expired -> appText(Res.string.orders_return_status_expired)
+    }
+
+@Composable
+private fun CustomerReturnStatus.detail(): String =
+    when (this) {
+        CustomerReturnStatus.Requested -> appText(Res.string.orders_return_status_requested_detail)
+        CustomerReturnStatus.DropoffPending -> appText(Res.string.orders_return_status_dropoff_pending_detail)
+        CustomerReturnStatus.DroppedAtRelay -> appText(Res.string.orders_return_status_dropped_relay_detail)
+        CustomerReturnStatus.CollectedBySequo -> appText(Res.string.orders_return_status_collected_sequo_detail)
+        CustomerReturnStatus.UnderInspection -> appText(Res.string.orders_return_status_under_inspection_detail)
+        CustomerReturnStatus.RefundProcessing -> appText(Res.string.orders_return_status_refund_processing_detail)
+        CustomerReturnStatus.RefundCompleted -> appText(Res.string.orders_return_status_refund_completed_detail)
+        CustomerReturnStatus.Rejected -> appText(Res.string.orders_return_status_rejected_detail)
+        CustomerReturnStatus.Expired -> appText(Res.string.orders_return_status_expired_detail)
+    }
 
 private enum class ReturnReason {
     WrongProduct,
