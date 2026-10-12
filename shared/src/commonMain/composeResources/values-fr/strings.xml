@@ -75,6 +75,15 @@
     <string name="cd_open_menu">Ouvrir le menu</string>
     <string name="cd_search">Rechercher</string>
     <string name="cd_notifications">Notifications</string>
+    <string name="admin_login_title">Demandes de connexion admin</string>
+    <string name="admin_login_warning">Approuvez seulement si le code correspond au site admin.</string>
+    <string name="admin_login_empty">Aucune demande de connexion admin.</string>
+    <string name="admin_login_error">Les demandes de connexion admin n'ont pas pu etre chargees. Reessayez.</string>
+    <string name="admin_login_refresh">Actualiser</string>
+    <string name="admin_login_approve">Approuver</string>
+    <string name="admin_login_reject">Refuser</string>
+    <string name="admin_login_requested">Demandee</string>
+    <string name="admin_login_expires">Expire</string>
     <string name="guest_basket_title">Connectez-vous pour creer votre panier</string>
     <string name="guest_basket_detail">Vous pouvez d'abord consulter les produits et les menus. Enregistrer le panier, choisir une adresse et payer demande un compte.</string>
     <string name="guest_orders_title">Connectez-vous pour suivre vos commandes</string>

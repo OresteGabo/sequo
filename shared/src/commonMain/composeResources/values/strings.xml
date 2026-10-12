@@ -75,6 +75,15 @@
     <string name="cd_open_menu">Open menu</string>
     <string name="cd_search">Search</string>
     <string name="cd_notifications">Notifications</string>
+    <string name="admin_login_title">Admin login requests</string>
+    <string name="admin_login_warning">Only approve if the code matches the admin website.</string>
+    <string name="admin_login_empty">No admin login requests.</string>
+    <string name="admin_login_error">Admin login requests could not be loaded. Please try again.</string>
+    <string name="admin_login_refresh">Refresh</string>
+    <string name="admin_login_approve">Approve</string>
+    <string name="admin_login_reject">Reject</string>
+    <string name="admin_login_requested">Requested</string>
+    <string name="admin_login_expires">Expires</string>
     <string name="guest_basket_title">Sign in to build your basket</string>
     <string name="guest_basket_detail">You can inspect products and menus first. Saving cart items, choosing an address, and checkout require an account.</string>
     <string name="guest_orders_title">Sign in to track orders</string>
