@@ -46,6 +46,8 @@ internal fun AccountContent(
     isGuest: Boolean,
     onSignInRequested: () -> Unit,
     onLogout: () -> Unit,
+    pendingAdminLoginRequestCount: Int = 0,
+    onAdminLoginRequestsClick: () -> Unit = {},
 ) {
     if (isGuest) {
         GuestAccountCard(onSignInRequested = onSignInRequested)
@@ -70,6 +72,16 @@ internal fun AccountContent(
         SupportedPaymentRow("Moov Africa", appText(Res.string.account_backup))
     }
     SequoSectionCard(title = appText(Res.string.account_tools), action = appText(Res.string.account_secure)) {
+        if (pendingAdminLoginRequestCount > 0) {
+            SettingRow(appText(Res.string.admin_login_title), "$pendingAdminLoginRequestCount")
+            Button(
+                onClick = onAdminLoginRequestsClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Text(appText(Res.string.admin_login_refresh))
+            }
+        }
         SettingRow(appText(Res.string.account_payments), "Yas / Moov")
         SettingRow(appText(Res.string.account_returns), "72 hours")
         SettingRow("Parrainage", appText(Res.string.account_delivery_credit))
