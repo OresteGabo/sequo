@@ -4,7 +4,7 @@ import Shared
 import UserNotifications
 import GoogleSignIn
 
-private let googleIosClientId = "543119759762-ehcnb5lpi883c94457ogrgqsd0nshde2.apps.googleusercontent.com"
+private let googleIosClientId = "92804430098-q92ufo08vjdsu285cek8993os6tgv2gl.apps.googleusercontent.com"
 
 final class SequoNotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
     static let shared = SequoNotificationPresenter()
