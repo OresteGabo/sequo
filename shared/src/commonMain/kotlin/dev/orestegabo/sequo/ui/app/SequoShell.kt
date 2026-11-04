@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.auth.CurrentUser
+import dev.orestegabo.sequo.core.auth.SavedDeliveryAddress
 import dev.orestegabo.sequo.core.catalog.CatalogApiClient
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
@@ -52,6 +53,7 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun SequoShell(
     currentUser: CurrentUser?,
+    loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     isGuest: Boolean,
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
@@ -117,6 +119,7 @@ internal fun SequoShell(
         drawerContent = {
             SequoNavigationDrawer(
                 currentUser = currentUser,
+                loadSavedAddresses = loadSavedAddresses,
                 isGuest = isGuest,
                 language = language,
                 onLanguageChange = onLanguageChange,
@@ -177,6 +180,7 @@ internal fun SequoShell(
                 catalogState = catalogState,
                 onReloadCatalog = ::reloadCatalog,
                 currentUser = currentUser,
+                loadSavedAddresses = loadSavedAddresses,
                 isGuest = isGuest,
                 onNotificationUnreadCountChanged = { notificationUnreadCount = it },
                 onOpenLegal = onOpenLegal,
@@ -247,6 +251,7 @@ internal fun SequoContentStage(
     catalogState: CatalogUiState,
     onReloadCatalog: () -> Unit,
     currentUser: CurrentUser?,
+    loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     isGuest: Boolean,
     onNotificationUnreadCountChanged: (Int) -> Unit,
     onOpenLegal: (LegalInitialTab) -> Unit,
@@ -326,6 +331,7 @@ internal fun SequoContentStage(
                 )
                 SequoSection.Account -> AccountContent(
                     currentUser = currentUser,
+                    loadSavedAddresses = loadSavedAddresses,
                     isGuest = isGuest,
                     onSignInRequested = onSignInRequested,
                     onLogout = onLogout,
@@ -433,6 +439,7 @@ internal fun ProductDetailScreenColumn(
 @Composable
 private fun SequoNavigationDrawer(
     currentUser: CurrentUser?,
+    loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     isGuest: Boolean,
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,

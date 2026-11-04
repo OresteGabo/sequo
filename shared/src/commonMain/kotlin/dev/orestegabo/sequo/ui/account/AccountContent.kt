@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.auth.CurrentUser
+import dev.orestegabo.sequo.core.auth.SavedDeliveryAddress
+import kotlinx.coroutines.CancellationException
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
@@ -43,6 +45,7 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun AccountContent(
     currentUser: CurrentUser?,
+    loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     isGuest: Boolean,
     onSignInRequested: () -> Unit,
     onLogout: () -> Unit,
@@ -62,11 +65,7 @@ internal fun AccountContent(
         tag = "15%",
     )
     SequoPassCard()
-    SequoSectionCard(title = appText(Res.string.account_saved_places), action = "Lome") {
-        AccountAddressRow(appText(Res.string.account_home), "Tokoin Gbadago, near Pharmacie des Etoiles")
-        AccountAddressRow(appText(Res.string.account_family), "Adidogome, carrefour Limousine")
-        AccountAddressRow(appText(Res.string.account_office), "Be-Kpota, route du marche")
-    }
+    SavedAddressesCard(currentUser?.id, loadSavedAddresses)
     SequoSectionCard(title = appText(Res.string.account_supported_payments), action = appText(Res.string.account_no_cash)) {
         SupportedPaymentRow("Yas Togo", appText(Res.string.account_primary))
         SupportedPaymentRow("Moov Africa", appText(Res.string.account_backup))
@@ -86,6 +85,38 @@ internal fun AccountContent(
         SettingRow(appText(Res.string.account_returns), "72 hours")
         SettingRow("Parrainage", appText(Res.string.account_delivery_credit))
         SettingRow(appText(Res.string.account_subscription), appText(Res.string.account_active_15))
+    }
+}
+
+@Composable
+private fun SavedAddressesCard(userId: String?, load: suspend () -> List<SavedDeliveryAddress>) {
+    var reload by remember(userId) { mutableStateOf(0) }
+    val state = remember(userId, reload) { mutableStateOf<Result<List<SavedDeliveryAddress>>?>(null) }
+    LaunchedEffect(userId, reload) {
+        try {
+            state.value = Result.success(load())
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            state.value = Result.failure(error)
+        }
+    }
+    SequoSectionCard(title = appText(Res.string.account_saved_places), action = "") {
+        val result = state.value
+        when {
+            result == null -> Text(appText(Res.string.account_addresses_loading))
+            result.isFailure -> {
+                Text(appText(Res.string.account_addresses_error))
+                TextButton(onClick = { reload++ }) { Text(appText(Res.string.account_addresses_retry)) }
+            }
+            else -> {
+                val addresses = result.getOrThrow()
+                if (addresses.isEmpty()) Text(appText(Res.string.account_addresses_empty))
+                addresses.forEach { address ->
+                    AccountAddressRow(address.label, listOfNotNull(address.streetHint, address.area, address.city).joinToString(", "))
+                }
+            }
+        }
     }
 }
 

@@ -41,6 +41,11 @@ class AuthRepository(
         return response.session
     }
 
+    internal suspend fun savedAddresses(): List<SavedDeliveryAddress> {
+        val session = checkNotNull(sessionStore.get())
+        return authApiClient.savedAddresses(session.accessToken)
+    }
+
     suspend fun currentUser(): CurrentUser? {
         val session = sessionStore.get() ?: return null
         return authApiClient.currentUser(session.accessToken)

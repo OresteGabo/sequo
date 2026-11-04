@@ -271,6 +271,10 @@
     <string name="account_subscription_active">Abonne</string>
     <string name="account_subscription_detail">-15% / 500 CFA credit</string>
     <string name="account_saved_places">Adresses</string>
+    <string name="account_addresses_loading">Chargement des adresses…</string>
+    <string name="account_addresses_error">Impossible de charger les adresses.</string>
+    <string name="account_addresses_retry">Réessayer</string>
+    <string name="account_addresses_empty">Aucune adresse enregistrée.</string>
     <string name="account_home">Maison</string>
     <string name="account_family">Famille</string>
     <string name="account_office">Bureau</string>

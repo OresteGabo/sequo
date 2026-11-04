@@ -87,6 +87,11 @@ class AuthApiClient(
         return response.toAuthApiResponse()
     }
 
+    internal suspend fun savedAddresses(accessToken: String): List<SavedDeliveryAddress> =
+        httpClient.get("${baseUrl.trimEnd('/')}/api/customer/addresses") {
+            bearerAuth(accessToken)
+        }.body()
+
     suspend fun currentUser(accessToken: String): CurrentUser {
         return try {
             httpClient.get("${baseUrl.trimEnd('/')}/api/auth/me") {
@@ -202,6 +207,15 @@ private fun socialLoginFailureMessage(provider: SocialLoginProvider, statusCode:
 data class AuthApiResponse(
     val statusCode: Int,
     val session: AuthSession,
+)
+
+@Serializable
+internal data class SavedDeliveryAddress(
+    val id: String = "",
+    val label: String,
+    val city: String,
+    val area: String? = null,
+    val streetHint: String? = null,
 )
 
 @Serializable

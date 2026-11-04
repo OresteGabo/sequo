@@ -430,6 +430,7 @@ private fun SequoApp(
     CompositionLocalProvider(LocalAppLanguage provides language) {
         SequoShell(
             currentUser = currentUser,
+            loadSavedAddresses = authRepository::savedAddresses,
             isGuest = guestMode,
             language = language,
             onLanguageChange = onLanguageChange,

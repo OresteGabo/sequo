@@ -271,6 +271,10 @@
     <string name="account_subscription_active">Subscription active</string>
     <string name="account_subscription_detail">15% off / 500 CFA credit</string>
     <string name="account_saved_places">Saved places</string>
+    <string name="account_addresses_loading">Loading saved addresses…</string>
+    <string name="account_addresses_error">Could not load saved addresses.</string>
+    <string name="account_addresses_retry">Retry</string>
+    <string name="account_addresses_empty">No saved addresses.</string>
     <string name="account_home">Home</string>
     <string name="account_family">Family</string>
     <string name="account_office">Office</string>
