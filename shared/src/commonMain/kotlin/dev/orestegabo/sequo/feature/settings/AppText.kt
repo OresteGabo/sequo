@@ -29,6 +29,21 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.cart_loading.key to "Updating your basket…",
+    Res.string.cart_load_failed.key to "Could not update the basket. Refresh to try again.",
+    Res.string.cart_refresh.key to "Refresh",
+    Res.string.cart_empty.key to "Your basket is empty.",
+    Res.string.cart_item_unavailable.key to "Unavailable. Remove this item to continue.",
+    Res.string.cart_remove.key to "Remove",
+    Res.string.cart_no_addresses.key to "Add a delivery address to get a quote.",
+    Res.string.cart_quote_failed.key to "Delivery quote unavailable for this address.",
+    Res.string.cart_options.key to "Options",
+    Res.string.cart_service_fee.key to "Service fee",
+    Res.string.product_option_choices.key to "Choices",
+    Res.string.product_option_unavailable.key to "Unavailable",
+    Res.string.product_option_error.key to "Could not confirm these options. Check your choices and try again.",
+    Res.string.product_option_added.key to "Added at the confirmed price",
+    Res.string.product_option_add.key to "Confirm options and add",
     Res.string.auth_sign_in_with.key to "Sign in with",
     Res.string.auth_continue_guest.key to "Continue as a guest",
     Res.string.auth_continue_as.key to "Continue as %1\$s",
@@ -322,6 +337,21 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.cart_loading.key to "Mise à jour du panier…",
+    Res.string.cart_load_failed.key to "Impossible de mettre à jour le panier. Actualisez pour réessayer.",
+    Res.string.cart_refresh.key to "Actualiser",
+    Res.string.cart_empty.key to "Votre panier est vide.",
+    Res.string.cart_item_unavailable.key to "Indisponible. Retirez cet article pour continuer.",
+    Res.string.cart_remove.key to "Retirer",
+    Res.string.cart_no_addresses.key to "Ajoutez une adresse de livraison pour obtenir un devis.",
+    Res.string.cart_quote_failed.key to "Devis de livraison indisponible pour cette adresse.",
+    Res.string.cart_options.key to "Options",
+    Res.string.cart_service_fee.key to "Frais de service",
+    Res.string.product_option_choices.key to "Choix",
+    Res.string.product_option_unavailable.key to "Indisponible",
+    Res.string.product_option_error.key to "Impossible de confirmer les options. Vérifiez vos choix et réessayez.",
+    Res.string.product_option_added.key to "Ajouté au prix confirmé",
+    Res.string.product_option_add.key to "Confirmer les options et ajouter",
     Res.string.auth_sign_in_with.key to "Connectez-vous avec",
     Res.string.auth_continue_guest.key to "Continuer en invite",
     Res.string.auth_continue_as.key to "Continuer avec %1\$s",

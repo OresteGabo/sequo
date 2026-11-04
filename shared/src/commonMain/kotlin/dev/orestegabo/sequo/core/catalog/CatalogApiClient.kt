@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.orestegabo.sequo.core.network.createSequoHttpClient
+import dev.orestegabo.sequo.model.ProductOptionGroup
 import dev.orestegabo.sequo.model.SequoProduct
 import dev.orestegabo.sequo.model.SequoPromo
 import dev.orestegabo.sequo.model.SequoShop
@@ -119,6 +120,8 @@ private data class CatalogProductResponse(
     val bargainingEnabled: Boolean = false,
     val cameraVerified: Boolean = false,
     val capturedAtLabel: String? = null,
+    val imageUrl: String? = null,
+    val customizations: List<ProductOptionGroup> = emptyList(),
 )
 
 @Serializable
@@ -204,6 +207,8 @@ private fun CatalogProductResponse.toProduct(): SequoProduct =
         originalPriceCfa = originalPriceCfa,
         isCameraVerified = cameraVerified,
         capturedAtLabel = capturedAtLabel,
+        imageUrl = imageUrl,
+        customizations = customizations,
     )
 
 private val fallbackCategory = SequoShopType(

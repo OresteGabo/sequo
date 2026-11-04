@@ -46,13 +46,17 @@ import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.notifications.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import dev.orestegabo.sequo.core.catalog.CartApiClient
+import dev.orestegabo.sequo.core.catalog.CartSnapshot
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
 internal fun SequoShell(
     currentUser: CurrentUser?,
+    cartAccessToken: suspend () -> String?,
     loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     isGuest: Boolean,
     language: AppLanguage,
@@ -67,7 +71,11 @@ internal fun SequoShell(
 ) {
     var currentDestination by remember { mutableStateOf(SequoSection.Home) }
     var notificationBackDestination by remember { mutableStateOf<SequoSection?>(null) }
-    var extraBasketItems by remember { mutableStateOf(0) }
+    val cartClient = remember { CartApiClient() }
+    DisposableEffect(cartClient) { onDispose(cartClient::close) }
+    var cart by remember(currentUser?.id, isGuest) { mutableStateOf<CartSnapshot?>(null) }
+    var cartBusy by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
+    var cartFailed by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf("") }
     var selectedProductListing by remember { mutableStateOf<SequoProductListing?>(null) }
@@ -78,8 +86,55 @@ internal fun SequoShell(
     val pinnedCategoryKeys = remember { mutableStateListOf("food") }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val basketCount = extraBasketItems
+    val basketCount = cart?.totalItems ?: 0
     val catalogLoadError = appText(Res.string.home_catalog_load_error)
+
+    suspend fun changeCart(change: suspend (String) -> CartSnapshot): CartSnapshot? {
+        if (cartBusy) return null
+        cartBusy = true
+        cartFailed = false
+        try {
+            return change(checkNotNull(cartAccessToken())).also { cart = it }
+        } finally {
+            cartBusy = false
+        }
+    }
+
+    fun updateCart(change: suspend (String) -> CartSnapshot) {
+        scope.launch {
+            try {
+                changeCart(change)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                cartFailed = true
+                selectedProductListing = null
+                currentDestination = SequoSection.Basket
+            }
+        }
+    }
+
+    suspend fun saveProduct(token: String, productId: String, selections: List<ProductOptionSelection>): CartSnapshot {
+        val saved = cartClient.cart(token)
+        val quantity = saved.findLine(productId, selections)?.quantity ?: 0
+        return cartClient.put(token, productId, quantity + 1, selections)
+    }
+
+    suspend fun addConfiguredProduct(productId: String, selections: List<ProductOptionSelection>): Int? {
+        if (isGuest) {
+            onSignInRequested()
+            return null
+        }
+        val saved = checkNotNull(changeCart { saveProduct(it, productId, selections) })
+        val line = checkNotNull(saved.findLine(productId, selections))
+        return checkNotNull(line.lineTotalCfa) / line.quantity
+    }
+
+    LaunchedEffect(currentUser?.id, isGuest, currentDestination) {
+        if (!isGuest && currentUser != null && (cart == null || currentDestination == SequoSection.Basket)) {
+            updateCart(cartClient::cart)
+        }
+    }
 
     fun reloadCatalog() {
         scope.launch {
@@ -160,7 +215,22 @@ internal fun SequoShell(
                     searchVisible = false
                 },
                 onCloseProduct = { selectedProductListing = null },
-                extraBasketItems = extraBasketItems,
+                cartContent = {
+                    BasketContent(
+                        cart = cart,
+                        busy = cartBusy,
+                        failed = cartFailed,
+                        onRefresh = { updateCart(cartClient::cart) },
+                        onQuantity = { line, quantity ->
+                            updateCart { token ->
+                                if (quantity == 0) cartClient.remove(token, line.id)
+                                else cartClient.put(token, line.product.id, quantity, line.selections)
+                            }
+                        },
+                        loadAddresses = loadSavedAddresses,
+                        loadQuote = { addressId -> cartClient.quote(checkNotNull(cartAccessToken()), addressId) },
+                    )
+                },
                 searchVisible = searchVisible,
                 onCloseSearch = { searchVisible = false },
                 selectedMarketTypeKey = selectedMarketTypeKey,
@@ -176,7 +246,11 @@ internal fun SequoShell(
                         pinnedCategoryKeys.add(typeKey)
                     }
                 },
-                onAddProduct = { extraBasketItems += 1 },
+                onAddProduct = { productId ->
+                    if (isGuest) onSignInRequested()
+                    else updateCart { saveProduct(it, productId, emptyList()) }
+                },
+                onAddCustomized = ::addConfiguredProduct,
                 catalogState = catalogState,
                 onReloadCatalog = ::reloadCatalog,
                 currentUser = currentUser,
@@ -239,7 +313,7 @@ internal fun SequoContentStage(
     selectedProductListing: SequoProductListing?,
     onProductSelected: (SequoProductListing) -> Unit,
     onCloseProduct: () -> Unit,
-    extraBasketItems: Int,
+    cartContent: @Composable () -> Unit,
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
     selectedMarketTypeKey: String,
@@ -247,7 +321,8 @@ internal fun SequoContentStage(
     pinnedCategoryKeys: List<String>,
     onCategoryUsed: (String) -> Unit,
     onToggleCategoryPinned: (String) -> Unit,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
+    onAddCustomized: suspend (String, List<ProductOptionSelection>) -> Int?,
     catalogState: CatalogUiState,
     onReloadCatalog: () -> Unit,
     currentUser: CurrentUser?,
@@ -275,6 +350,7 @@ internal fun SequoContentStage(
         ProductDetailScreenColumn(modifier = modifier) {
             ProductDetailContent(
                 listing = selectedProductListing,
+                onAddCustomized = onAddCustomized,
                 allShops = catalog.shops,
                 onAddProduct = onAddProduct,
                 onProductSelected = onProductSelected,
@@ -311,7 +387,7 @@ internal fun SequoContentStage(
                         onBrowse = { onDestinationSelected(SequoSection.Markets) },
                     )
                 } else {
-                    BasketContent(extraBasketItems)
+                    cartContent()
                 }
                 SequoSection.Orders -> if (isGuest) {
                     GuestSignInPanel(

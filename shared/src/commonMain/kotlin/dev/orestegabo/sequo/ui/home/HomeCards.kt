@@ -209,7 +209,7 @@ internal fun FlashSaleSection(
     title: String,
     badge: String?,
     products: List<Pair<SequoShop, SequoProduct>>,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onSeeAll: () -> Unit,
     onNegotiateClick: (SequoProduct) -> Unit = {},
     onProductSelected: (SequoShop, SequoProduct) -> Unit = { _, _ -> },
@@ -302,7 +302,7 @@ internal fun FlashSaleSection(
 internal fun FlashProductCard(
     shop: SequoShop,
     product: SequoProduct,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onNegotiateClick: () -> Unit = {},
     onProductClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -326,9 +326,8 @@ internal fun FlashProductCard(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
             ) {
                 Box(Modifier.fillMaxSize()) {
-                    Image(
-                        painter = painterResource(productImageResource(product)),
-                        contentDescription = product.name,
+                    CatalogProductImage(
+                        product = product,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
@@ -429,7 +428,7 @@ internal fun FlashProductCard(
                     )
                     ProductDiscountBadge(product = product, compact = true)
                 }
-                SequoTinyButton(appText(Res.string.home_add), onAddProduct)
+                SequoTinyButton(appText(Res.string.home_add), if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick)
             }
         }
     }

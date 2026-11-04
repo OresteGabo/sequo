@@ -52,7 +52,7 @@ import org.jetbrains.compose.resources.DrawableResource
 internal fun SequoShopCard(
     shop: SequoShop,
     selectedSubcategory: String? = null,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onNegotiateClick: (SequoProduct) -> Unit = {},
     onProductSelected: (SequoProduct) -> Unit = {},
 ) {
@@ -188,7 +188,7 @@ internal fun ShopStatusDot() {
 @Composable
 internal fun ProductLine(
     product: SequoProduct,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onNegotiateClick: () -> Unit = {},
     onProductClick: () -> Unit = {},
 ) {
@@ -230,7 +230,7 @@ internal fun ProductLine(
                     )
                     ProductDiscountBadge(product = product)
                 }
-                SequoTinyButton(appText(Res.string.home_add), onAddProduct)
+                SequoTinyButton(appText(Res.string.home_add), if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick)
             }
         }
     }
@@ -242,7 +242,7 @@ internal fun CompactProductCard(
     product: SequoProduct,
     comparisonPriceCfa: Int? = null,
     relationLabel: String? = null,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onNegotiateClick: () -> Unit = {},
     onProductClick: () -> Unit = {},
 ) {
@@ -299,7 +299,7 @@ internal fun CompactProductCard(
                         )
                         ProductDiscountBadge(product = product, compact = true)
                     }
-                    SequoTinyButton(appText(Res.string.home_add), onAddProduct)
+                    SequoTinyButton(appText(Res.string.home_add), if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick)
                 }
             }
         }
@@ -452,9 +452,8 @@ internal fun ProductImage(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
     ) {
         Box(Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(productImageResource(product)),
-                contentDescription = product.name,
+            CatalogProductImage(
+                product = product,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )

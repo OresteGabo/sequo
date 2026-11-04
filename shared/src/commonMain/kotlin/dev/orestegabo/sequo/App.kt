@@ -430,6 +430,7 @@ private fun SequoApp(
     CompositionLocalProvider(LocalAppLanguage provides language) {
         SequoShell(
             currentUser = currentUser,
+            cartAccessToken = { authRepository.getSavedSession()?.accessToken },
             loadSavedAddresses = authRepository::savedAddresses,
             isGuest = guestMode,
             language = language,

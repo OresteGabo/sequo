@@ -101,7 +101,7 @@ internal fun SequoSearchCard(onClose: () -> Unit) {
 @Composable
 internal fun ProductPromoCarousel(
     promos: List<SequoPromo>,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onSeeAll: () -> Unit,
     onNegotiateClick: (SequoProduct) -> Unit = {},
     onProductSelected: (SequoProductListing) -> Unit = {},
@@ -148,7 +148,7 @@ internal fun ProductPromoCarousel(
 @Composable
 private fun ProductPromoCard(
     promo: SequoPromo,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onSeeAll: () -> Unit,
     onNegotiateClick: () -> Unit,
     onProductClick: () -> Unit,
@@ -161,9 +161,8 @@ private fun ProductPromoCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
     ) {
         Box(Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(productImageResource(promo.product)),
-                contentDescription = promo.product.name,
+            CatalogProductImage(
+                product = promo.product,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
@@ -234,7 +233,7 @@ private fun ProductPromoCard(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SequoTinyButton(appText(Res.string.home_add), onAddProduct)
+                    SequoTinyButton(appText(Res.string.home_add), if (promo.product.customizations.isEmpty()) ({ onAddProduct(promo.product.id) }) else onProductClick)
                     Surface(
                         onClick = onSeeAll,
                         shape = RoundedCornerShape(999.dp),

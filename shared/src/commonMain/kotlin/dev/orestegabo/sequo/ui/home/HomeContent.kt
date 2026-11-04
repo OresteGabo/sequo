@@ -45,7 +45,7 @@ import sequo.shared.generated.resources.*
 internal fun HomeContent(
     catalog: CatalogSnapshot,
     onDestinationSelected: (SequoSection) -> Unit,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
     categoryUsage: Map<String, Int>,
     pinnedCategoryKeys: List<String>,

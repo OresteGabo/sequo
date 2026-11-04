@@ -297,4 +297,19 @@
     <string name="account_provider">Provider</string>
     <string name="account_unknown">unknown</string>
     <string name="account_sign_out">Sign out</string>
+    <string name="product_option_choices">Choices</string>
+    <string name="product_option_unavailable">Unavailable</string>
+    <string name="product_option_error">Could not confirm these options. Check your choices and try again.</string>
+    <string name="product_option_added">Added at the confirmed price</string>
+    <string name="product_option_add">Confirm options and add</string>
+    <string name="cart_loading">Updating your basket…</string>
+    <string name="cart_load_failed">Could not update the basket. Refresh to try again.</string>
+    <string name="cart_refresh">Refresh</string>
+    <string name="cart_empty">Your basket is empty.</string>
+    <string name="cart_item_unavailable">Unavailable. Remove this item to continue.</string>
+    <string name="cart_remove">Remove</string>
+    <string name="cart_no_addresses">Add a delivery address to get a quote.</string>
+    <string name="cart_quote_failed">Delivery quote unavailable for this address.</string>
+    <string name="cart_options">Options</string>
+    <string name="cart_service_fee">Service fee</string>
 </resources>

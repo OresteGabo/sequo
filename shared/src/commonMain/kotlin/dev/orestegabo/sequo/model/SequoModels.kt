@@ -35,6 +35,7 @@ import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
+import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
@@ -69,6 +70,8 @@ internal data class SequoProduct(
     val originalPriceCfa: Int? = null,
     val isCameraVerified: Boolean = false,
     val capturedAtLabel: String? = null,
+    val imageUrl: String? = null,
+    val customizations: List<ProductOptionGroup> = emptyList(),
 ) {
     val hasDiscount: Boolean
         get() = originalPriceCfa != null && originalPriceCfa > priceCfa
@@ -107,6 +110,19 @@ internal data class SequoPromo(
     val shop: SequoShop,
     val product: SequoProduct,
 )
+
+@Serializable
+internal data class ProductOption(
+    val id: String, val name: String, val priceDeltaCfa: Int, val active: Boolean,
+)
+
+@Serializable
+internal data class ProductOptionGroup(
+    val id: String, val name: String, val minChoices: Int, val maxChoices: Int, val options: List<ProductOption>,
+)
+
+@Serializable
+internal data class ProductOptionSelection(val groupId: String, val optionIds: Set<String>)
 
 internal data class BasketEntry(
     val shop: SequoShop,

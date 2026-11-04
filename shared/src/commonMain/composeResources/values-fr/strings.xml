@@ -297,4 +297,19 @@
     <string name="account_provider">Provider</string>
     <string name="account_unknown">inconnu</string>
     <string name="account_sign_out">Se deconnecter</string>
+    <string name="product_option_choices">Choix</string>
+    <string name="product_option_unavailable">Indisponible</string>
+    <string name="product_option_error">Impossible de confirmer les options. Vérifiez vos choix et réessayez.</string>
+    <string name="product_option_added">Ajouté au prix confirmé</string>
+    <string name="product_option_add">Confirmer les options et ajouter</string>
+    <string name="cart_loading">Mise à jour du panier…</string>
+    <string name="cart_load_failed">Impossible de mettre à jour le panier. Actualisez pour réessayer.</string>
+    <string name="cart_refresh">Actualiser</string>
+    <string name="cart_empty">Votre panier est vide.</string>
+    <string name="cart_item_unavailable">Indisponible. Retirez cet article pour continuer.</string>
+    <string name="cart_remove">Retirer</string>
+    <string name="cart_no_addresses">Ajoutez une adresse de livraison pour obtenir un devis.</string>
+    <string name="cart_quote_failed">Devis de livraison indisponible pour cette adresse.</string>
+    <string name="cart_options">Options</string>
+    <string name="cart_service_fee">Frais de service</string>
 </resources>

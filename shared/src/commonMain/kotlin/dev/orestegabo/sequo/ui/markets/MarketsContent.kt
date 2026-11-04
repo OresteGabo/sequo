@@ -43,7 +43,7 @@ import sequo.shared.generated.resources.*
 internal fun MarketsContent(
     catalog: CatalogSnapshot,
     selectedTypeKey: String,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
 ) {
     var selectedArea by remember { mutableStateOf("All Lome") }

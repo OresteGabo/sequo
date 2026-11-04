@@ -46,8 +46,9 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun ProductDetailContent(
     listing: SequoProductListing,
+    onAddCustomized: suspend (String, List<ProductOptionSelection>) -> Int?,
     allShops: List<SequoShop>,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
     onNegotiateClick: () -> Unit,
 ) {
@@ -82,6 +83,7 @@ internal fun ProductDetailContent(
         }
         ProductDetailInfoCard(
             listing = listing,
+            onAddCustomized = onAddCustomized,
             onAddProduct = onAddProduct,
             onNegotiateClick = onNegotiateClick,
         )
@@ -128,9 +130,8 @@ private fun ProductPhotoStack(
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.62f)),
                 shadowElevation = 4.dp,
             ) {
-                Image(
-                    painter = painterResource(productImageResource(galleryProduct)),
-                    contentDescription = galleryProduct.name,
+                CatalogProductImage(
+                    product = galleryProduct,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
@@ -158,9 +159,8 @@ private fun ProductPhotoStack(
             shadowElevation = 8.dp,
         ) {
             Box(Modifier.fillMaxSize()) {
-                Image(
-                    painter = painterResource(productImageResource(selectedProduct)),
-                    contentDescription = selectedProduct.name,
+                CatalogProductImage(
+                    product = selectedProduct,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
@@ -270,9 +270,8 @@ private fun ProductDetailHero(
             shadowElevation = if (heroSettled) 0.dp else 8.dp,
         ) {
             Box(Modifier.fillMaxSize()) {
-                Image(
-                    painter = painterResource(productImageResource(selectedProduct)),
-                    contentDescription = selectedProduct.name,
+                CatalogProductImage(
+                    product = selectedProduct,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
@@ -371,9 +370,8 @@ private fun MiniPhotoStack(
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.70f)),
                 shadowElevation = 3.dp,
             ) {
-                Image(
-                    painter = painterResource(productImageResource(galleryProduct)),
-                    contentDescription = galleryProduct.name,
+                CatalogProductImage(
+                    product = galleryProduct,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
@@ -393,9 +391,8 @@ private fun MiniPhotoStack(
             shadowElevation = 6.dp,
         ) {
             Box(Modifier.fillMaxSize()) {
-                Image(
-                    painter = painterResource(productImageResource(selectedProduct)),
-                    contentDescription = selectedProduct.name,
+                CatalogProductImage(
+                    product = selectedProduct,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
@@ -432,7 +429,8 @@ private fun MiniPhotoStack(
 @Composable
 private fun ProductDetailInfoCard(
     listing: SequoProductListing,
-    onAddProduct: () -> Unit,
+    onAddCustomized: suspend (String, List<ProductOptionSelection>) -> Int?,
+    onAddProduct: (String) -> Unit,
     onNegotiateClick: () -> Unit,
 ) {
     val product = listing.product
@@ -460,7 +458,11 @@ private fun ProductDetailInfoCard(
             if (product.isNegotiable) {
                 ProductBargainingPanel(product = product, onNegotiateClick = onNegotiateClick)
             }
-            SequoPrimaryButton("Add to cart", onAddProduct, Modifier.fillMaxWidth())
+            if (product.customizations.isEmpty()) {
+                SequoPrimaryButton(appText(Res.string.home_add), { onAddProduct(listing.product.id) }, Modifier.fillMaxWidth())
+            } else {
+                ProductOptionsPanel(listing.product, onAddCustomized)
+            }
         }
     }
 }
@@ -693,7 +695,7 @@ private fun ProductSuggestionsSection(
     current: SequoProductListing,
     allShops: List<SequoShop>,
     suggestions: List<SequoProductListing>,
-    onAddProduct: () -> Unit,
+    onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
 ) {
     var selectedTab by remember(current) { mutableStateOf(ProductSuggestionTab.SameShop) }
