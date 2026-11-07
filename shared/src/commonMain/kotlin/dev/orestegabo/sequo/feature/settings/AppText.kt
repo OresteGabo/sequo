@@ -29,6 +29,21 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.checkout_submit.key to "Submit checkout",
+    Res.string.checkout_submitting.key to "Submitting…",
+    Res.string.checkout_price_changed.key to "The basket or delivery quote changed. Review the updated amounts before submitting again.",
+    Res.string.checkout_rejected.key to "Checkout was rejected. Check your order history.",
+    Res.string.checkout_submit_failed.key to "Could not confirm submission. Try again or check your order history.",
+    Res.string.checkout_view_orders.key to "View orders",
+    Res.string.orders_loading.key to "Loading orders…",
+    Res.string.orders_load_failed.key to "Could not load orders. Refresh to try again.",
+    Res.string.orders_empty.key to "Your orders will appear here after checkout.",
+    Res.string.orders_awaiting_payment.key to "Awaiting payment confirmation",
+    Res.string.orders_in_preparation.key to "Paid · awaiting fulfillment",
+    Res.string.orders_delivered.key to "Delivered",
+    Res.string.orders_return_requested.key to "Return requested",
+    Res.string.orders_refunded.key to "Refunded",
+    Res.string.orders_status_unknown.key to "Status unavailable",
     Res.string.cart_loading.key to "Updating your basket…",
     Res.string.cart_load_failed.key to "Could not update the basket. Refresh to try again.",
     Res.string.cart_refresh.key to "Refresh",
@@ -337,6 +352,21 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.checkout_submit.key to "Envoyer la commande",
+    Res.string.checkout_submitting.key to "Envoi en cours…",
+    Res.string.checkout_price_changed.key to "Le panier ou le devis de livraison a changé. Vérifiez les nouveaux montants avant de réessayer.",
+    Res.string.checkout_rejected.key to "La commande a été refusée. Consultez votre historique.",
+    Res.string.checkout_submit_failed.key to "Impossible de confirmer l’envoi. Réessayez ou consultez votre historique.",
+    Res.string.checkout_view_orders.key to "Voir les commandes",
+    Res.string.orders_loading.key to "Chargement des commandes…",
+    Res.string.orders_load_failed.key to "Impossible de charger les commandes. Actualisez pour réessayer.",
+    Res.string.orders_empty.key to "Vos commandes apparaîtront ici après leur envoi.",
+    Res.string.orders_awaiting_payment.key to "En attente de confirmation du paiement",
+    Res.string.orders_in_preparation.key to "Payée · en attente de préparation",
+    Res.string.orders_delivered.key to "Livrée",
+    Res.string.orders_return_requested.key to "Retour demandé",
+    Res.string.orders_refunded.key to "Remboursée",
+    Res.string.orders_status_unknown.key to "Statut indisponible",
     Res.string.cart_loading.key to "Mise à jour du panier…",
     Res.string.cart_load_failed.key to "Impossible de mettre à jour le panier. Actualisez pour réessayer.",
     Res.string.cart_refresh.key to "Actualiser",

@@ -312,4 +312,19 @@
     <string name="cart_quote_failed">Delivery quote unavailable for this address.</string>
     <string name="cart_options">Options</string>
     <string name="cart_service_fee">Service fee</string>
+    <string name="checkout_submit">Submit checkout</string>
+    <string name="checkout_submitting">Submitting…</string>
+    <string name="checkout_price_changed">The basket or delivery quote changed. Review the updated amounts before submitting again.</string>
+    <string name="checkout_rejected">Checkout was rejected. Check your order history.</string>
+    <string name="checkout_submit_failed">Could not confirm submission. Try again or check your order history.</string>
+    <string name="checkout_view_orders">View orders</string>
+    <string name="orders_loading">Loading orders…</string>
+    <string name="orders_load_failed">Could not load orders. Refresh to try again.</string>
+    <string name="orders_empty">Your orders will appear here after checkout.</string>
+    <string name="orders_awaiting_payment">Awaiting payment confirmation</string>
+    <string name="orders_in_preparation">Paid · awaiting fulfillment</string>
+    <string name="orders_delivered">Delivered</string>
+    <string name="orders_return_requested">Return requested</string>
+    <string name="orders_refunded">Refunded</string>
+    <string name="orders_status_unknown">Status unavailable</string>
 </resources>

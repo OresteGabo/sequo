@@ -312,4 +312,19 @@
     <string name="cart_quote_failed">Devis de livraison indisponible pour cette adresse.</string>
     <string name="cart_options">Options</string>
     <string name="cart_service_fee">Frais de service</string>
+    <string name="checkout_submit">Envoyer la commande</string>
+    <string name="checkout_submitting">Envoi en cours…</string>
+    <string name="checkout_price_changed">Le panier ou le devis de livraison a changé. Vérifiez les nouveaux montants avant de réessayer.</string>
+    <string name="checkout_rejected">La commande a été refusée. Consultez votre historique.</string>
+    <string name="checkout_submit_failed">Impossible de confirmer l’envoi. Réessayez ou consultez votre historique.</string>
+    <string name="checkout_view_orders">Voir les commandes</string>
+    <string name="orders_loading">Chargement des commandes…</string>
+    <string name="orders_load_failed">Impossible de charger les commandes. Actualisez pour réessayer.</string>
+    <string name="orders_empty">Vos commandes apparaîtront ici après leur envoi.</string>
+    <string name="orders_awaiting_payment">En attente de confirmation du paiement</string>
+    <string name="orders_in_preparation">Payée · en attente de préparation</string>
+    <string name="orders_delivered">Livrée</string>
+    <string name="orders_return_requested">Retour demandé</string>
+    <string name="orders_refunded">Remboursée</string>
+    <string name="orders_status_unknown">Statut indisponible</string>
 </resources>

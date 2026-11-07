@@ -20,7 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.catalog.CheckoutSummary
+import dev.orestegabo.sequo.core.catalog.CustomerOrderDetails
+import dev.orestegabo.sequo.core.catalog.OrderedProduct
 import dev.orestegabo.sequo.data.*
+import kotlinx.coroutines.CancellationException
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
@@ -40,171 +44,78 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun OrdersContent() {
-    var selectedOrder by remember { mutableStateOf<SequoOrder?>(null) }
-    var selectedTab by remember { mutableStateOf(OrdersTab.Current) }
-    val currentOrders = remember { emptyList<SequoOrder>() }
-    val pastOrders = remember { emptyList<SequoOrder>() }
-    val visibleOrders = if (selectedTab == OrdersTab.Current) currentOrders else pastOrders
-    val returnableCount = currentOrders.count { it.isInsideReturnWindow }
-    val orderForDetail = selectedOrder
-
-    if (orderForDetail != null) {
-        OrderDetailScreen(
-            order = orderForDetail,
-            onBack = { selectedOrder = null },
-        )
-    } else {
-        OrderTabs(
-            selectedTab = selectedTab,
-            currentCount = currentOrders.size,
-            pastCount = pastOrders.size,
-            onTabSelected = { selectedTab = it },
-        )
-        //ReturnPolicyNote(returnableCount = returnableCount)
-        OrderListHeader(
-            title = if (selectedTab == OrdersTab.Current) "Current orders" else "Past orders",
-            action = when (selectedTab) {
-                OrdersTab.Current -> "$returnableCount returnable"
-                OrdersTab.Past -> "${pastOrders.size} closed"
-            },
-        )
-        if (visibleOrders.isEmpty()) {
-            SequoErrorPanel(
-                kind = SequoErrorKind.OrderSync,
-                onRetry = {},
-                technicalNote = "Your ${selectedTab.label.lowercase()} orders will appear here after checkout.",
-            )
-        } else {
-            when (selectedTab) {
-                OrdersTab.Current -> CurrentOrderBoard(
-                    orders = visibleOrders,
-                    onOrderSelected = { selectedOrder = it },
-                )
-                OrdersTab.Past -> PastOrderBoard(
-                    orders = visibleOrders,
-                    onOrderSelected = { selectedOrder = it },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CurrentOrderBoard(
-    orders: List<SequoOrder>,
-    onOrderSelected: (SequoOrder) -> Unit,
+internal fun OrdersContent(
+    loadCheckouts: suspend () -> List<CheckoutSummary>,
+    loadOrders: suspend () -> List<CustomerOrderDetails>,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        orders.forEach { order ->
-            ActiveOrderCard(order = order, onClick = { onOrderSelected(order) })
+    var refresh by remember { mutableStateOf(0) }
+    var checkouts by remember { mutableStateOf(emptyList<CheckoutSummary>()) }
+    var orders by remember { mutableStateOf(emptyList<CustomerOrderDetails>()) }
+    var loading by remember { mutableStateOf(true) }
+    var failed by remember { mutableStateOf(false) }
+    LaunchedEffect(refresh) {
+        loading = true
+        failed = false
+        try {
+            val savedCheckouts = loadCheckouts()
+            orders = loadOrders()
+            checkouts = savedCheckouts
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            failed = true
+        } finally {
+            loading = false
+        }
+    }
+    Text(appText(Res.string.nav_orders_title), style = MaterialTheme.typography.headlineSmall)
+    TextButton(onClick = { refresh++ }, enabled = !loading) { Text(appText(Res.string.cart_refresh)) }
+    if (loading) Text(appText(Res.string.orders_loading))
+    if (failed) Text(appText(Res.string.orders_load_failed), color = MaterialTheme.colorScheme.error)
+
+    val completedCheckoutIds = orders.map { it.order.checkoutId }.toSet()
+    val pendingRows = checkouts.filter { it.checkoutId !in completedCheckoutIds }.map {
+        OrderHistoryRow(it.checkoutId, it.status, it.totalCfa, it.destinationLabel, it.createdAt, it.lines)
+    }
+    val orderRows = orders.map { details ->
+        val order = details.order
+        val destination = checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
+        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines)
+    }
+    val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
+    if (!loading && !failed && rows.isEmpty()) Text(appText(Res.string.orders_empty))
+    for (row in rows) {
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(appText(orderHistoryStatus(row.status)), style = MaterialTheme.typography.titleMedium)
+                Text(row.id, style = MaterialTheme.typography.bodySmall)
+                row.destination?.let { Text(it) }
+                row.lines.forEach { Text("${it.quantity} × ${it.productName}") }
+                Text(formatCfa(row.totalCfa))
+            }
         }
     }
 }
 
-@Composable
-private fun PastOrderBoard(
-    orders: List<SequoOrder>,
-    onOrderSelected: (SequoOrder) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        orders.chunked(2).forEach { rowOrders ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rowOrders.forEach { order ->
-                    PastOrderReceiptCard(
-                        order = order,
-                        onClick = { onOrderSelected(order) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (rowOrders.size == 1) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
+private data class OrderHistoryRow(
+    val id: String,
+    val status: String,
+    val totalCfa: Int,
+    val destination: String?,
+    val createdAt: String,
+    val lines: List<OrderedProduct>,
+)
 
-private enum class OrdersTab(val label: String) {
-    Current("Current"),
-    Past("Past"),
+private fun orderHistoryStatus(status: String) = when (status) {
+    "AWAITING_WEBHOOK" -> Res.string.orders_awaiting_payment
+    "FAILED" -> Res.string.basket_payment_failed
+    "CANCELLED" -> Res.string.basket_payment_cancelled
+    "COMPLETED", "ACCEPTED_FOR_FULFILLMENT" -> Res.string.orders_in_preparation
+    "DELIVERED" -> Res.string.orders_delivered
+    "RETURN_REQUESTED" -> Res.string.orders_return_requested
+    "REFUNDED" -> Res.string.orders_refunded
+    else -> Res.string.orders_status_unknown
 }
-
-@Composable
-private fun OrderTabs(
-    selectedTab: OrdersTab,
-    currentCount: Int,
-    pastCount: Int,
-    onTabSelected: (OrdersTab) -> Unit,
-) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
-    ) {
-        PrimaryTabRow(
-            selectedTabIndex = selectedTab.ordinal,
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.primary,
-        ) {
-            OrdersTab.entries.forEach { tab ->
-                val count = if (tab == OrdersTab.Current) currentCount else pastCount
-                Tab(
-                    selected = selectedTab == tab,
-                    onClick = { onTabSelected(tab) },
-                    text = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            Text(tab.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                "$count orders",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (selectedTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    },
-                )
-            }
-        }
-    }
-}
-/*
-@Composable
-private fun ReturnPolicyNote(returnableCount: Int) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(13.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SequoIconMark(Icons.AutoMirrored.Filled.AssignmentReturn, MaterialTheme.colorScheme.primary, Modifier.size(36.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(appText(Res.string.orders_returns_current_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Text(
-                    appText(Res.string.orders_returns_current_detail),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (returnableCount > 0) {
-                Text(
-                    "$returnableCount open",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
-}*/
 
 @Composable
 private fun OrderListHeader(title: String, action: String) {

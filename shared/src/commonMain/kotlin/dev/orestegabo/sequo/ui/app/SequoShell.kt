@@ -229,6 +229,14 @@ internal fun SequoShell(
                         },
                         loadAddresses = loadSavedAddresses,
                         loadQuote = { addressId -> cartClient.quote(checkNotNull(cartAccessToken()), addressId) },
+                        submitCheckout = { quote, provider -> cartClient.checkout(checkNotNull(cartAccessToken()), quote, provider) },
+                        onOpenOrders = { currentDestination = SequoSection.Orders },
+                    )
+                },
+                ordersContent = {
+                    OrdersContent(
+                        loadCheckouts = { cartClient.checkouts(checkNotNull(cartAccessToken())) },
+                        loadOrders = { cartClient.orders(checkNotNull(cartAccessToken())) },
                     )
                 },
                 searchVisible = searchVisible,
@@ -314,6 +322,7 @@ internal fun SequoContentStage(
     onProductSelected: (SequoProductListing) -> Unit,
     onCloseProduct: () -> Unit,
     cartContent: @Composable () -> Unit,
+    ordersContent: @Composable () -> Unit,
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
     selectedMarketTypeKey: String,
@@ -335,11 +344,13 @@ internal fun SequoContentStage(
     modifier: Modifier = Modifier,
 ) {
     val catalog = (catalogState as? CatalogUiState.Ready)?.snapshot
-    if (catalogState is CatalogUiState.Loading) {
+    val needsCatalog = selectedProductListing != null ||
+        currentDestination == SequoSection.Home || currentDestination == SequoSection.Markets
+    if (needsCatalog && catalogState is CatalogUiState.Loading) {
         SequoScreenColumn(modifier = modifier) {
             SequoCatalogLoadingSkeleton()
         }
-    } else if (catalogState is CatalogUiState.Failed) {
+    } else if (needsCatalog && catalogState is CatalogUiState.Failed) {
         SequoScreenColumn(modifier = modifier) {
             SequoErrorPanel(
                 kind = SequoErrorKind.Server,
@@ -397,7 +408,7 @@ internal fun SequoContentStage(
                         onBrowse = { onDestinationSelected(SequoSection.Home) },
                     )
                 } else {
-                    OrdersContent()
+                    ordersContent()
                 }
                 SequoSection.Notifications -> NotificationsContent(
                     onOpenOrders = { onDestinationSelected(SequoSection.Orders) },

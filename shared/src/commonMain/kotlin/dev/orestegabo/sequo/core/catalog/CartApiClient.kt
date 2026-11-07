@@ -9,6 +9,7 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import kotlinx.serialization.Serializable
@@ -29,6 +30,18 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
         bearerAuth(token)
         parameter("addressId", addressId)
     }.body()
+
+    suspend fun checkout(token: String, quote: CartQuote, paymentProvider: String): CheckoutSummary =
+        client.post("/api/orders/checkouts") {
+            bearerAuth(token)
+            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider))
+        }.body()
+
+    suspend fun checkouts(token: String): List<CheckoutSummary> =
+        client.get("/api/orders/checkouts") { bearerAuth(token) }.body()
+
+    suspend fun orders(token: String): List<CustomerOrderDetails> =
+        client.get("/api/orders") { bearerAuth(token) }.body()
 
     fun close() = client.close()
 }
@@ -65,9 +78,41 @@ internal data class CartProduct(
 
 @Serializable
 internal data class CartQuote(
+    val addressId: String,
+    val revision: String,
     val productTotalCfa: Int,
     val optionTotalCfa: Int,
     val serviceFeeCfa: Int,
     val deliveryFeeCfa: Int,
     val totalCfa: Int,
 )
+
+
+@Serializable
+private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String)
+
+@Serializable
+internal data class CheckoutSummary(
+    val checkoutId: String,
+    val orderId: String? = null,
+    val status: String,
+    val totalCfa: Int,
+    val destinationLabel: String? = null,
+    val createdAt: String,
+    val lines: List<OrderedProduct>,
+)
+
+@Serializable
+internal data class CustomerOrderDetails(val order: CustomerOrder, val lines: List<OrderedProduct>)
+
+@Serializable
+internal data class CustomerOrder(
+    val id: String,
+    val checkoutId: String,
+    val orderStatus: String,
+    val totalCfa: Int,
+    val createdAt: String,
+)
+
+@Serializable
+internal data class OrderedProduct(val productName: String, val quantity: Int)
