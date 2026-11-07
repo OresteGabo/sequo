@@ -25,6 +25,7 @@ import dev.orestegabo.sequo.core.catalog.CartLine
 import dev.orestegabo.sequo.core.catalog.CartQuote
 import dev.orestegabo.sequo.core.catalog.CartSnapshot
 import dev.orestegabo.sequo.core.catalog.CheckoutSummary
+import dev.orestegabo.sequo.core.catalog.CheckoutProvider
 import dev.orestegabo.sequo.core.network.SequoApiException
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.formatCfa
@@ -41,10 +42,24 @@ internal fun BasketContent(
     onQuantity: (CartLine, Int) -> Unit,
     loadAddresses: suspend () -> List<SavedDeliveryAddress>,
     loadQuote: suspend (String) -> CartQuote,
+    loadPaymentProviders: suspend () -> List<CheckoutProvider>,
     submitCheckout: suspend (CartQuote, String) -> CheckoutSummary,
     onOpenOrders: () -> Unit,
 ) {
     var submitting by remember { mutableStateOf(false) }
+    var providers by remember { mutableStateOf<List<CheckoutProvider>?>(null) }
+    var providersFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(busy) {
+        if (busy) return@LaunchedEffect
+        providersFailed = false
+        try {
+            providers = loadPaymentProviders()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            providersFailed = true
+        }
+    }
     var checkoutError by remember { mutableStateOf<CheckoutError?>(null) }
     val scope = rememberCoroutineScope()
     val editingEnabled = !busy && !submitting
@@ -153,6 +168,14 @@ internal fun BasketContent(
                     RadioButton(selected = provider == id, onClick = { provider = id }, enabled = editingEnabled)
                     Text(label)
                 }
+                val configuration = providers?.firstOrNull { it.providerId == id }
+                Text(appText(when {
+                    providersFailed -> Res.string.checkout_provider_status_failed
+                    providers == null -> Res.string.cart_loading
+                    configuration?.apiConfigured == true && configuration.checkoutConnected -> Res.string.checkout_provider_ready
+                    configuration?.apiConfigured == true -> Res.string.checkout_provider_prepared
+                    else -> Res.string.basket_payment_not_configured_detail
+                }), style = MaterialTheme.typography.bodySmall)
             }
             Button(
                 enabled = editingEnabled,

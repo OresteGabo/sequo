@@ -29,6 +29,9 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.checkout_provider_status_failed.key to "Payment availability could not be loaded.",
+    Res.string.checkout_provider_ready.key to "Payment available",
+    Res.string.checkout_provider_prepared.key to "Provider configured. Payment connection is being prepared.",
     Res.string.checkout_submit.key to "Submit checkout",
     Res.string.checkout_submitting.key to "Submitting…",
     Res.string.checkout_price_changed.key to "The basket or delivery quote changed. Review the updated amounts before submitting again.",
@@ -352,6 +355,9 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.checkout_provider_status_failed.key to "Impossible de charger la disponibilité du paiement.",
+    Res.string.checkout_provider_ready.key to "Paiement disponible",
+    Res.string.checkout_provider_prepared.key to "Opérateur configuré. La connexion au paiement est en préparation.",
     Res.string.checkout_submit.key to "Envoyer la commande",
     Res.string.checkout_submitting.key to "Envoi en cours…",
     Res.string.checkout_price_changed.key to "Le panier ou le devis de livraison a changé. Vérifiez les nouveaux montants avant de réessayer.",

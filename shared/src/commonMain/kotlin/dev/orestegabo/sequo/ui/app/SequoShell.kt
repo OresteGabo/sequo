@@ -229,7 +229,12 @@ internal fun SequoShell(
                         },
                         loadAddresses = loadSavedAddresses,
                         loadQuote = { addressId -> cartClient.quote(checkNotNull(cartAccessToken()), addressId) },
-                        submitCheckout = { quote, provider -> cartClient.checkout(checkNotNull(cartAccessToken()), quote, provider) },
+                        loadPaymentProviders = cartClient::paymentProviders,
+                        submitCheckout = { quote, provider ->
+                            cartClient.checkout(checkNotNull(cartAccessToken()), quote, provider).also {
+                                cart = CartSnapshot(emptyList(), 0, 0)
+                            }
+                        },
                         onOpenOrders = { currentDestination = SequoSection.Orders },
                     )
                 },

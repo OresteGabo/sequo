@@ -31,6 +31,9 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
         parameter("addressId", addressId)
     }.body()
 
+    suspend fun paymentProviders(): List<CheckoutProvider> =
+        client.get("/api/payments/providers").body()
+
     suspend fun checkout(token: String, quote: CartQuote, paymentProvider: String): CheckoutSummary =
         client.post("/api/orders/checkouts") {
             bearerAuth(token)
@@ -116,3 +119,11 @@ internal data class CustomerOrder(
 
 @Serializable
 internal data class OrderedProduct(val productName: String, val quantity: Int)
+
+
+@Serializable
+internal data class CheckoutProvider(
+    val providerId: String,
+    val apiConfigured: Boolean = false,
+    val checkoutConnected: Boolean = false,
+)

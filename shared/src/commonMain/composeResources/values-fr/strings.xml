@@ -327,4 +327,7 @@
     <string name="orders_return_requested">Retour demandé</string>
     <string name="orders_refunded">Remboursée</string>
     <string name="orders_status_unknown">Statut indisponible</string>
+    <string name="checkout_provider_status_failed">Impossible de charger la disponibilité du paiement.</string>
+    <string name="checkout_provider_ready">Paiement disponible</string>
+    <string name="checkout_provider_prepared">Opérateur configuré. La connexion au paiement est en préparation.</string>
 </resources>
