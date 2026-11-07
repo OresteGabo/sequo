@@ -106,7 +106,14 @@ internal data class CheckoutSummary(
 )
 
 @Serializable
-internal data class CustomerOrderDetails(val order: CustomerOrder, val lines: List<OrderedProduct>)
+internal data class CustomerOrderDetails(
+    val order: CustomerOrder,
+    val lines: List<OrderedProduct>,
+    val deliveries: List<CustomerDeliveryTracking> = emptyList(),
+)
+
+@Serializable
+internal data class CustomerDeliveryTracking(val deliveryCode: String, val status: String, val updatedAt: String)
 
 @Serializable
 internal data class CustomerOrder(

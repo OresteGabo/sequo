@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.catalog.CheckoutSummary
 import dev.orestegabo.sequo.core.catalog.CustomerOrderDetails
+import dev.orestegabo.sequo.core.catalog.CustomerDeliveryTracking
 import dev.orestegabo.sequo.core.catalog.OrderedProduct
 import dev.orestegabo.sequo.data.*
 import kotlinx.coroutines.CancellationException
@@ -80,7 +81,7 @@ internal fun OrdersContent(
     val orderRows = orders.map { details ->
         val order = details.order
         val destination = checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
-        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines)
+        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries)
     }
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
     if (!loading && !failed && rows.isEmpty()) Text(appText(Res.string.orders_empty))
@@ -91,6 +92,10 @@ internal fun OrdersContent(
                 Text(row.id, style = MaterialTheme.typography.bodySmall)
                 row.destination?.let { Text(it) }
                 row.lines.forEach { Text("${it.quantity} × ${it.productName}") }
+                row.deliveries.forEach { delivery ->
+                    Text(appText(customerDeliveryStatus(delivery.status)), style = MaterialTheme.typography.titleSmall)
+                    Text(delivery.deliveryCode, style = MaterialTheme.typography.bodySmall)
+                }
                 Text(formatCfa(row.totalCfa))
             }
         }
@@ -104,7 +109,19 @@ private data class OrderHistoryRow(
     val destination: String?,
     val createdAt: String,
     val lines: List<OrderedProduct>,
+    val deliveries: List<CustomerDeliveryTracking> = emptyList(),
 )
+
+private fun customerDeliveryStatus(status: String) = when (status) {
+    "CREATED", "OFFERED_TO_COURIER" -> Res.string.orders_delivery_offered
+    "ACCEPTED_BY_COURIER" -> Res.string.orders_delivery_accepted
+    "PICKED_UP_FROM_SELLER" -> Res.string.orders_on_way
+    "DELIVERED_TO_CUSTOMER", "RELEASED_BY_RELAY" -> Res.string.orders_delivered
+    "DEPOSITED_AT_RELAY" -> Res.string.basket_delivery_relay
+    "PROBLEM_REPORTED" -> Res.string.orders_delivery_problem
+    "CANCELLED" -> Res.string.basket_payment_cancelled
+    else -> Res.string.orders_status_unknown
+}
 
 private fun orderHistoryStatus(status: String) = when (status) {
     "AWAITING_WEBHOOK" -> Res.string.orders_awaiting_payment

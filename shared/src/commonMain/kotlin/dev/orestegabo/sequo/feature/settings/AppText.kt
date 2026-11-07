@@ -29,6 +29,10 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.orders_delivery_offered.key to "Waiting for a rider",
+    Res.string.orders_delivery_accepted.key to "Rider assigned · awaiting pickup",
+    Res.string.orders_on_way.key to "Picked up · delivery in progress",
+    Res.string.orders_delivery_problem.key to "Delivery issue · operations notified",
     Res.string.checkout_provider_status_failed.key to "Payment availability could not be loaded.",
     Res.string.checkout_provider_ready.key to "Payment available",
     Res.string.checkout_provider_prepared.key to "Provider configured. Payment connection is being prepared.",
@@ -42,7 +46,7 @@ private val EnglishStrings = mapOf(
     Res.string.orders_load_failed.key to "Could not load orders. Refresh to try again.",
     Res.string.orders_empty.key to "Your orders will appear here after checkout.",
     Res.string.orders_awaiting_payment.key to "Awaiting payment confirmation",
-    Res.string.orders_in_preparation.key to "Paid · awaiting fulfillment",
+    Res.string.orders_in_preparation.key to "Paid · fulfillment in progress",
     Res.string.orders_delivered.key to "Delivered",
     Res.string.orders_return_requested.key to "Return requested",
     Res.string.orders_refunded.key to "Refunded",
@@ -355,6 +359,10 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.orders_delivery_offered.key to "En attente d’un livreur",
+    Res.string.orders_delivery_accepted.key to "Livreur affecté · enlèvement en attente",
+    Res.string.orders_on_way.key to "Colis enlevé · livraison en cours",
+    Res.string.orders_delivery_problem.key to "Incident de livraison · exploitation informée",
     Res.string.checkout_provider_status_failed.key to "Impossible de charger la disponibilité du paiement.",
     Res.string.checkout_provider_ready.key to "Paiement disponible",
     Res.string.checkout_provider_prepared.key to "Opérateur configuré. La connexion au paiement est en préparation.",
@@ -368,7 +376,7 @@ private val FrenchStrings = mapOf(
     Res.string.orders_load_failed.key to "Impossible de charger les commandes. Actualisez pour réessayer.",
     Res.string.orders_empty.key to "Vos commandes apparaîtront ici après leur envoi.",
     Res.string.orders_awaiting_payment.key to "En attente de confirmation du paiement",
-    Res.string.orders_in_preparation.key to "Payée · en attente de préparation",
+    Res.string.orders_in_preparation.key to "Payée · traitement en cours",
     Res.string.orders_delivered.key to "Livrée",
     Res.string.orders_return_requested.key to "Retour demandé",
     Res.string.orders_refunded.key to "Remboursée",

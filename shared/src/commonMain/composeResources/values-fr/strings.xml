@@ -322,7 +322,7 @@
     <string name="orders_load_failed">Impossible de charger les commandes. Actualisez pour réessayer.</string>
     <string name="orders_empty">Vos commandes apparaîtront ici après leur envoi.</string>
     <string name="orders_awaiting_payment">En attente de confirmation du paiement</string>
-    <string name="orders_in_preparation">Payée · en attente de préparation</string>
+    <string name="orders_in_preparation">Payée · traitement en cours</string>
     <string name="orders_delivered">Livrée</string>
     <string name="orders_return_requested">Retour demandé</string>
     <string name="orders_refunded">Remboursée</string>
@@ -330,4 +330,8 @@
     <string name="checkout_provider_status_failed">Impossible de charger la disponibilité du paiement.</string>
     <string name="checkout_provider_ready">Paiement disponible</string>
     <string name="checkout_provider_prepared">Opérateur configuré. La connexion au paiement est en préparation.</string>
+    <string name="orders_delivery_offered">En attente d’un livreur</string>
+    <string name="orders_delivery_accepted">Livreur affecté · enlèvement en attente</string>
+    <string name="orders_on_way">Colis enlevé · livraison en cours</string>
+    <string name="orders_delivery_problem">Incident de livraison · exploitation informée</string>
 </resources>
