@@ -41,7 +41,8 @@ internal fun BasketContent(
     onRefresh: () -> Unit,
     onQuantity: (CartLine, Int) -> Unit,
     loadAddresses: suspend () -> List<SavedDeliveryAddress>,
-    loadQuote: suspend (String) -> CartQuote,
+    loadQuote: suspend (String, String?) -> CartQuote,
+    loadRelayPoints: suspend () -> List<dev.orestegabo.sequo.core.catalog.RelayDestination>,
     loadPaymentProviders: suspend () -> List<CheckoutProvider>,
     submitCheckout: suspend (CartQuote, String) -> CheckoutSummary,
     onOpenOrders: () -> Unit,
@@ -102,8 +103,11 @@ internal fun BasketContent(
     var addresses by remember { mutableStateOf<List<SavedDeliveryAddress>?>(null) }
     var addressesFailed by remember { mutableStateOf(false) }
     var addressId by remember { mutableStateOf<String?>(null) }
-    var quote by remember(cart, addressId) { mutableStateOf<CartQuote?>(null) }
-    var quoteFailed by remember(cart, addressId) { mutableStateOf(false) }
+    var relayPointId by remember { mutableStateOf<String?>(null) }
+    var relayPoints by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.RelayDestination>?>(null) }
+    var relaysFailed by remember { mutableStateOf(false) }
+    var quote by remember(cart, addressId, relayPointId) { mutableStateOf<CartQuote?>(null) }
+    var quoteFailed by remember(cart, addressId, relayPointId) { mutableStateOf(false) }
     LaunchedEffect(cart) {
         try {
             addresses = loadAddresses().filter { it.id.isNotBlank() }
@@ -116,21 +120,50 @@ internal fun BasketContent(
             addressesFailed = true
         }
     }
+    LaunchedEffect(cart, busy) {
+        if (busy) return@LaunchedEffect
+        relaysFailed = false
+        try {
+            relayPoints = loadRelayPoints()
+            // Keep a chosen but now unavailable relay until the customer explicitly changes destination.
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { relayPoints = null; relaysFailed = true }
+    }
     var quoteRefresh by remember { mutableStateOf(0) }
-    LaunchedEffect(cart, addressId, busy, quoteRefresh) {
+    LaunchedEffect(cart, addressId, relayPointId, relayPoints, relaysFailed, busy, quoteRefresh) {
         quote = null
         quoteFailed = false
         if (busy) return@LaunchedEffect
         val selected = addressId ?: return@LaunchedEffect
+        if (relayPointId != null && (relaysFailed || relayPoints.orEmpty().none { it.id == relayPointId })) {
+            quoteFailed = true
+            return@LaunchedEffect
+        }
         try {
-            quote = loadQuote(selected)
+            quote = loadQuote(selected, relayPointId)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
             quoteFailed = true
         }
     }
-    Text(appText(Res.string.basket_delivery_home), style = MaterialTheme.typography.titleMedium)
+    Text(appText(Res.string.cart_relay_title), style = MaterialTheme.typography.titleMedium)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        RadioButton(selected = relayPointId == null, enabled = editingEnabled,
+            onClick = { relayPointId = null; checkoutError = null })
+        Text(appText(Res.string.basket_delivery_home))
+    }
+    if (relaysFailed) Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
+    else if (relayPoints == null) Text(appText(Res.string.cart_loading))
+    else if (relayPoints.orEmpty().isEmpty()) Text(appText(Res.string.cart_relay_unavailable))
+    for (relay in relayPoints.orEmpty()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = relayPointId == relay.id, enabled = editingEnabled,
+                onClick = { relayPointId = relay.id; checkoutError = null })
+            Column { Text(relay.name); Text(listOfNotNull(relay.neighborhood, relay.city, relay.landmark).joinToString(", ")) }
+        }
+    }
+    Text(appText(if (relayPointId == null) Res.string.basket_delivery_home else Res.string.cart_relay_contact), style = MaterialTheme.typography.titleMedium)
     when {
         addressesFailed -> Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
         addresses == null -> Text(appText(Res.string.cart_loading))

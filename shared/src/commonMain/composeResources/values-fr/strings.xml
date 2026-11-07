@@ -334,4 +334,7 @@
     <string name="orders_delivery_accepted">Livreur affecté · enlèvement en attente</string>
     <string name="orders_on_way">Colis enlevé · livraison en cours</string>
     <string name="orders_delivery_problem">Incident de livraison · exploitation informée</string>
+    <string name="cart_relay_title">Destination de livraison</string>
+    <string name="cart_relay_unavailable">Aucun relais éligible disponible actuellement pour ce panier.</string>
+    <string name="cart_relay_contact">Coordonnées du destinataire (adresse enregistrée)</string>
 </resources>

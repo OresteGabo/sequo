@@ -26,10 +26,13 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
     suspend fun remove(token: String, lineId: String): CartSnapshot =
         client.delete("/api/cart/items/$lineId") { bearerAuth(token) }.body()
 
-    suspend fun quote(token: String, addressId: String): CartQuote = client.get("/api/cart/quote") {
+    suspend fun quote(token: String, addressId: String, relayPointId: String? = null): CartQuote = client.get("/api/cart/quote") {
         bearerAuth(token)
         parameter("addressId", addressId)
+        relayPointId?.let { parameter("relayPointId", it) }
     }.body()
+
+    suspend fun relayPoints(token: String): List<RelayDestination> = client.get("/api/cart/relay-points") { bearerAuth(token) }.body()
 
     suspend fun paymentProviders(): List<CheckoutProvider> =
         client.get("/api/payments/providers").body()
@@ -37,7 +40,7 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
     suspend fun checkout(token: String, quote: CartQuote, paymentProvider: String): CheckoutSummary =
         client.post("/api/orders/checkouts") {
             bearerAuth(token)
-            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider))
+            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider, quote.relayPointId))
         }.body()
 
     suspend fun checkouts(token: String): List<CheckoutSummary> =
@@ -88,11 +91,13 @@ internal data class CartQuote(
     val serviceFeeCfa: Int,
     val deliveryFeeCfa: Int,
     val totalCfa: Int,
+    val relayPointId: String? = null,
+    val fulfillmentMode: String = "HOME",
 )
 
 
 @Serializable
-private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String)
+private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String, val relayPointId: String? = null)
 
 @Serializable
 internal data class CheckoutSummary(
@@ -113,7 +118,12 @@ internal data class CustomerOrderDetails(
 )
 
 @Serializable
-internal data class CustomerDeliveryTracking(val deliveryCode: String, val status: String, val updatedAt: String)
+internal data class CustomerDeliveryTracking(val deliveryCode: String, val status: String, val updatedAt: String,
+    val relayDestination: RelayDestination? = null, val relayDepositedAt: String? = null)
+
+@Serializable
+internal data class RelayDestination(val id: String, val name: String, val city: String? = null,
+    val neighborhood: String? = null, val landmark: String? = null)
 
 @Serializable
 internal data class CustomerOrder(

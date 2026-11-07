@@ -80,7 +80,8 @@ internal fun OrdersContent(
     }
     val orderRows = orders.map { details ->
         val order = details.order
-        val destination = checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
+        val destination = details.deliveries.mapNotNull { it.relayDestination?.name }.distinct().takeIf { it.isNotEmpty() }?.joinToString(" / ")
+            ?: checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
         OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries)
     }
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
@@ -95,6 +96,8 @@ internal fun OrdersContent(
                 row.deliveries.forEach { delivery ->
                     Text(appText(customerDeliveryStatus(delivery.status)), style = MaterialTheme.typography.titleSmall)
                     Text(delivery.deliveryCode, style = MaterialTheme.typography.bodySmall)
+                    delivery.relayDestination?.let { relay -> Text(listOfNotNull(relay.name, relay.neighborhood, relay.city).joinToString(" · ")) }
+                    delivery.relayDepositedAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }
                 Text(formatCfa(row.totalCfa))
             }
