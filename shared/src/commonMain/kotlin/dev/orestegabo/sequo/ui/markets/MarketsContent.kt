@@ -67,7 +67,7 @@ internal fun MarketsContent(
         shopsByType
     } else {
         shopsByType.filter { shop ->
-            shop.area.contains(selectedArea) || shop.name.contains(selectedArea)
+            shop.area?.contains(selectedArea) == true || shop.name.contains(selectedArea)
         }
     }
     val filteredShops = areaShops.filter { shop ->
@@ -77,9 +77,9 @@ internal fun MarketsContent(
     }
     val visibleShops = when (selectedSort) {
         "Fastest" -> filteredShops.sortedBy { it.etaSortRank() }
-        "Rating" -> filteredShops.sortedByDescending { it.rating.toDoubleOrNull() ?: 0.0 }
-        "Delivery" -> filteredShops.sortedBy { baseDelivery(it.distanceKm) }
-        else -> filteredShops.sortedBy { it.distanceKm }
+        "Rating" -> filteredShops.sortedByDescending { it.rating?.toDoubleOrNull() ?: Double.NEGATIVE_INFINITY }
+        "Delivery" -> filteredShops.sortedBy { it.distanceKm?.let(::baseDelivery) ?: Int.MAX_VALUE }
+        else -> filteredShops.sortedBy { it.distanceKm ?: Double.POSITIVE_INFINITY }
     }
 
     MarketSortBar(
@@ -184,6 +184,7 @@ private fun MarketSortBar(
 
 private fun SequoShop.etaSortRank(): Int =
     when {
+        eta == null -> Int.MAX_VALUE
         eta.contains("min", ignoreCase = true) -> eta.filter { it.isDigit() }.toIntOrNull() ?: 999
         eta.contains("today", ignoreCase = true) -> 240
         eta.contains("tomorrow", ignoreCase = true) -> 1440

@@ -180,7 +180,8 @@ internal fun SequoTinyButton(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-internal fun MetaPill(label: String, accentColor: Color, inverse: Boolean = false) {
+internal fun MetaPill(label: String?, accentColor: Color, inverse: Boolean = false) {
+    if (label.isNullOrBlank()) return
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = if (inverse) Color(0x2EFFF8EE) else accentColor.copy(alpha = 0.14f),
@@ -198,15 +199,16 @@ internal fun MetaPill(label: String, accentColor: Color, inverse: Boolean = fals
 }
 
 @Composable
-internal fun RuleRow(title: String, detail: String) {
+internal fun RuleRow(title: String?, detail: String?) {
+    if (title.isNullOrBlank() && detail.isNullOrBlank()) return
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)),
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
+            if (!title.isNullOrBlank()) Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (!detail.isNullOrBlank()) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
         }
     }
 }
@@ -225,7 +227,8 @@ internal fun ShopMark(text: String) {
 }
 
 @Composable
-internal fun RatingMark(rating: String) {
+internal fun RatingMark(rating: String?) {
+    if (rating.isNullOrBlank()) return
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.76f),

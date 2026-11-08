@@ -61,7 +61,7 @@ internal data class CatalogSnapshot(
             .sortedWith(
                 compareByDescending<Pair<SequoShop, SequoProduct>> { it.second.hasDiscount }
                     .thenByDescending { it.second.isNegotiable }
-                    .thenBy { it.first.distanceKm },
+                    .thenBy { it.first.distanceKm ?: Double.POSITIVE_INFINITY },
             )
             .take(8)
     }
@@ -182,14 +182,14 @@ private fun CatalogCategoryResponse.toShopType(): SequoShopType =
 private fun MerchantStorefrontResponse.toShop(): SequoShop =
     SequoShop(
         name = name,
-        area = area.orEmpty(),
-        kind = kind ?: status,
-        distanceKm = distanceKm ?: 0.0,
-        eta = eta ?: "Available",
-        photoStatus = photoStatus ?: "Catalog synced",
-        openStatus = openStatus ?: status.lowercase().replaceFirstChar { it.uppercase() },
-        rating = rating ?: "-",
-        consolidation = consolidation ?: "Standard delivery",
+        area = area?.takeIf { it.isNotBlank() },
+        kind = kind?.takeIf { it.isNotBlank() },
+        distanceKm = distanceKm?.takeIf { it.isFinite() && it >= 0.0 },
+        eta = eta?.takeIf { it.isNotBlank() },
+        photoStatus = photoStatus?.takeIf { it.isNotBlank() },
+        openStatus = openStatus?.takeIf { it.isNotBlank() },
+        rating = rating?.takeIf { it.isNotBlank() },
+        consolidation = consolidation?.takeIf { it.isNotBlank() },
         products = products.map { it.toProduct() },
     )
 

@@ -136,7 +136,7 @@ internal fun BasketLine(entry: BasketEntry, entries: List<BasketEntry>) {
     )
 }
 
-private fun packageLabelForArea(area: String, entries: List<BasketEntry>): String {
+private fun packageLabelForArea(area: String?, entries: List<BasketEntry>): String {
     val areas = entries.map { it.shop.area }.distinct()
     val index = areas.indexOf(area).coerceAtLeast(0)
     return ('A'.code + index).toChar().toString()
@@ -295,7 +295,7 @@ internal fun DeliveryAddressCard(packageCount: Int, deliveryMode: CheckoutDelive
 internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
     var expanded by remember { mutableStateOf(false) }
     val packages = entries.groupBy { it.shop.area }.values.toList()
-    val totalDelivery = cartPackageDeliveryFees(entries).sum()
+    val totalDelivery = cartPackageDeliveryFees(entries)?.sum()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -339,7 +339,7 @@ internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
                 }
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(appText(Res.string.basket_delivery), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatCfa(totalDelivery), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Text(totalDelivery?.let(::formatCfa) ?: appText(Res.string.cart_quote_failed), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
@@ -377,7 +377,7 @@ internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(appText(Res.string.basket_package_label).replace("%1\$s", ('A'.code + index).toChar().toString()), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         Text(
-                            "${shop.area}  |  $itemCount item${if (itemCount == 1) "" else "s"}",
+                            listOfNotNull(shop.area, "$itemCount item${if (itemCount == 1) "" else "s"}").joinToString("  |  "),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -385,7 +385,7 @@ internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
                         )
                     }
                     Text(
-                        formatCfa(baseDelivery(shop.distanceKm)),
+                        shop.distanceKm?.let { formatCfa(baseDelivery(it)) }.orEmpty(),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -430,7 +430,7 @@ internal fun CartDeliveryPackagesCard(entries: List<BasketEntry>) {
 }
 
 private fun isFoodBasketEntry(entry: BasketEntry): Boolean =
-    entry.shop.kind.contains("food", ignoreCase = true) ||
+    entry.shop.kind?.contains("food", ignoreCase = true) == true ||
         entry.product.label.contains("food", ignoreCase = true) ||
         entry.product.label.contains("hot", ignoreCase = true)
 
@@ -457,11 +457,11 @@ private fun CheckoutDeliveryMode.icon(): ImageVector =
         CheckoutDeliveryMode.RelayPickup -> Icons.Filled.Storefront
     }
 
-private fun cartPackageDeliveryFees(entries: List<BasketEntry>): List<Int> =
-    entries
-        .groupBy { it.shop.area }
-        .values
-        .map { entries -> baseDelivery(entries.first().shop.distanceKm) }
+private fun cartPackageDeliveryFees(entries: List<BasketEntry>): List<Int>? {
+    if (entries.any { it.shop.distanceKm == null }) return null
+    val distances = entries.groupBy { it.shop.area }.values.map { it.first().shop.distanceKm }
+    return distances.map { baseDelivery(requireNotNull(it)) }
+}
 
 @Composable
 internal fun QuantityStepper(quantity: Int) {
@@ -514,7 +514,8 @@ internal fun SequoCheckoutCard(
     onRefreshPaymentStatus: () -> Unit,
 ) {
     val subtotal = entries.sumOf { it.product.priceCfa * it.quantity } + (extraBasketItems * 3500)
-    val packageDelivery = cartPackageDeliveryFees(entries).sum()
+    val packageDelivery = cartPackageDeliveryFees(entries)?.sum()
+    if (packageDelivery == null) { Text(appText(Res.string.cart_quote_failed)); return }
     val subscriptionDiscount = (packageDelivery * 15) / 100
     val deliveryAfterSubscription = packageDelivery - subscriptionDiscount
     val referralCredit = 500.coerceAtMost(deliveryAfterSubscription)

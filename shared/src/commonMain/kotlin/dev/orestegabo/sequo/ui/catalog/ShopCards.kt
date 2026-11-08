@@ -69,17 +69,17 @@ internal fun SequoShopCard(
                 SequoShoppingMark(Modifier.size(52.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(shop.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("${shop.area} / ${appCatalogText(shop.kind)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(appCatalogText(shop.openStatus), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    listOfNotNull(shop.area, shop.kind?.let { appCatalogText(it) }).joinToString(" / ").takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    shop.openStatus?.let { Text(appCatalogText(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
                 }
                 RatingMark(shop.rating)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
-                MetaPill(formatCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
-                MetaPill(appCatalogText(shop.eta), SequoAccent)
+                shop.distanceKm?.let { MetaPill(formatDistance(it), SequoPrimary) }
+                shop.distanceKm?.let { MetaPill(formatCfa(baseDelivery(it)), SequoSecondary) }
+                MetaPill(shop.eta?.let { appCatalogText(it) }, SequoAccent)
             }
-            RuleRow(appCatalogText(shop.photoStatus), appCatalogText(shop.consolidation))
+            RuleRow(shop.photoStatus?.let { appCatalogText(it) }, shop.consolidation?.let { appCatalogText(it) })
             displayProducts.forEach { product ->
                 ProductLine(
                     product = product,
@@ -124,28 +124,30 @@ internal fun ShopSummaryRow(shop: SequoShop) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Filled.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(15.dp),
-                        )
-                        Text(
-                            shop.area,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    shop.area?.let { area ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(15.dp),
+                            )
+                            Text(
+                                area,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
                 RatingMark(shop.rating)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
-                MetaPill(formatCompactCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
-                MetaPill(appCatalogText(shop.eta), SequoAccent)
+                shop.distanceKm?.let { MetaPill(formatDistance(it), SequoPrimary) }
+                shop.distanceKm?.let { MetaPill(formatCompactCfa(baseDelivery(it)), SequoSecondary) }
+                MetaPill(shop.eta?.let { appCatalogText(it) }, SequoAccent)
             }
             Box(
                 modifier = Modifier
@@ -154,9 +156,9 @@ internal fun ShopSummaryRow(shop: SequoShop) {
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                ShopStatusDot()
+                if (shop.openStatus != null) ShopStatusDot()
                 Text(
-                    appCatalogText(shop.openStatus),
+                    shop.openStatus?.let { appCatalogText(it) }.orEmpty(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f),
@@ -164,7 +166,7 @@ internal fun ShopSummaryRow(shop: SequoShop) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    appCatalogText(shop.kind),
+                    shop.kind?.let { appCatalogText(it) }.orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
                     maxLines = 1,
@@ -269,7 +271,7 @@ internal fun CompactProductCard(
                 Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "${shop.name} / ${shop.area}",
+                        listOfNotNull(shop.name, shop.area).joinToString(" / "),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),

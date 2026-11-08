@@ -531,13 +531,13 @@ private fun ProductSellerCard(shop: SequoShop) {
                 SequoShoppingMark(Modifier.size(46.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(shop.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("${shop.area} / ${shop.kind}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    listOfNotNull(shop.area, shop.kind).joinToString(" / ").takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
                 RatingMark(shop.rating)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                MetaPill(formatDistance(shop.distanceKm), SequoPrimary)
-                MetaPill(formatCfa(baseDelivery(shop.distanceKm)), SequoSecondary)
+                shop.distanceKm?.let { MetaPill(formatDistance(it), SequoPrimary) }
+                shop.distanceKm?.let { MetaPill(formatCfa(baseDelivery(it)), SequoSecondary) }
                 MetaPill(shop.eta, SequoAccent)
             }
             RuleRow(shop.openStatus, shop.consolidation)
@@ -724,7 +724,7 @@ private fun similarProductListings(current: SequoProductListing, allShops: List<
             productRelationKey(product) == currentRelationKey ||
                 normalizedProductSubcategory(product) == currentSubcategory ||
                 product.label == current.product.label ||
-                listing.shop.kind == current.shop.kind
+                listing.shop.kind != null && listing.shop.kind == current.shop.kind
         }
         .sortedWith(
             compareByDescending<SequoProductListing> { listing ->
@@ -732,13 +732,13 @@ private fun similarProductListings(current: SequoProductListing, allShops: List<
                     productRelationKey(listing.product) == currentRelationKey -> 4
                     normalizedProductSubcategory(listing.product) == currentSubcategory -> 3
                     listing.product.label == current.product.label -> 2
-                    listing.shop.kind == current.shop.kind -> 1
+                    listing.shop.kind != null && listing.shop.kind == current.shop.kind -> 1
                     else -> 0
                 }
             }.thenBy { listing ->
                 abs(listing.product.priceCfa - current.product.priceCfa)
             }.thenBy { listing ->
-                listing.shop.distanceKm
+                listing.shop.distanceKm ?: Double.POSITIVE_INFINITY
             },
         )
         .take(6)

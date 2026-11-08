@@ -79,14 +79,14 @@ internal data class SequoProduct(
 
 internal data class SequoShop(
     val name: String,
-    val area: String,
-    val kind: String,
-    val distanceKm: Double,
-    val eta: String,
-    val photoStatus: String,
-    val openStatus: String,
-    val rating: String,
-    val consolidation: String,
+    val area: String?,
+    val kind: String?,
+    val distanceKm: Double?,
+    val eta: String?,
+    val photoStatus: String?,
+    val openStatus: String?,
+    val rating: String?,
+    val consolidation: String?,
     val products: List<SequoProduct>,
 )
 

@@ -90,7 +90,7 @@ internal fun SequoTopAppBar(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = productListing?.let { "${it.shop.name} / ${it.shop.area}" } ?: currentDestination.appBarSubtitle(),
+                    text = productListing?.let { listOfNotNull(it.shop.name, it.shop.area).joinToString(" / ") } ?: currentDestination.appBarSubtitle(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
