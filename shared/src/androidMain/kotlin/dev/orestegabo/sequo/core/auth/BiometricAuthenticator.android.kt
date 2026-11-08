@@ -33,7 +33,11 @@ private class AndroidBiometricAuthenticator(
     private val activity: Activity?,
 ) : BiometricAuthenticator {
     override val availability: BiometricAvailability
-        get() = context.biometricAvailability()
+        get() = selectBiometricAvailability(
+            sdkInt = Build.VERSION.SDK_INT,
+            legacy = { context.fingerprintAvailability() },
+            modern = { context.biometricManagerAvailability() },
+        )
 
     override suspend fun authenticate(config: BiometricPromptConfig): BiometricAuthResult {
         val currentAvailability = availability
@@ -92,22 +96,30 @@ private class AndroidBiometricAuthenticator(
     }
 }
 
-@SuppressLint("MissingPermission")
-private fun Context.biometricAvailability(): BiometricAvailability {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-        return BiometricAvailability.NotSupported
-    }
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-        val fingerprintManager = getSystemService(FingerprintManager::class.java)
-            ?: return BiometricAvailability.NoHardware
-        return when {
-            !packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT) ||
-                !fingerprintManager.isHardwareDetected -> BiometricAvailability.NoHardware
-            !fingerprintManager.hasEnrolledFingerprints() -> BiometricAvailability.NoneEnrolled
-            else -> BiometricAvailability.NotSupported
-        }
-    }
+// Injectable API dispatch protects legacy devices from resolving API29-only framework classes.
+internal fun selectBiometricAvailability(
+    sdkInt: Int,
+    legacy: () -> BiometricAvailability,
+    modern: () -> BiometricAvailability,
+): BiometricAvailability = if (sdkInt < Build.VERSION_CODES.Q) legacy() else modern()
 
+@SuppressLint("MissingPermission")
+private fun Context.fingerprintAvailability(): BiometricAvailability {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return BiometricAvailability.NotSupported
+    val fingerprintManager = getSystemService(FingerprintManager::class.java)
+        ?: return BiometricAvailability.NoHardware
+    return when {
+        !packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT) ||
+            !fingerprintManager.isHardwareDetected -> BiometricAvailability.NoHardware
+        !fingerprintManager.hasEnrolledFingerprints() -> BiometricAvailability.NoneEnrolled
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P -> BiometricAvailability.Available
+        else -> BiometricAvailability.NotSupported
+    }
+}
+
+@android.annotation.TargetApi(Build.VERSION_CODES.Q)
+@SuppressLint("MissingPermission")
+private fun Context.biometricManagerAvailability(): BiometricAvailability {
     val biometricManager = getSystemService(android.hardware.biometrics.BiometricManager::class.java)
         ?: return BiometricAvailability.NoHardware
     return when (biometricManager.canAuthenticate()) {

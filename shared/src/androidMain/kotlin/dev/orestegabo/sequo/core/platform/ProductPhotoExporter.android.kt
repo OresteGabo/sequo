@@ -1,6 +1,6 @@
 package dev.orestegabo.sequo.core.platform
 
-import android.content.ContentValues
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -9,16 +9,20 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
-import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
+import java.io.ByteArrayOutputStream
+import java.io.File
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import sequo.shared.generated.resources.Res
+import sequo.shared.generated.resources.photo_export_cancelled
+import sequo.shared.generated.resources.photo_export_in_progress
 import sequo.shared.generated.resources.photo_export_opening_share
 import sequo.shared.generated.resources.photo_export_prepare_failed
 import sequo.shared.generated.resources.photo_export_save_failed
@@ -27,75 +31,71 @@ import sequo.shared.generated.resources.photo_export_share_failed
 
 @Composable
 internal actual fun rememberProductPhotoExporter(): ProductPhotoExporter {
-    val context = LocalContext.current
-    return remember(context) { AndroidProductPhotoExporter(context.applicationContext) }
+    val context = LocalContext.current.applicationContext
+    val saver = rememberAndroidDocumentSaver("image/jpeg")
+    return remember(context, saver) { AndroidProductPhotoExporter(context, saver) }
 }
 
 private class AndroidProductPhotoExporter(
     private val context: Context,
+    private val saver: AndroidDocumentSaver,
 ) : ProductPhotoExporter {
     override suspend fun saveWatermarkedPhoto(
         image: ImageBitmap,
         fileName: String,
         productName: String,
-    ): ProductPhotoExportResult = runCatching {
-        val bitmap = image.asAndroidBitmap()
-        val watermarked = bitmap.withSequoWatermark(productName)
-        val safeName = fileName.safeImageFileName()
-        context.writeWatermarkedImage(watermarked, safeName)
-            ?: return ProductPhotoExportResult(false, Res.string.photo_export_save_failed)
-        ProductPhotoExportResult(true, Res.string.photo_export_saved)
-    }.getOrElse {
-        ProductPhotoExportResult(false, Res.string.photo_export_save_failed)
+    ): ProductPhotoExportResult = try {
+        val bytes = withContext(Dispatchers.IO) {
+            val watermarked = image.asAndroidBitmap().withSequoWatermark(productName)
+            try { watermarked.jpegBytes() } finally { watermarked.recycle() }
+        }
+        when (saver.save(fileName.safeImageFileName(), bytes)) {
+            DocumentSaveResult.Saved -> ProductPhotoExportResult(true, Res.string.photo_export_saved)
+            DocumentSaveResult.Cancelled -> ProductPhotoExportResult(false, Res.string.photo_export_cancelled)
+            DocumentSaveResult.Failed -> ProductPhotoExportResult(false, Res.string.photo_export_save_failed)
+            DocumentSaveResult.Busy -> ProductPhotoExportResult(false, Res.string.photo_export_in_progress)
+        }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        ProductPhotoExportResult(false, Res.string.photo_export_prepare_failed)
     }
 
     override suspend fun sharePhoto(
         image: ImageBitmap,
         fileName: String,
         productName: String,
-    ): ProductPhotoExportResult = runCatching {
-        val bitmap = image.asAndroidBitmap()
-        val watermarked = bitmap.withSequoWatermark(productName)
-        val safeName = fileName.safeImageFileName()
-        val uri = context.writeWatermarkedImage(watermarked, safeName)
-            ?: return ProductPhotoExportResult(false, Res.string.photo_export_prepare_failed)
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+    ): ProductPhotoExportResult = try {
+        val file = withContext(Dispatchers.IO) {
+            val directory = File(context.cacheDir, "shared-product-photos").apply {
+                check(isDirectory || mkdirs())
+            }
+            File.createTempFile("sequo-photo-", ".jpg", directory).also { target ->
+                target.outputStream().use { output ->
+                    check(image.asAndroidBitmap().compress(Bitmap.CompressFormat.JPEG, 94, output))
+                }
+            }
+        }
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.sharedfiles", file)
+        val share = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_TEXT, "Shared from Sequo")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            putExtra(Intent.EXTRA_TITLE, productName)
+            clipData = ClipData.newRawUri(fileName.safeImageFileName(), uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Share photo").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        context.startActivity(Intent.createChooser(share, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         ProductPhotoExportResult(true, Res.string.photo_export_opening_share)
-    }.getOrElse {
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
         ProductPhotoExportResult(false, Res.string.photo_export_share_failed)
     }
 }
 
-private fun Context.writeWatermarkedImage(
-    bitmap: Bitmap,
-    safeName: String,
-): Uri? {
-    val resolver = contentResolver
-    val values = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, safeName)
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Sequo")
-            put(MediaStore.Images.Media.IS_PENDING, 1)
-        }
-    }
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
-    resolver.openOutputStream(uri)?.use { output ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 94, output)
-    } ?: return null
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        values.clear()
-        values.put(MediaStore.Images.Media.IS_PENDING, 0)
-        resolver.update(uri, values, null, null)
-    }
-    return uri
+private fun Bitmap.jpegBytes(): ByteArray = ByteArrayOutputStream().use { output ->
+    check(compress(Bitmap.CompressFormat.JPEG, 94, output))
+    output.toByteArray()
 }
 
 private fun Bitmap.withSequoWatermark(productName: String): Bitmap {

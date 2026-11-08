@@ -158,7 +158,7 @@
     <string name="legal_pdf_create_failed">Could not create the PDF file.</string>
     <string name="legal_pdf_open_failed">Could not open the PDF file.</string>
     <string name="legal_pdf_save_failed">Could not save the PDF. Please check storage access and try again.</string>
-    <string name="legal_pdf_saved">Saved to Downloads.</string>
+    <string name="legal_pdf_saved">PDF saved.</string>
     <string name="legal_pdf_share_sheet_failed">Could not open the iOS share sheet.</string>
     <string name="legal_pdf_share_sheet_ready">Choose Files, Messages, WhatsApp, Mail, AirDrop, or another app.</string>
     <string name="legal_pdf_prepare_failed">Could not prepare the PDF. Please try again.</string>
@@ -415,4 +415,10 @@
     <string name="account_build">Build target</string>
     <string name="account_release">Release</string>
     <string name="account_api_target">API target</string>
+    <string name="legal_pdf_choose_destination">Choose where to save the PDF.</string>
+    <string name="legal_pdf_cancelled">PDF saving cancelled.</string>
+    <string name="legal_pdf_save_in_progress">Finish the current save dialog first.</string>
+    <string name="photo_export_cancelled">Photo saving cancelled.</string>
+    <string name="photo_export_in_progress">Finish the current save dialog first.</string>
+    <string name="export_interrupted">Saving was interrupted. Please try again.</string>
 </resources>

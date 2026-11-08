@@ -33,10 +33,11 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import dev.orestegabo.sequo.core.auth.GoogleSignInFailureReason
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
+import dev.orestegabo.sequo.core.platform.AndroidDocumentExportHost
 import dev.orestegabo.sequo.feature.settings.AppLanguage
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.json.JSONObject
 import java.security.SecureRandom
 import kotlin.coroutines.resume
 
@@ -79,18 +80,20 @@ class MainActivity : ComponentActivity() {
         handleNotificationIntent(intent)
 
         setContent {
-            App(
-                onGoogleSignIn = ::signInWithGoogle,
-                onGoogleSignOut = {
-                    try {
-                        credentialManager.clearCredentialState(ClearCredentialStateRequest())
-                    } catch (error: Throwable) {
-                        Log.w(GoogleSignInTag, "Could not clear Google credential state.", error)
-                    }
-                },
-                onHomeEntered = ::notifyHomeReached,
-                openNotificationsRequest = openNotificationsRequest.value,
-            )
+            AndroidDocumentExportHost {
+                App(
+                    onGoogleSignIn = ::signInWithGoogle,
+                    onGoogleSignOut = {
+                        try {
+                            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+                        } catch (error: Throwable) {
+                            Log.w(GoogleSignInTag, "Could not clear Google credential state.")
+                        }
+                    },
+                    onHomeEntered = ::notifyHomeReached,
+                    openNotificationsRequest = openNotificationsRequest.value,
+                )
+            }
         }
     }
 
@@ -224,7 +227,7 @@ class MainActivity : ComponentActivity() {
                 }
                 Log.d(
                     GoogleSignInTag,
-                    "Google ID token received for ${googleCredential.id}; length=${googleCredential.idToken.length}; ${googleCredential.idToken.safeGoogleTokenSummary()}",
+                    "Google sign-in returned an ID token.",
                 )
                 GoogleSignInResult.Success(
                     idToken = googleCredential.idToken,
@@ -237,7 +240,7 @@ class MainActivity : ComponentActivity() {
                 GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
             }
         } catch (error: GetCredentialCancellationException) {
-            Log.e(GoogleSignInTag, "Credential Manager cancelled Google sign-in after account selection.", error)
+            Log.e(GoogleSignInTag, "Credential Manager cancelled Google sign-in after account selection.")
             if (error.message?.contains("Account reauth failed", ignoreCase = true) == true) {
                 Log.w(GoogleSignInTag, "Retrying Google sign-in with Play Services fallback.")
                 signInWithLegacyGoogleClient()
@@ -245,16 +248,18 @@ class MainActivity : ComponentActivity() {
                 GoogleSignInResult.Failure(GoogleSignInFailureReason.Interrupted)
             }
         } catch (error: GoogleIdTokenParsingException) {
-            Log.e(GoogleSignInTag, "Google returned an invalid ID token credential.", error)
+            Log.e(GoogleSignInTag, "Google returned an invalid ID token credential.")
             GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         } catch (error: GetCredentialException) {
-            Log.e(GoogleSignInTag, "Credential Manager failed.", error)
+            Log.e(GoogleSignInTag, "Credential Manager failed.")
             GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         } catch (error: IllegalArgumentException) {
-            Log.e(GoogleSignInTag, "Google sign-in response was invalid.", error)
+            Log.e(GoogleSignInTag, "Google sign-in response was invalid.")
             GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (error: Throwable) {
-            Log.e(GoogleSignInTag, "Unexpected Google sign-in failure.", error)
+            Log.e(GoogleSignInTag, "Unexpected Google sign-in failure.")
             GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed)
         }
     }
@@ -288,7 +293,7 @@ class MainActivity : ComponentActivity() {
                     if (legacyGoogleSignInContinuation === continuation) {
                         legacyGoogleSignInContinuation = null
                     }
-                    Log.e(GoogleSignInTag, "Could not launch Play Services Google sign-in fallback.", error)
+                    Log.e(GoogleSignInTag, "Could not launch Play Services Google sign-in fallback.")
                     continuation.resume(
                         GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed),
                     )
@@ -304,7 +309,7 @@ class MainActivity : ComponentActivity() {
         val account = try {
             GoogleSignIn.getSignedInAccountFromIntent(result.data).getResult(ApiException::class.java)
         } catch (error: ApiException) {
-            Log.e(GoogleSignInTag, "Play Services Google sign-in failed with status ${error.statusCode}.", error)
+            Log.e(GoogleSignInTag, "Play Services Google sign-in failed with status ${error.statusCode}.")
             continuation.resume(
                 if (result.data == null) {
                     GoogleSignInResult.Cancelled
@@ -314,7 +319,7 @@ class MainActivity : ComponentActivity() {
             )
             return
         } catch (error: Throwable) {
-            Log.e(GoogleSignInTag, "Play Services Google sign-in failed.", error)
+            Log.e(GoogleSignInTag, "Play Services Google sign-in failed.")
             continuation.resume(GoogleSignInResult.Failure(GoogleSignInFailureReason.Failed))
             return
         }
@@ -328,7 +333,7 @@ class MainActivity : ComponentActivity() {
 
         Log.d(
             GoogleSignInTag,
-            "Play Services Google ID token received for ${account.email}; length=${idToken.length}; ${idToken.safeGoogleTokenSummary()}",
+            "Play Services Google sign-in returned an ID token.",
         )
         continuation.resume(
             GoogleSignInResult.Success(
@@ -346,16 +351,7 @@ class MainActivity : ComponentActivity() {
         return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
-    private fun String.safeGoogleTokenSummary(): String =
-        runCatching {
-            val payload = split('.').getOrNull(1).orEmpty()
-            val paddedPayload = payload.padEnd(payload.length + (4 - payload.length % 4) % 4, '=')
-            val json = JSONObject(
-                String(Base64.decode(paddedPayload, Base64.URL_SAFE or Base64.NO_WRAP)),
-            )
-            "aud=${json.optString("aud", "missing")} iss=${json.optString("iss", "missing")} " +
-                "emailVerified=${json.opt("email_verified") ?: "missing"} subPresent=${json.optString("sub").isNotBlank()}"
-        }.getOrDefault("claims=unreadable")
+
 }
 
 @Preview

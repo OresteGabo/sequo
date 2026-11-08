@@ -158,7 +158,7 @@
     <string name="legal_pdf_create_failed">Impossible de creer le fichier PDF.</string>
     <string name="legal_pdf_open_failed">Impossible d'ouvrir le fichier PDF.</string>
     <string name="legal_pdf_save_failed">Impossible d'enregistrer le PDF. Verifiez l'acces au stockage et reessayez.</string>
-    <string name="legal_pdf_saved">Enregistre dans Telechargements.</string>
+    <string name="legal_pdf_saved">PDF enregistre.</string>
     <string name="legal_pdf_share_sheet_failed">Impossible d'ouvrir le partage iOS.</string>
     <string name="legal_pdf_share_sheet_ready">Choisissez Fichiers, Messages, WhatsApp, Mail, AirDrop ou une autre app.</string>
     <string name="legal_pdf_prepare_failed">Impossible de preparer le PDF. Reessayez.</string>
@@ -415,4 +415,10 @@
     <string name="account_build">Cible de compilation</string>
     <string name="account_release">Version</string>
     <string name="account_api_target">Cible API</string>
+    <string name="legal_pdf_choose_destination">Choisissez ou enregistrer le PDF.</string>
+    <string name="legal_pdf_cancelled">Enregistrement du PDF annule.</string>
+    <string name="legal_pdf_save_in_progress">Terminez d'abord la boite d'enregistrement ouverte.</string>
+    <string name="photo_export_cancelled">Enregistrement de la photo annule.</string>
+    <string name="photo_export_in_progress">Terminez d'abord la boite d'enregistrement ouverte.</string>
+    <string name="export_interrupted">L'enregistrement a ete interrompu. Reessayez.</string>
 </resources>

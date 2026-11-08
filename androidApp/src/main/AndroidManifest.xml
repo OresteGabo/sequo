@@ -9,12 +9,23 @@
 
     <application
         android:allowBackup="false"
+        android:fullBackupContent="@xml/sequo_backup_rules"
+        android:dataExtractionRules="@xml/sequo_data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="${sequoAppLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Sequo"
         android:usesCleartextTraffic="${sequoCleartextAllowed}">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.sharedfiles"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/sequo_shared_files" />
+        </provider>
         <activity
             android:exported="true"
             android:launchMode="singleTop"
