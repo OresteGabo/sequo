@@ -423,4 +423,5 @@
     <string name="export_interrupted">Saving was interrupted. Please try again.</string>
     <string name="auth_local_practice">Local practice · no real payments</string>
     <string name="orders_hide_detail">Hide details</string>
+    <string name="bottom_orders">Orders</string>
 </resources>

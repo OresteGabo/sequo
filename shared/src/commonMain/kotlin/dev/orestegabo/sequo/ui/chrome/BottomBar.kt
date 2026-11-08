@@ -39,7 +39,7 @@ private fun SequoSection.bottomLabel(): String =
         SequoSection.Home -> appText(Res.string.bottom_home)
         SequoSection.Markets -> appText(Res.string.nav_markets_title)
         SequoSection.Basket -> appText(Res.string.nav_basket_title)
-        SequoSection.Orders -> appText(Res.string.nav_orders_title)
+        SequoSection.Orders -> appText(Res.string.bottom_orders)
         SequoSection.Notifications -> appText(Res.string.nav_notifications_title)
         SequoSection.Account -> appText(Res.string.nav_account_title)
     }

@@ -423,4 +423,5 @@
     <string name="export_interrupted">L'enregistrement a ete interrompu. Reessayez.</string>
     <string name="auth_local_practice">Essai local · aucun paiement réel</string>
     <string name="orders_hide_detail">Masquer les détails</string>
+    <string name="bottom_orders">Suivi</string>
 </resources>

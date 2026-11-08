@@ -69,7 +69,6 @@ internal fun BasketContent(
     var checkoutError by remember { mutableStateOf<CheckoutError?>(null) }
     val scope = rememberCoroutineScope()
     val editingEnabled = !busy && !submitting
-    Text(appText(Res.string.nav_basket_title), style = MaterialTheme.typography.headlineSmall)
     if (busy) Text(appText(Res.string.cart_loading))
     if (failed) Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
     TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
