@@ -57,6 +57,18 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
         client.post("/api/orders/$orderId/relay-pickups/$parcelId/credential") { bearerAuth(token) }
     }
 
+    suspend fun returnEligibility(token: String, orderId: String): CustomerReturnEligibility =
+        client.get("/api/returns/orders/$orderId/eligibility") { bearerAuth(token) }.body()
+
+    suspend fun returns(token: String, orderId: String): List<CustomerReturnRequest> =
+        client.get("/api/returns/orders/$orderId") { bearerAuth(token) }.body()
+
+    suspend fun requestReturn(token: String, orderId: String, returnId: String, reason: String): CustomerReturnRequest =
+        client.post("/api/returns") {
+            bearerAuth(token)
+            setBody(CustomerReturnRequestBody(orderId, returnId, reason))
+        }.body()
+
     fun close() = client.close()
 }
 
@@ -167,3 +179,19 @@ internal data class CustomerRelayPickup(val parcelId: String, val relayPointId: 
 @Serializable
 internal data class DeliveryModeOffer(val id: String, val missionMode: String, val etaMinMinutes: Int,
     val etaMaxMinutes: Int, val zoneId: String, val deliveryFeeCfa: Int)
+
+@Serializable
+private data class CustomerReturnRequestBody(val orderId: String, val returnId: String, val reason: String)
+
+@Serializable
+internal data class CustomerReturnRequest(val id: String, val orderId: String, val status: String,
+    val reason: String, val requestedAt: String, val relayPointId: String? = null,
+    val droppedAt: String? = null, val receivedBySequoAt: String? = null,
+    val dropoffMethod: String? = null, val instructions: String? = null,
+    val relayPoints: List<RelayDestination> = emptyList(), val returnPin: String? = null)
+
+@Serializable
+internal data class CustomerReturnEligibility(val orderId: String, val eligible: Boolean,
+    val code: String? = null, val message: String? = null, val deliveredAt: String? = null,
+    val returnWindowEndsAt: String? = null, val existingReturnId: String? = null,
+    val dropoffMethod: String, val instructions: String, val relayPoints: List<RelayDestination> = emptyList())

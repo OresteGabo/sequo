@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.catalog.CustomerReturnEligibility
+import dev.orestegabo.sequo.core.catalog.CustomerReturnRequest
 import dev.orestegabo.sequo.core.catalog.CheckoutSummary
 import dev.orestegabo.sequo.core.catalog.CustomerOrderDetails
 import dev.orestegabo.sequo.core.catalog.CustomerDeliveryTracking
@@ -52,6 +54,9 @@ internal fun OrdersContent(
     sessionKey: String?,
     loadRelayPickups: suspend (String) -> List<dev.orestegabo.sequo.core.catalog.CustomerRelayPickup>,
     renewRelayPickup: suspend (String, String) -> Unit,
+    loadReturnEligibility: suspend (String) -> CustomerReturnEligibility,
+    loadReturns: suspend (String) -> List<CustomerReturnRequest>,
+    submitReturn: suspend (String, String, String) -> CustomerReturnRequest,
 ) {
     var refresh by remember { mutableStateOf(0) }
     var checkouts by remember(sessionKey) { mutableStateOf(emptyList<CheckoutSummary>()) }
@@ -86,7 +91,7 @@ internal fun OrdersContent(
         val order = details.order
         val destination = details.deliveries.mapNotNull { it.relayDestination?.name }.distinct().takeIf { it.isNotEmpty() }?.joinToString(" / ")
             ?: checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
-        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries)
+        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries, persistedOrder = true)
     }
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
     if (!loading && !failed && rows.isEmpty()) Text(appText(Res.string.orders_empty))
@@ -108,6 +113,12 @@ internal fun OrdersContent(
                     key(sessionKey, row.id, refresh) { RelayPickupContent(row.id, loadRelayPickups, renewRelayPickup) }
                 }
                 Text(formatCfa(row.totalCfa))
+                if (row.persistedOrder) {
+                    key(sessionKey, row.id) {
+                        CustomerReturnContent(row.id, refresh, loadReturnEligibility, loadReturns, submitReturn,
+                            onRequested = { refresh++ })
+                    }
+                }
             }
         }
     }
@@ -179,6 +190,7 @@ private data class OrderHistoryRow(
     val createdAt: String,
     val lines: List<OrderedProduct>,
     val deliveries: List<CustomerDeliveryTracking> = emptyList(),
+    val persistedOrder: Boolean = false,
 )
 
 private fun customerDeliveryStatus(status: String) = when (status) {
@@ -383,11 +395,9 @@ private fun OrderContextLine(order: SequoOrder, accent: Color) {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val icon = if (order.isInsideReturnWindow) Icons.AutoMirrored.Filled.AssignmentReturn else Icons.Filled.Schedule
-        val label = if (order.isInsideReturnWindow) "Return open 72h" else order.dateLine
-        Icon(icon, contentDescription = null, tint = if (order.isInsideReturnWindow) SequoSecondary else accent, modifier = Modifier.size(15.dp))
+        Icon(Icons.Filled.Schedule, contentDescription = null, tint = accent, modifier = Modifier.size(15.dp))
         Text(
-            label,
+            order.dateLine,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -683,72 +693,8 @@ internal fun OrderDetailScreen(order: SequoOrder, onBack: () -> Unit) {
 
 @Composable
 private fun ReturnRequestPanel(order: SequoOrder) {
-    if (order.state != SequoOrderState.Delivered && order.state !in activeReturnStates) return
-
-    var selectedItemIndexes by remember(order.id) { mutableStateOf(order.items.indices.toSet()) }
-    var selectedReason by remember(order.id) { mutableStateOf(ReturnReason.WrongProduct) }
-    var requestCreated by remember(order.id) { mutableStateOf(order.state in activeReturnStates) }
-    val returnReference = remember(order.id) { "RET-${order.id.removePrefix("SQ-")}" }
-    val returnPin = remember(order.id) { order.pickupCode.filter(Char::isDigit).take(6).padEnd(6, '0') }
-    val eligible = order.isInsideReturnWindow || order.state in activeReturnStates
-
-    SequoSectionCard(
-        title = appText(Res.string.orders_return_request_title),
-        action = if (eligible) "72h" else "closed",
-    ) {
-        RuleRow(
-            appText(if (eligible) Res.string.orders_return_available else Res.string.orders_return_expired),
-            appText(Res.string.orders_return_relay_detail),
-        )
-        Text(
-            appText(Res.string.orders_return_local_mock),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.SemiBold,
-        )
-        if (eligible) {
-            Text(appText(Res.string.orders_return_select_items), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            order.items.forEachIndexed { index, item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(
-                        checked = index in selectedItemIndexes,
-                        onCheckedChange = { checked ->
-                            selectedItemIndexes = if (checked) selectedItemIndexes + index else selectedItemIndexes - index
-                        },
-                    )
-                    Text("${item.quantity} x ${item.name}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-            Text(appText(Res.string.orders_return_reason), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ReturnReason.entries.forEach { reason ->
-                    FilterChip(
-                        selected = selectedReason == reason,
-                        onClick = { selectedReason = reason },
-                        label = { Text(reason.label()) },
-                    )
-                }
-            }
-            RuleRow(appText(Res.string.orders_return_relay_dropoff), appText(Res.string.orders_return_relay_detail))
-            if (requestCreated) {
-                ValueRow(appText(Res.string.orders_return_reference), returnReference, strong = true)
-                ValueRow(appText(Res.string.orders_return_pin), returnPin, strong = true)
-                ReturnStatusTracker(order = order, requestCreated = true)
-            } else {
-                ReturnStatusTracker(order = order, requestCreated = false)
-                Button(
-                    onClick = { requestCreated = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = selectedItemIndexes.isNotEmpty(),
-                ) {
-                    Text(appText(Res.string.orders_return_confirm))
-                }
-            }
-        }
+    if (order.state == SequoOrderState.Delivered || order.state in activeReturnStates) {
+        Text(appText(Res.string.returns_open_orders))
     }
 }
 
