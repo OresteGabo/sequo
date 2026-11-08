@@ -117,7 +117,6 @@ internal fun MarketsContent(
         expanded = areaFiltersExpanded,
         onExpandedChange = { areaFiltersExpanded = it },
     )
-    LomeRouteCard()
     visibleShops.forEach { shop ->
         SequoShopCard(
             shop = shop,

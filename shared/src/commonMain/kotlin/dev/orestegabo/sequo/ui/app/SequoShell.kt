@@ -414,10 +414,24 @@ internal fun SequoContentStage(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var searchQuery by remember { mutableStateOf("") }
     val catalog = (catalogState as? CatalogUiState.Ready)?.snapshot
     val needsCatalog = selectedProductListing != null ||
         currentDestination == SequoSection.Home || currentDestination == SequoSection.Markets
-    if (needsCatalog && catalogState is CatalogUiState.Loading) {
+    if (searchVisible) {
+        SequoScreenColumn(modifier = modifier) {
+            SequoSearchCard(query = searchQuery, onQueryChange = { searchQuery = it }, onClose = onCloseSearch)
+            CatalogSearchContent(
+                query = searchQuery,
+                catalog = catalog,
+                loading = catalogState is CatalogUiState.Loading,
+                failed = catalogState is CatalogUiState.Failed,
+                onReload = onReloadCatalog,
+                onAddProduct = onAddProduct,
+                onProductSelected = onProductSelected,
+            )
+        }
+    } else if (needsCatalog && catalogState is CatalogUiState.Loading) {
         SequoScreenColumn(modifier = modifier) {
             SequoCatalogLoadingSkeleton()
         }
@@ -443,9 +457,6 @@ internal fun SequoContentStage(
         }
     } else {
         SequoScreenColumn(modifier = modifier) {
-            if (searchVisible) {
-                SequoSearchCard(onClose = onCloseSearch)
-            }
             when (currentDestination) {
                 SequoSection.Home -> HomeContent(
                     catalog = requireNotNull(catalog),

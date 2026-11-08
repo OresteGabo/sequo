@@ -5,6 +5,12 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
@@ -46,8 +52,9 @@ import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
-internal fun SequoSearchCard(onClose: () -> Unit) {
-    var query by remember { mutableStateOf("") }
+internal fun SequoSearchCard(query: String, onQueryChange: (String) -> Unit, onClose: () -> Unit) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    val placeholder = appText(Res.string.home_search_placeholder)
     Surface(
         modifier = Modifier.fillMaxWidth().height(52.dp),
         shape = RoundedCornerShape(14.dp),
@@ -67,9 +74,11 @@ internal fun SequoSearchCard(onClose: () -> Unit) {
             )
             BasicTextField(
                 value = query,
-                onValueChange = { query = it },
-                modifier = Modifier.weight(1f),
+                onValueChange = { onQueryChange(it.take(160)) },
+                modifier = Modifier.weight(1f).semantics { contentDescription = placeholder },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                 decorationBox = { innerTextField ->
                     Box(contentAlignment = Alignment.CenterStart) {
