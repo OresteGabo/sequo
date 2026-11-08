@@ -31,9 +31,9 @@ These rules override older legacy documentation.
 | Food customization | Food items use topping/option groups, not normal product variants. See [UI_PATTERNS.md](UI_PATTERNS.md). |
 | Product photos | Sellers must upload real-time camera photos. Gallery uploads and Google images are prohibited except generic items such as sealed bottles of water. |
 | Delivery fee | Delivery is 400 CFA for 5 km or less, then +100 CFA for every extra km. See [DELIVERY_PRICING.md](DELIVERY_PRICING.md). |
-| Subscriptions | Paying subscribers receive automatic percentage discounts on delivery fees. Multi-year subscribers receive deeper discounts than monthly subscribers. |
+| Subscriptions | Only an approved plan and a verified eligible subscription period enable server-calculated delivery benefits. Loyalty rules are optional and require SEQUO approval; no fixed rate or multi-year tier is implied. |
 | Payment | Payment must be validated before order completion through Yas Togo or Moov Africa. Cash collection and cash withdrawals are not supported. |
-| Referral | Parrainage gives 500 CFA of delivery-service discount credit. It is not a cash payout and cannot be withdrawn. |
+| Referral | Approved referral rules may grant delivery credit. The PDF’s 500 CFA is an example, not a production tariff. The server controls the available balance, reservation and one-time application; it cannot be withdrawn as cash. |
 | Bargaining | Eligible products can support price proposals, max 3 attempts per party, with agreed minimum prices locked for 24 hours. See [BARGAINING_FLOW.md](BARGAINING_FLOW.md). |
 | Consolidation | Items from grouped sellers in the same area, such as a Marche de Mulhouse cooperative, are routed through Sequo as one package while preserving seller-level accounting. |
 | Returns | Returns are allowed within 72 hours of delivery through Point de Relai drop-off. Refunds trigger automatically after Sequo inspection accepts the product. See [RETURNS_POLICY.md](RETURNS_POLICY.md). |

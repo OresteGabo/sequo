@@ -212,7 +212,14 @@ internal fun BasketContent(
             CartAmount(appText(Res.string.basket_payment_items), it.productTotalCfa)
             CartAmount(appText(Res.string.cart_options), it.optionTotalCfa)
             CartAmount(appText(Res.string.cart_service_fee), it.serviceFeeCfa)
-            CartAmount(appText(Res.string.basket_delivery), it.deliveryFeeCfa)
+            val hasDeliveryBenefits = it.subscriptionDiscountCfa > 0 || it.loyaltyDiscountCfa > 0 || it.referralCreditAppliedCfa > 0
+            if (hasDeliveryBenefits) {
+                CartAmount(appText(Res.string.benefits_delivery_base), it.deliveryBaseFeeCfa ?: it.deliveryFeeCfa)
+                if (it.subscriptionDiscountCfa > 0) CartAmount(appText(Res.string.benefits_subscription_discount), -it.subscriptionDiscountCfa)
+                if (it.loyaltyDiscountCfa > 0) CartAmount(appText(Res.string.benefits_loyalty_discount), -it.loyaltyDiscountCfa)
+                if (it.referralCreditAppliedCfa > 0) CartAmount(appText(Res.string.benefits_referral_credit), -it.referralCreditAppliedCfa)
+            }
+            CartAmount(appText(if (hasDeliveryBenefits) Res.string.benefits_delivery_final else Res.string.basket_delivery), it.deliveryFeeCfa)
             CartAmount(appText(Res.string.basket_payment_total), it.totalCfa)
             val reviewedQuote = it
             var provider by remember { mutableStateOf("yas_togo") }

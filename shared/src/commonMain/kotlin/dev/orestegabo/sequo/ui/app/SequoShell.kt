@@ -52,6 +52,7 @@ import dev.orestegabo.sequo.core.bargaining.BargainingRepository
 import dev.orestegabo.sequo.core.bargaining.NetworkBargainingRepository
 import dev.orestegabo.sequo.core.catalog.CartApiClient
 import dev.orestegabo.sequo.core.catalog.CartSnapshot
+import dev.orestegabo.sequo.core.catalog.CustomerBenefits
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
@@ -290,6 +291,7 @@ internal fun SequoShell(
                 onReloadCatalog = ::reloadCatalog,
                 currentUser = currentUser,
                 loadSavedAddresses = loadSavedAddresses,
+                loadBenefits = { cartClient.benefits(checkNotNull(cartAccessToken())) },
                 isGuest = isGuest,
                 onNotificationUnreadCountChanged = { notificationUnreadCount = it },
                 onOpenLegal = onOpenLegal,
@@ -365,6 +367,7 @@ internal fun SequoContentStage(
     onReloadCatalog: () -> Unit,
     currentUser: CurrentUser?,
     loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
+    loadBenefits: suspend () -> CustomerBenefits,
     isGuest: Boolean,
     onNotificationUnreadCountChanged: (Int) -> Unit,
     onOpenLegal: (LegalInitialTab) -> Unit,
@@ -450,6 +453,7 @@ internal fun SequoContentStage(
                 SequoSection.Account -> AccountContent(
                     currentUser = currentUser,
                     loadSavedAddresses = loadSavedAddresses,
+                    loadBenefits = loadBenefits,
                     isGuest = isGuest,
                     onSignInRequested = onSignInRequested,
                     onLogout = onLogout,

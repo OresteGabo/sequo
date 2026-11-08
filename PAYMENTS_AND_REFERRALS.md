@@ -32,7 +32,7 @@ Recommended payment states:
 | `PaymentValidated` | Provider validation succeeded |
 | `PaymentFailed` | Provider rejected or payment expired |
 | `PaymentCancelled` | Customer cancelled before validation |
-| `RefundPending` | Refund has been triggered but provider has not confirmed it |
+| `RefundPending` | A return refund instruction may be recorded; inspect its separate provider status, which remains `NOT_SUBMITTED` until provider execution exists |
 | `RefundCompleted` | Provider or wallet ledger confirms refund completion |
 
 ## Checkout UX
@@ -61,7 +61,7 @@ Rules:
 
 ## Referral Program
 
-Parrainage gives 500 CFA worth of delivery-service discount.
+Parrainage may grant approved delivery credit. The signed PDF’s 500 CFA is an example; award amounts, qualifying conditions and expiry require SEQUO approval before production. Default unapproved configuration grants no new credit. Test rates and grants remain isolated local fixtures.
 
 Rules:
 
@@ -71,7 +71,10 @@ Rules:
 - The credit cannot be transferred between users.
 - The credit cannot reduce product subtotal.
 - The credit cannot reduce payment provider fees unless explicitly configured by backend policy.
-- The credit is applied automatically at checkout when eligible.
+- Only a server-approved available balance is eligible; the app does not create referral awards or subscription activations.
+- The customer sees the effective available balance through `/api/subscriptions/benefits` and the actual credit applied in the server quote.
+- Pending checkout reserves credit; verified successful payment applies it once. Definitive failed or cancelled payment releases its reservation.
+- Quote changes require review. Checkout retries keep the frozen snapshot and do not create another credit application.
 
 Recommended referral ledger fields:
 
@@ -79,7 +82,7 @@ Recommended referral ledger fields:
 | --- | --- |
 | `creditId` | Stable ledger identifier |
 | `sourceReferralCode` | Referral source |
-| `amountCfa` | Always 500 CFA per earned referral credit unless policy changes |
+| `amountCfa` | Amount authorized by an approved grant; 500 CFA is only the PDF example |
 | `remainingAmountCfa` | Unused delivery credit |
 | `status` | Pending, active, applied, expired, reversed |
 | `earnedAt` | When the reward was earned |
@@ -87,12 +90,9 @@ Recommended referral ledger fields:
 
 ## Refund Interaction
 
-When a return is inspected and accepted by Sequo:
+Return receipt, inspection and an authorized refund instruction are separate steps; inspection does not automatically execute a refund. A recorded instruction has its own reference and `REQUESTED` status, with provider payment status `NOT_SUBMITTED`. It does not confirm money was sent or received. Legacy refund records require reconciliation rather than a replacement instruction.
 
-- Refund trigger is automatic.
-- Customer should see refund status.
-- Refund must not be issued as cash from a Point de Relai.
-- Delivery credits used on the order should follow backend refund policy and be visible in the ledger.
+See [RETURNS_POLICY.md](RETURNS_POLICY.md) for the current customer flow and pending policy decisions. Refunds are not cash pickup. Restoration or reversal of used delivery credits requires an approved server policy; this document does not invent one.
 
 ## Auditability
 

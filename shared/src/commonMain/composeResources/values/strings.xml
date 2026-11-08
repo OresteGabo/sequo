@@ -395,4 +395,21 @@
     <string name="returns_refund_not_submitted">Payment has not been submitted to the provider.</string>
     <string name="returns_refund_timeline_pending">Processing timeline pending confirmation.</string>
     <string name="returns_refund_due">SEQUO processing target:</string>
+    <string name="benefits_title">Delivery benefits</string>
+    <string name="benefits_loading">Loading your benefits…</string>
+    <string name="benefits_error">Could not load your benefits. Refresh to try again.</string>
+    <string name="benefits_active">Verified subscription benefits active</string>
+    <string name="benefits_unapproved">No approved subscription benefits are active.</string>
+    <string name="benefits_pending_verification">Subscription verification is pending.</string>
+    <string name="benefits_expired">Subscription benefits have expired.</string>
+    <string name="benefits_monthly_price">Monthly plan price</string>
+    <string name="benefits_subscription_discount">Subscription delivery discount</string>
+    <string name="benefits_loyalty_note">Any applicable loyalty discount appears in your delivery quote.</string>
+    <string name="benefits_available_credit">Available delivery credit</string>
+    <string name="benefits_credit_note">Delivery credit applies only through the server quote. It cannot be withdrawn as cash.</string>
+    <string name="benefits_delivery_base">Delivery before benefits</string>
+    <string name="benefits_loyalty_discount">Loyalty delivery discount</string>
+    <string name="benefits_referral_credit">Referral delivery credit applied</string>
+    <string name="benefits_delivery_final">Delivery after benefits</string>
+    <string name="account_return_eligibility">Check eligibility in Orders</string>
 </resources>

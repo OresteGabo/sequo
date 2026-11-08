@@ -36,40 +36,35 @@ The customer UI should avoid surprise rounding. Show the route distance and fina
 
 ## Subscription Discounts
 
-Monthly paying subscribers receive automatic percentage discounts on delivery fees. Multi-year subscribers receive deeper discounts than monthly subscribers.
+An approved plan and a verified eligible subscription period may enable automatic delivery discounts. Raw `ACTIVE` status alone does not establish eligibility.
 
 Rules:
 
-- The discount percent comes from the active subscription plan on the backend.
-- Discounts apply automatically at checkout when the subscription is active.
-- The customer must not need to enter a promo code for their subscription discount.
-- Multi-year plans must have a larger delivery-fee discount than monthly plans.
-- Subscription discounts apply to delivery service fees, not product prices.
-- The invoice must show the original delivery fee, discount amount, and discounted delivery fee.
+- Rates, caps, eligibility periods and approval references are server-owned; production values and conditions require SEQUO approval.
+- Loyalty is optional and requires an approved rule plus verified tenure. The PDF does not prescribe annual or multi-year tiers, thresholds or rates.
+- Without approved eligibility, the server applies no subscription or loyalty discount. Local fixture rates do not activate production benefits.
+- Subscription and loyalty discounts affect delivery charges, not product prices.
+- The customer reads `/api/subscriptions/benefits` and refreshes for effective status and available delivery credit. Failed or unknown reads do not retain active benefit claims.
+- The app does not add subscription purchase, payment-provider activation or referral-grant controls in this flow.
 
 Recommended plan fields:
 
 | Field | Purpose |
 | --- | --- |
 | `planId` | Stable backend identifier |
-| `billingPeriod` | Monthly, annual, multi-year |
-| `deliveryDiscountPercent` | Percent applied to eligible delivery fee |
-| `startsAt` | Subscription start time |
-| `expiresAt` | Subscription expiry time |
-| `status` | Active, pending, expired, cancelled |
+| `deliveryDiscountPercent` | Approved percent applied to eligible delivery charges |
+| `monthlyDiscountCapCfa` | Optional approved monthly cap |
+| `approvalReference` | Plan approval evidence |
+| `currentPeriodStartsAt` / `currentPeriodEndsAt` | Verified period boundaries |
+| `activationReference` | Subscription activation evidence |
+| `status` | Stored state; effective eligibility is checked separately |
 
 ## Referral Delivery Credit
 
-Referral credit is applied after the subscription delivery discount.
+The server applies approved subscription and optional loyalty benefits, then referral credit to the remaining delivery charge. Credit cannot reduce the product subtotal or make delivery negative.
 
-Order of operations:
-
-1. Calculate base delivery fee.
-2. Apply subscription delivery discount if active.
-3. Apply referral delivery credit if available.
-4. Charge the remaining payable amount through Yas Togo or Moov Africa.
-
-Referral credit cannot make the delivery component negative.
+The signed PDF gives 500 CFA as an example. Amounts, award conditions and expiry require SEQUO approval; no 500 CFA production default is inferred.
+Pending checkout reserves the selected credit and benefit capacity. Verified successful payment applies the reservation once; a definitive failed or cancelled checkout releases it. Replays use the frozen checkout snapshot rather than spending credit again.
 
 ## Consolidated Orders
 
@@ -93,20 +88,23 @@ Checkout must show:
 
 - Route distance.
 - Delivery fee before discounts.
-- Subscription discount.
-- Referral credit applied.
+- Subscription discount and any approved loyalty discount.
+- Referral credit actually applied.
 - Final delivery fee.
 - Final order total.
 
-Example:
+Local test fixture example only; these benefit rates and credit amounts are not approved production values:
 
 ```text
 Delivery distance: 8.4 km
-Delivery fee: 800 CFA
-Subscriber discount: -120 CFA
-Referral credit: -500 CFA
-Delivery due: 180 CFA
+Delivery before benefits: 800 CFA
+Subscription discount: -56 CFA
+Loyalty discount: -24 CFA
+Referral credit applied: -180 CFA
+Delivery due: 540 CFA
 ```
+
+Checkout reads `deliveryBaseFeeCfa`, `subscriptionDiscountCfa`, `loyaltyDiscountCfa`, `referralCreditAppliedCfa` and the final amounts from the server. It submits the reviewed quote revision, never client-selected discount rates, credit amounts or totals. Legacy quotes without the additive benefit fields retain their original final delivery amount.
 
 ## Backend Requirements
 

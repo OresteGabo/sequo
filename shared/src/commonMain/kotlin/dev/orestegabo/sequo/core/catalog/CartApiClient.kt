@@ -35,6 +35,12 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
 
     suspend fun relayPoints(token: String): List<RelayDestination> = client.get("/api/cart/relay-points") { bearerAuth(token) }.body()
 
+    suspend fun benefits(token: String): CustomerBenefits =
+        client.get("/api/subscriptions/benefits") { bearerAuth(token) }.body<CustomerBenefits>().also {
+            require(it.status in setOf("ACTIVE", "NO_APPROVED_SUBSCRIPTION", "PENDING_VERIFICATION", "EXPIRED") &&
+                it.currency == "XOF" && it.availableReferralCreditCfa >= 0) { "Delivery benefits are unavailable." }
+        }
+
     suspend fun paymentProviders(): List<CheckoutProvider> =
         client.get("/api/payments/providers").body()
 
@@ -119,6 +125,10 @@ internal data class CartQuote(
     val fulfillmentMode: String = "HOME",
     val deliveryOption: DeliveryModeOffer? = null,
     val availableDeliveryModes: List<DeliveryModeOffer> = emptyList(),
+    val deliveryBaseFeeCfa: Int? = null,
+    val subscriptionDiscountCfa: Int = 0,
+    val loyaltyDiscountCfa: Int = 0,
+    val referralCreditAppliedCfa: Int = 0,
 )
 
 
@@ -202,3 +212,9 @@ internal data class CustomerReturnEligibility(val orderId: String, val eligible:
     val code: String? = null, val message: String? = null, val deliveredAt: String? = null,
     val returnWindowEndsAt: String? = null, val existingReturnId: String? = null,
     val dropoffMethod: String, val instructions: String, val relayPoints: List<RelayDestination> = emptyList())
+
+@Serializable
+internal data class CustomerBenefits(val subscriptionActive: Boolean,
+    val subscriptionStatus: String? = null, val planName: String? = null, val monthlyPriceCfa: Int? = null,
+    val deliveryDiscountPercent: Int = 0, val loyaltyEnabled: Boolean = false,
+    val availableReferralCreditCfa: Int = 0, val currency: String = "XOF", val status: String)

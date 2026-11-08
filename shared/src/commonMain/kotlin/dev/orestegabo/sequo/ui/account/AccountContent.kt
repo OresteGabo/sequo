@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.catalog.CustomerBenefits
 import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.auth.SavedDeliveryAddress
 import kotlinx.coroutines.CancellationException
@@ -46,6 +47,7 @@ import sequo.shared.generated.resources.*
 internal fun AccountContent(
     currentUser: CurrentUser?,
     loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
+    loadBenefits: suspend () -> CustomerBenefits,
     isGuest: Boolean,
     onSignInRequested: () -> Unit,
     onLogout: () -> Unit,
@@ -58,13 +60,7 @@ internal fun AccountContent(
     }
 
     AccountProfileCard(currentUser = currentUser, onLogout = onLogout)
-    SequoStatusStrip(
-        icon = Icons.Filled.CheckCircle,
-        title = appText(Res.string.account_subscription_active),
-        detail = appText(Res.string.account_subscription_detail),
-        tag = "15%",
-    )
-    SequoPassCard()
+    DeliveryBenefitsCard(currentUser?.id, loadBenefits)
     SavedAddressesCard(currentUser?.id, loadSavedAddresses)
     SequoSectionCard(title = appText(Res.string.account_supported_payments), action = appText(Res.string.account_no_cash)) {
         SupportedPaymentRow("Yas Togo", appText(Res.string.account_primary))
@@ -82,9 +78,48 @@ internal fun AccountContent(
             }
         }
         SettingRow(appText(Res.string.account_payments), "Yas / Moov")
-        SettingRow(appText(Res.string.account_returns), "72 hours")
-        SettingRow("Parrainage", appText(Res.string.account_delivery_credit))
-        SettingRow(appText(Res.string.account_subscription), appText(Res.string.account_active_15))
+        SettingRow(appText(Res.string.account_returns), appText(Res.string.account_return_eligibility))
+    }
+}
+
+@Composable
+private fun DeliveryBenefitsCard(userId: String?, load: suspend () -> CustomerBenefits) {
+    var refresh by remember(userId) { mutableStateOf(0) }
+    var benefits by remember(userId) { mutableStateOf<CustomerBenefits?>(null) }
+    var loading by remember(userId) { mutableStateOf(true) }
+    var failed by remember(userId) { mutableStateOf(false) }
+    LaunchedEffect(userId, refresh) {
+        benefits = null
+        loading = true
+        failed = false
+        try { benefits = load() }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { failed = true }
+        finally { loading = false }
+    }
+    SequoSectionCard(title = appText(Res.string.benefits_title), action = "") {
+        TextButton(onClick = { refresh++ }, enabled = !loading) { Text(appText(Res.string.cart_refresh)) }
+        when {
+            loading -> Text(appText(Res.string.benefits_loading))
+            failed -> Text(appText(Res.string.benefits_error), color = MaterialTheme.colorScheme.error)
+            else -> benefits?.let { actual ->
+                val active = actual.subscriptionActive && actual.status == "ACTIVE"
+                Text(appText(when (actual.status) {
+                    "ACTIVE" -> if (active) Res.string.benefits_active else Res.string.benefits_unapproved
+                    "PENDING_VERIFICATION" -> Res.string.benefits_pending_verification
+                    "EXPIRED" -> Res.string.benefits_expired
+                    else -> Res.string.benefits_unapproved
+                }))
+                if (active) {
+                    actual.planName?.takeIf { it.isNotBlank() }?.let { Text(it) }
+                    actual.monthlyPriceCfa?.let { Text(appText(Res.string.benefits_monthly_price) + " · " + formatCfa(it)) }
+                    Text(appText(Res.string.benefits_subscription_discount) + " · ${actual.deliveryDiscountPercent}%")
+                    if (actual.loyaltyEnabled) Text(appText(Res.string.benefits_loyalty_note))
+                }
+                Text(appText(Res.string.benefits_available_credit) + " · " + formatCfa(actual.availableReferralCreditCfa))
+                Text(appText(Res.string.benefits_credit_note), style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
 

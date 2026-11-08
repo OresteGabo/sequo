@@ -395,4 +395,21 @@
     <string name="returns_refund_not_submitted">Le paiement n’a pas été envoyé au prestataire.</string>
     <string name="returns_refund_timeline_pending">Délai de traitement en attente de confirmation.</string>
     <string name="returns_refund_due">Échéance de traitement fournie par SEQUO :</string>
+    <string name="benefits_title">Avantages de livraison</string>
+    <string name="benefits_loading">Chargement de vos avantages…</string>
+    <string name="benefits_error">Impossible de charger vos avantages. Actualisez pour réessayer.</string>
+    <string name="benefits_active">Avantages de l’abonnement vérifié actifs</string>
+    <string name="benefits_unapproved">Aucun avantage d’abonnement approuvé n’est actif.</string>
+    <string name="benefits_pending_verification">La vérification de l’abonnement est en attente.</string>
+    <string name="benefits_expired">Les avantages de l’abonnement ont expiré.</string>
+    <string name="benefits_monthly_price">Prix mensuel de la formule</string>
+    <string name="benefits_subscription_discount">Réduction abonnement sur la livraison</string>
+    <string name="benefits_loyalty_note">Toute réduction de fidélité applicable apparaît dans votre devis de livraison.</string>
+    <string name="benefits_available_credit">Crédit de livraison disponible</string>
+    <string name="benefits_credit_note">Le crédit de livraison est appliqué uniquement dans le devis du serveur. Il ne peut pas être retiré en espèces.</string>
+    <string name="benefits_delivery_base">Livraison avant avantages</string>
+    <string name="benefits_loyalty_discount">Réduction de fidélité sur la livraison</string>
+    <string name="benefits_referral_credit">Crédit de livraison de parrainage appliqué</string>
+    <string name="benefits_delivery_final">Livraison après avantages</string>
+    <string name="account_return_eligibility">Consulter l’éligibilité dans Commandes</string>
 </resources>
