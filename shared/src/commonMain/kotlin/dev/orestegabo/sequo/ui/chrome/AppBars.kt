@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
+import dev.orestegabo.sequo.design.SequoPageHeader
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
@@ -54,84 +55,35 @@ internal fun SequoTopAppBar(
     val productMode = productListing != null
     val backMode = productMode || showBackButton
     val searchAvailable = currentDestination != SequoSection.Notifications
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = if (productMode) MaterialTheme.colorScheme.surface.copy(alpha = 0.94f) else MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
-        tonalElevation = 3.dp,
-        shadowElevation = if (productMode) 2.dp else 0.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .statusBarsPadding()
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(start = 20.dp, end = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    SequoPageHeader(
+        modifier = modifier,
+        title = productListing?.product?.name ?: currentDestination.appBarTitle(),
+        subtitle = productListing?.let { listOfNotNull(it.shop.name, it.shop.area).joinToString(" / ") }
+            ?: currentDestination.appBarSubtitle(),
+        navigationIcon = {
             IconButton(onClick = if (backMode) onBackClick else onMenuClick) {
-                Icon(
-                    imageVector = if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
+                Icon(if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
                     contentDescription = if (backMode) appText(Res.string.cd_back) else appText(Res.string.cd_open_menu),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp),
-                )
+                    modifier = Modifier.size(24.dp))
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                Text(
-                    text = productListing?.product?.name ?: currentDestination.appBarTitle(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = productListing?.let { listOfNotNull(it.shop.name, it.shop.area).joinToString(" / ") } ?: currentDestination.appBarSubtitle(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+        },
+        actions = {
             if (!productMode) {
-                if (searchAvailable) {
-                    IconButton(onClick = onSearchClick) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = appText(Res.string.cd_search),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
+                if (searchAvailable) IconButton(onClick = onSearchClick) {
+                    Icon(Icons.Filled.Search, contentDescription = appText(Res.string.cd_search), modifier = Modifier.size(24.dp))
                 }
                 IconButton(onClick = onNotificationsClick) {
-                    BadgedBox(
-                        badge = {
-                            if (notificationUnreadCount > 0) {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                ) {
-                                    Text(notificationUnreadCount.coerceAtMost(9).toString())
-                                }
-                            }
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Notifications,
-                            contentDescription = appText(Res.string.cd_notifications),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp),
-                        )
+                    BadgedBox(badge = {
+                        if (notificationUnreadCount > 0) Badge {
+                            Text(if (notificationUnreadCount > 99) "99+" else notificationUnreadCount.toString())
+                        }
+                    }) {
+                        Icon(Icons.Filled.Notifications, contentDescription = appText(Res.string.cd_notifications), modifier = Modifier.size(24.dp))
                     }
                 }
             }
-        }
-    }
+        },
+    )
 }
 
 @Composable

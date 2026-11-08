@@ -3,6 +3,7 @@ package dev.orestegabo.sequo.ui.basket
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.design.SequoDesign
+import dev.orestegabo.sequo.design.SequoPanel
 import dev.orestegabo.sequo.core.auth.SavedDeliveryAddress
 import dev.orestegabo.sequo.core.catalog.CartLine
 import dev.orestegabo.sequo.core.catalog.CartQuote
@@ -77,29 +80,31 @@ internal fun BasketContent(
     }
 
     for (line in cart.items) {
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Text(line.product.name, style = MaterialTheme.typography.titleMedium)
-            val price = line.lineTotalCfa
-            Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable))
-            line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
-            line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
-            if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
-            val optionNames = line.selections.flatMap { selection ->
-                val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
-                group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.name }
-            }
-            if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { onQuantity(line, line.quantity - 1) }, enabled = editingEnabled && line.available && line.quantity > 1) {
-                    Text("−")
+        SequoPanel {
+            Column(Modifier.padding(SequoDesign.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(line.product.name, style = MaterialTheme.typography.titleMedium)
+                val price = line.lineTotalCfa
+                Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable))
+                line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
+                line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
+                if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
+                val optionNames = line.selections.flatMap { selection ->
+                    val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
+                    group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.name }
                 }
-                Text(line.quantity.toString())
-                TextButton(onClick = { onQuantity(line, line.quantity + 1) }, enabled = editingEnabled && line.available && line.quantity < 99) {
-                    Text("+")
+                if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { onQuantity(line, line.quantity - 1) }, enabled = editingEnabled && line.available && line.quantity > 1) {
+                        Text("−")
+                    }
+                    Text(line.quantity.toString())
+                    TextButton(onClick = { onQuantity(line, line.quantity + 1) }, enabled = editingEnabled && line.available && line.quantity < 99) {
+                        Text("+")
+                    }
+                    TextButton(onClick = { onQuantity(line, 0) }, enabled = editingEnabled) { Text(appText(Res.string.cart_remove)) }
                 }
-                TextButton(onClick = { onQuantity(line, 0) }, enabled = editingEnabled) { Text(appText(Res.string.cart_remove)) }
             }
-        }
+            }
     }
 
     CartAmount(appText(Res.string.basket_payment_items), cart.subtotalCfa)

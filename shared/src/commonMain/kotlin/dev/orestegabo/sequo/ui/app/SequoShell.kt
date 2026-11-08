@@ -33,6 +33,7 @@ import dev.orestegabo.sequo.feature.settings.AppThemePreference
 import dev.orestegabo.sequo.feature.settings.appCatalogText
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.data.*
+import dev.orestegabo.sequo.design.SequoDesign
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
@@ -247,136 +248,145 @@ internal fun SequoShell(
             )
         },
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            SequoAmbientBackground(modifier = Modifier.fillMaxSize())
-            SequoContentStage(
-                currentDestination = currentDestination,
-                onDestinationSelected = {
-                    currentDestination = it
-                    notificationBackDestination = null
-                },
-                selectedProductListing = selectedProductListing,
-                onProductSelected = { listing ->
-                    selectedProductListing = listing
-                    searchVisible = false
-                },
-                onCloseProduct = { selectedProductListing = null },
-                cartContent = {
-                    BasketContent(
-                        cart = cart,
-                        busy = cartBusy,
-                        failed = cartFailed,
-                        onRefresh = { updateCart(cartClient::cart) },
-                        onQuantity = { line, quantity ->
-                            updateCart { token ->
-                                if (quantity == 0) cartClient.remove(token, line.id)
-                                else cartClient.put(token, line.product.id, quantity, line.selections, line.bargainingThreadId)
-                            }
-                        },
-                        loadAddresses = loadSavedAddresses,
-                        loadQuote = { addressId, relayPointId, mode -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId, mode) },
-                        loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },
-                        loadPaymentProviders = cartClient::paymentProviders,
-                        submitCheckout = { quote, provider ->
-                            cartClient.checkout(checkNotNull(cartAccessToken()), quote, provider).also {
-                                cart = CartSnapshot(emptyList(), 0, 0)
-                            }
-                        },
-                        onOpenOrders = { currentDestination = SequoSection.Orders },
-                    )
-                },
-                ordersContent = {
-                    OrdersContent(
-                        loadCheckouts = { cartClient.checkouts(checkNotNull(cartAccessToken())) },
-                        loadOrders = { cartClient.orders(checkNotNull(cartAccessToken())) },
-                        sessionKey = currentUser?.id,
-                        loadRelayPickups = { orderId -> cartClient.relayPickups(checkNotNull(cartAccessToken()), orderId) },
-                        renewRelayPickup = { orderId, parcelId -> cartClient.renewRelayPickup(checkNotNull(cartAccessToken()), orderId, parcelId) },
-                        loadReturnEligibility = { orderId -> cartClient.returnEligibility(checkNotNull(cartAccessToken()), orderId) },
-                        loadReturns = { orderId -> cartClient.returns(checkNotNull(cartAccessToken()), orderId) },
-                        submitReturn = { orderId, returnId, reason -> cartClient.requestReturn(checkNotNull(cartAccessToken()), orderId, returnId, reason) },
-                    )
-                },
-                notificationsContent = {
-                    if (isGuest || currentUser == null) NotificationsContent(
-                        onOpenOrders = { currentDestination = SequoSection.Orders },
-                        onOpenPrivacy = { onOpenLegal(LegalInitialTab.Privacy) },
-                        onOpenTerms = { onOpenLegal(LegalInitialTab.Terms) },
-                        onUnreadCountChanged = { notificationUnreadCount = it },
-                    ) else LiveCustomerNotificationsContent(
-                        accountId = currentUser.id,
-                        accessToken = cartAccessToken,
-                        onUnreadCountChanged = { notificationUnreadCount = it },
-                        onSignInRequested = onSignInRequested,
-                        onOpenOrders = { currentDestination = SequoSection.Orders },
-                    )
-                },
-                searchVisible = searchVisible,
-                onCloseSearch = { searchVisible = false },
-                selectedMarketTypeKey = selectedMarketTypeKey,
-                categoryUsage = categoryUsage,
-                pinnedCategoryKeys = pinnedCategoryKeys,
-                onCategoryUsed = { typeKey ->
-                    categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
-                },
-                onToggleCategoryPinned = { typeKey ->
-                    if (typeKey in pinnedCategoryKeys) {
-                        pinnedCategoryKeys.remove(typeKey)
-                    } else if (pinnedCategoryKeys.size < 3) {
-                        pinnedCategoryKeys.add(typeKey)
-                    }
-                },
-                onAddProduct = { productId ->
-                    if (isGuest) onSignInRequested()
-                    else updateCart { saveProduct(it, productId, emptyList()) }
-                },
-                onAddCustomized = ::addConfiguredProduct,
-                onAddNegotiated = ::addNegotiatedProduct,
-                bargainingRepository = bargainingRepository,
-                catalogState = catalogState,
-                onReloadCatalog = ::reloadCatalog,
-                currentUser = currentUser,
-                loadSavedAddresses = loadSavedAddresses,
-                loadBenefits = { cartClient.benefits(checkNotNull(cartAccessToken())) },
-                isGuest = isGuest,
-                onNotificationUnreadCountChanged = { notificationUnreadCount = it },
-                onOpenLegal = onOpenLegal,
-                onSignInRequested = onSignInRequested,
-                onLogout = onLogout,
-                modifier = Modifier.fillMaxSize(),
-            )
-            SequoTopAppBar(
-                currentDestination = currentDestination,
-                onMenuClick = { scope.launch { drawerState.open() } },
-                onSearchClick = { searchVisible = !searchVisible },
-                onNotificationsClick = {
-                    notificationBackDestination = if (currentDestination == SequoSection.Notifications) {
-                        SequoSection.Home
-                    } else {
-                        currentDestination
-                    }
-                    currentDestination = SequoSection.Notifications
-                    searchVisible = false
-                    selectedProductListing = null
-                },
-                notificationUnreadCount = notificationUnreadCount,
-                productListing = selectedProductListing,
-                showBackButton = notificationBackDestination != null && currentDestination == SequoSection.Notifications,
-                onBackClick = ::handleBack,
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
-            SequoBottomBar(
-                currentDestination = currentDestination,
-                onDestinationSelected = {
-                    currentDestination = it
-                    notificationBackDestination = null
-                    searchVisible = false
-                    selectedProductListing = null
-                },
-                pendingBasketCount = basketCount,
-                notificationUnreadCount = notificationUnreadCount,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                SequoTopAppBar(
+                    currentDestination = currentDestination,
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onSearchClick = { searchVisible = !searchVisible },
+                    onNotificationsClick = {
+                        notificationBackDestination = if (currentDestination == SequoSection.Notifications) {
+                            SequoSection.Home
+                        } else {
+                            currentDestination
+                        }
+                        currentDestination = SequoSection.Notifications
+                        searchVisible = false
+                        selectedProductListing = null
+                    },
+                    notificationUnreadCount = notificationUnreadCount,
+                    productListing = selectedProductListing,
+                    showBackButton = notificationBackDestination != null && currentDestination == SequoSection.Notifications,
+                    onBackClick = ::handleBack,
+                    modifier = Modifier.statusBarsPadding(),
+                )
+            },
+            bottomBar = {
+                SequoBottomBar(
+                    currentDestination = currentDestination,
+                    onDestinationSelected = {
+                        currentDestination = it
+                        notificationBackDestination = null
+                        searchVisible = false
+                        selectedProductListing = null
+                    },
+                    pendingBasketCount = basketCount,
+                    notificationUnreadCount = notificationUnreadCount,
+                    modifier = Modifier.navigationBarsPadding(),
+                )
+            },
+        ) { contentPadding ->
+            Box(Modifier.fillMaxSize().padding(contentPadding).consumeWindowInsets(contentPadding)) {
+                SequoAmbientBackground(modifier = Modifier.fillMaxSize())
+                SequoContentStage(
+                    currentDestination = currentDestination,
+                    onDestinationSelected = {
+                        currentDestination = it
+                        notificationBackDestination = null
+                    },
+                    selectedProductListing = selectedProductListing,
+                    onProductSelected = { listing ->
+                        selectedProductListing = listing
+                        searchVisible = false
+                    },
+                    onCloseProduct = { selectedProductListing = null },
+                    cartContent = {
+                        BasketContent(
+                            cart = cart,
+                            busy = cartBusy,
+                            failed = cartFailed,
+                            onRefresh = { updateCart(cartClient::cart) },
+                            onQuantity = { line, quantity ->
+                                updateCart { token ->
+                                    if (quantity == 0) cartClient.remove(token, line.id)
+                                    else cartClient.put(token, line.product.id, quantity, line.selections, line.bargainingThreadId)
+                                }
+                            },
+                            loadAddresses = loadSavedAddresses,
+                            loadQuote = { addressId, relayPointId, mode -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId, mode) },
+                            loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },
+                            loadPaymentProviders = cartClient::paymentProviders,
+                            submitCheckout = { quote, provider ->
+                                cartClient.checkout(checkNotNull(cartAccessToken()), quote, provider).also {
+                                    cart = CartSnapshot(emptyList(), 0, 0)
+                                }
+                            },
+                            onOpenOrders = { currentDestination = SequoSection.Orders },
+                        )
+                    },
+                    ordersContent = {
+                        OrdersContent(
+                            loadCheckouts = { cartClient.checkouts(checkNotNull(cartAccessToken())) },
+                            loadOrders = { cartClient.orders(checkNotNull(cartAccessToken())) },
+                            sessionKey = currentUser?.id,
+                            loadRelayPickups = { orderId -> cartClient.relayPickups(checkNotNull(cartAccessToken()), orderId) },
+                            renewRelayPickup = { orderId, parcelId -> cartClient.renewRelayPickup(checkNotNull(cartAccessToken()), orderId, parcelId) },
+                            loadReturnEligibility = { orderId -> cartClient.returnEligibility(checkNotNull(cartAccessToken()), orderId) },
+                            loadReturns = { orderId -> cartClient.returns(checkNotNull(cartAccessToken()), orderId) },
+                            submitReturn = { orderId, returnId, reason -> cartClient.requestReturn(checkNotNull(cartAccessToken()), orderId, returnId, reason) },
+                        )
+                    },
+                    notificationsContent = {
+                        if (isGuest || currentUser == null) NotificationsContent(
+                            onOpenOrders = { currentDestination = SequoSection.Orders },
+                            onOpenPrivacy = { onOpenLegal(LegalInitialTab.Privacy) },
+                            onOpenTerms = { onOpenLegal(LegalInitialTab.Terms) },
+                            onUnreadCountChanged = { notificationUnreadCount = it },
+                        ) else LiveCustomerNotificationsContent(
+                            accountId = currentUser.id,
+                            accessToken = cartAccessToken,
+                            onUnreadCountChanged = { notificationUnreadCount = it },
+                            onSignInRequested = onSignInRequested,
+                            onOpenOrders = { currentDestination = SequoSection.Orders },
+                        )
+                    },
+                    searchVisible = searchVisible,
+                    onCloseSearch = { searchVisible = false },
+                    selectedMarketTypeKey = selectedMarketTypeKey,
+                    categoryUsage = categoryUsage,
+                    pinnedCategoryKeys = pinnedCategoryKeys,
+                    onCategoryUsed = { typeKey ->
+                        categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
+                    },
+                    onToggleCategoryPinned = { typeKey ->
+                        if (typeKey in pinnedCategoryKeys) {
+                            pinnedCategoryKeys.remove(typeKey)
+                        } else if (pinnedCategoryKeys.size < 3) {
+                            pinnedCategoryKeys.add(typeKey)
+                        }
+                    },
+                    onAddProduct = { productId ->
+                        if (isGuest) onSignInRequested()
+                        else updateCart { saveProduct(it, productId, emptyList()) }
+                    },
+                    onAddCustomized = ::addConfiguredProduct,
+                    onAddNegotiated = ::addNegotiatedProduct,
+                    bargainingRepository = bargainingRepository,
+                    catalogState = catalogState,
+                    onReloadCatalog = ::reloadCatalog,
+                    currentUser = currentUser,
+                    loadSavedAddresses = loadSavedAddresses,
+                    loadBenefits = { cartClient.benefits(checkNotNull(cartAccessToken())) },
+                    isGuest = isGuest,
+                    onNotificationUnreadCountChanged = { notificationUnreadCount = it },
+                    onOpenLegal = onOpenLegal,
+                    onSignInRequested = onSignInRequested,
+                    onLogout = onLogout,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }
@@ -583,7 +593,7 @@ internal fun SequoScreenColumn(
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, top = 104.dp, end = 20.dp, bottom = 126.dp),
+            .padding(horizontal = SequoDesign.ScreenGutter, vertical = SequoDesign.SectionGap),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         content = content,
     )
@@ -597,7 +607,7 @@ internal fun ProductDetailScreenColumn(
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
-            .padding(start = 0.dp, top = 0.dp, end = 0.dp, bottom = 126.dp),
+            .padding(bottom = SequoDesign.SectionGap),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         content = content,
     )

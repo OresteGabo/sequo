@@ -21,6 +21,9 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
+import dev.orestegabo.sequo.design.SequoDesign
+import dev.orestegabo.sequo.design.SequoActionButton
+import dev.orestegabo.sequo.design.SequoOutlineButton
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
@@ -93,9 +96,9 @@ internal fun SequoPassCard() {
 @Composable
 internal fun SequoCard(
     modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = RoundedCornerShape(26.dp),
-    color: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
+    shape: RoundedCornerShape = SequoDesign.CardShape,
+    color: Color = MaterialTheme.colorScheme.surface,
+    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
     content: @Composable () -> Unit,
 ) {
     Surface(
@@ -116,27 +119,8 @@ internal fun SequoPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val colors = if (enabled) {
-        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary.copy(alpha = 0.92f))
-    } else {
-        listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
-    }
-    Box(
-        modifier = modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Brush.horizontalGradient(colors))
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+    SequoActionButton(onClick = onClick, modifier = modifier, enabled = enabled) {
+        Text(label, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -147,20 +131,14 @@ internal fun SequoSecondaryButton(
     modifier: Modifier = Modifier,
     emphasized: Boolean = false,
 ) {
-    val containerColor = if (emphasized) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.26f)
-    val borderColor = if (emphasized) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.34f)
-    val textColor = if (emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.90f)
-    Box(
-        modifier = modifier
-            .height(52.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(containerColor)
-            .border(1.4.dp, borderColor, RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    if (emphasized) {
+        SequoActionButton(onClick = onClick, modifier = modifier,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer)) {
+            Text(label, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    } else SequoOutlineButton(onClick = onClick, modifier = modifier) {
+        Text(label, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 

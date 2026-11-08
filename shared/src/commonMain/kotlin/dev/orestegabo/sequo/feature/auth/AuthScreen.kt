@@ -1,5 +1,6 @@
 package dev.orestegabo.sequo.feature.auth
 
+import dev.orestegabo.sequo.design.SequoDesign
 import dev.orestegabo.sequo.core.platform.PlatformBackHandler
 
 import androidx.compose.foundation.BorderStroke
@@ -180,7 +181,7 @@ private fun SocialAuthPage(
             .fillMaxSize()
             .safeContentPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = SequoDesign.ScreenGutter)
             .padding(top = 22.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -660,7 +661,7 @@ private fun EmailFallbackPage(
             .safeContentPadding()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = SequoDesign.ScreenGutter)
             .padding(top = 20.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
