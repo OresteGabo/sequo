@@ -17,10 +17,10 @@ import kotlinx.serialization.Serializable
 internal class CartApiClient(private val client: HttpClient = createSequoHttpClient()) {
     suspend fun cart(token: String): CartSnapshot = client.get("/api/cart") { bearerAuth(token) }.body()
 
-    suspend fun put(token: String, productId: String, quantity: Int, selections: List<ProductOptionSelection>): CartSnapshot =
+    suspend fun put(token: String, productId: String, quantity: Int, selections: List<ProductOptionSelection>, bargainingThreadId: String? = null): CartSnapshot =
         client.put("/api/cart/items") {
             bearerAuth(token)
-            setBody(CartItemRequest(productId, quantity, selections))
+            setBody(CartItemRequest(productId, quantity, selections, bargainingThreadId))
         }.body()
 
     suspend fun remove(token: String, lineId: String): CartSnapshot =
@@ -61,14 +61,14 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
 }
 
 @Serializable
-private data class CartItemRequest(val productId: String, val quantity: Int, val selections: List<ProductOptionSelection>)
+private data class CartItemRequest(val productId: String, val quantity: Int, val selections: List<ProductOptionSelection>, val bargainingThreadId: String? = null)
 
 @Serializable
 internal data class CartSnapshot(val items: List<CartLine>, val totalItems: Int, val subtotalCfa: Int) {
-    fun findLine(productId: String, selections: List<ProductOptionSelection>): CartLine? {
+    fun findLine(productId: String, selections: List<ProductOptionSelection>, bargainingThreadId: String? = null): CartLine? {
         val choices = selections.associate { it.groupId to it.optionIds }
         return items.firstOrNull { line ->
-            line.product.id == productId && line.selections.associate { it.groupId to it.optionIds } == choices
+            line.product.id == productId && line.bargainingThreadId == bargainingThreadId && line.selections.associate { it.groupId to it.optionIds } == choices
         }
     }
 }
@@ -81,6 +81,10 @@ internal data class CartLine(
     val selections: List<ProductOptionSelection>,
     val lineTotalCfa: Int?,
     val available: Boolean,
+    val bargainingThreadId: String? = null,
+    val negotiatedUnitPriceCfa: Int? = null,
+    val negotiatedPriceExpiresAt: String? = null,
+    val unavailableReason: String? = null,
 )
 
 @Serializable

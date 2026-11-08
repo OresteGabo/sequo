@@ -124,6 +124,7 @@ internal fun MarketsContent(
             selectedSubcategory = selectedSubcategory.takeUnless { it == "All" },
             onAddProduct = onAddProduct,
             onProductSelected = { product -> onProductSelected(SequoProductListing(shop, product)) },
+            onNegotiateClick = { product -> onProductSelected(SequoProductListing(shop, product)) },
         )
     }
 }

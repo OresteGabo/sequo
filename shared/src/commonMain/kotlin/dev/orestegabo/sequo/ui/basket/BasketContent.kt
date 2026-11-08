@@ -79,6 +79,9 @@ internal fun BasketContent(
             Text(line.product.name, style = MaterialTheme.typography.titleMedium)
             val price = line.lineTotalCfa
             Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable))
+            line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
+            line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
+            if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
             val optionNames = line.selections.flatMap { selection ->
                 val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
                 group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.name }

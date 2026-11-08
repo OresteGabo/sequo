@@ -1,165 +1,76 @@
-# Bargaining Flow
+# Bargaining MVP flow
 
-This document defines Sequo's customer-seller price negotiation system, also known as Negociation or `Propose ton prix`.
+This records the Task 18 implementation. The signed SEQUO MVP PDF defines scope.
+Bargaining applies to a product and its authorized customer/merchant pair.
+The MVP does not introduce variant-specific agreements.
 
-## Purpose
+## Eligibility and privacy
 
-Bargaining lets a customer propose a lower price on eligible products while keeping seller control, preventing endless negotiation, and preserving clear payment/order rules.
+- The customer signs in; the server resolves the product's merchant and checks ownership on every action.
+- The merchant enables bargaining per product. The product and merchant must be active, with a valid catalog price.
+- A proposal is a positive whole-CFA amount strictly below the current catalog base price.
+- The server enforces a configured merchant floor; public catalog/customer responses hide that private floor.
+- Historical minimum accepted prices are not displayed. The additional policy contemplated by contract point 55 requires SEQUO approval.
 
-Example: a product listed at 100,000 CFA may allow a customer to propose 80,000 CFA. The seller can accept, reject, or counter-propose if the product allows bargaining.
+## Attempts and replies
 
-## Eligibility
+- Defaults are three customer price proposals and three merchant counters.
+- Counts cover the same customer, merchant and product across threads; opening another thread does not reset them.
+- Accept/reject decisions and messages do not consume price attempts. There is no automatic cooldown or attempt reset.
+- The server supplies counts, configured limits and `nextActor`; clients refresh instead of decrementing counters locally.
+- Accept, reject and merchant counter actions reference the latest pending opposite offer using `expectedOfferId`.
+- A stale response is rejected. A decision uses the server's pending amount, without a client-selected acceptance price.
+- Stable `idempotencyKey` values permit retries of an identical action; a conflicting reuse is rejected.
 
-Rules:
+## Authenticated API
 
-- Sellers can deactivate bargaining for specific products.
-- Bargaining availability is product-specific and may also be variant-specific.
-- Food items should usually avoid bargaining unless the seller explicitly enables it.
-- A customer must be signed in before making a proposal.
-- Bargaining must happen before checkout payment.
-- A locked or accepted price must be included in the order pricing snapshot.
-
-## Attempt Limits
-
-Each party has a maximum of 3 attempts per bargaining thread.
-
-| Party | Counts as an attempt |
+| Request | Purpose |
 | --- | --- |
-| Customer | New price proposal |
-| Seller | Counter-proposal |
+| `GET /api/bargaining/threads` | Customer's persisted threads |
+| `GET /api/bargaining/threads?merchantId=…` | Authorized merchant's inbox |
+| `GET /api/bargaining/threads/{id}` | Scoped thread readback |
+| `POST /api/bargaining/threads` | Initial customer proposal |
+| `POST /api/bargaining/threads/{id}/offers` | Unified offer, counter, decision or message |
 
-Seller accept, seller reject without counter, and customer accept do not consume a new price-attempt unless the action includes a new price.
+Create sends `productId`, `amountCfa`, optional `message` and a stable `idempotencyKey`.
+The offers body uses `offerType` (`OFFER`, `COUNTER_OFFER`, `ACCEPT`, `REJECT`, `MESSAGE`),
+optional `amountCfa`/`message`, `expectedOfferId` where required, and `idempotencyKey`.
+Neither body grants merchant scope or lets a client mark payment successful.
 
-When either party reaches 3 attempts, they cannot submit another price in that thread.
+The thread DTO retains IDs, `status`, `lastOfferCfa`, `acceptedPriceCfa`, `openedAt` and `offers`.
+It also supplies `productName`, `catalogPriceCfa`, `bargainingEnabled`, `customerAttemptsUsed`,
+`merchantAttemptsUsed`, `maxCustomerAttempts`, `maxMerchantAttempts`, `acceptedAt`, `expiresAt`
+and `nextActor`. Offer history includes the actor, action, amount, message and creation time.
 
-## Price Lock Rule
+## Accepted price and basket
 
-Once an acceptable minimum price is set or agreed, it is locked for 24 hours.
+- Acceptance creates a server-owned price agreement, with a default 24-hour validity window.
+- The negotiated amount replaces the product's base unit price. Selected food options/supplements remain extra and are computed by the server.
+- Cart `PUT /api/cart/items` includes `bargainingThreadId` to apply the agreement, with the existing product, quantity and selections.
+- Reloads and quantity edits preserve that reference. Listed-price and negotiated lines remain distinct.
+- Cart readback exposes `negotiatedUnitPriceCfa`, `negotiatedPriceExpiresAt` and the reference; the quote computes authoritative totals/revision.
+- An invalid or expired referenced agreement makes the item unavailable. It never silently falls back to the catalog price.
+- The customer must review the agreement or explicitly remove the item and re-add it at the listed price before requesting a fresh quote.
 
-Meaning:
+## Checkout timing
 
-- The accepted negotiated price is available to that customer for that product or variant for 24 hours.
-- The seller cannot increase that locked price for that customer during the lock window.
-- The customer must pay before the lock expires.
-- After expiry, checkout must use the current listed price or require a new bargaining thread.
-- The order snapshot stores the agreed price and lock reference.
+A new checkout must validate the accepted agreement before expiry and match the reviewed quote.
+If the agreement expires before server checkout creation, the customer must review again.
+A pending checkout already created with a valid agreement freezes its price snapshot and reference;
+its stable retry can succeed after agreement expiry without creating a duplicate checkout.
+The agreement window is not a claim about a payment-provider execution deadline.
+Only normal verified payment reconciliation permits fulfillment.
 
-## Historical Minimum Accepted Prices
+## Current screens and statuses
 
-The customer product page should display historical minimum accepted prices to inform customer proposals.
+Customer offer buttons open product detail. The panel loads persisted history, shows remaining
+attempts and the merchant response, allows a price reply or acceptance/rejection, and provides refresh.
+Only a server-accepted response displays the agreed price and expiry or attaches it to basket additions.
+Loading, session errors and failed requests remain visible; an uncertain response is not local acceptance.
 
-Rules:
-
-- Show historical minimum accepted price only when backend data exists.
-- Do not reveal customer identity.
-- Do not reveal seller private notes or margins.
-- Make the history informational, not a guaranteed offer.
-- If the seller changes bargaining policy, historical values may remain visible but new bargaining can be disabled.
-
-Suggested customer text:
-
-```text
-Lowest accepted recently: 80,000 CFA
-```
-
-Avoid fake ranges or invented minimums. If there is no accepted-price history, say no accepted-price history is available.
-
-## State Machine
-
-| State | Description | Next states |
-| --- | --- | --- |
-| `NotAvailable` | Seller disabled bargaining or product is ineligible | None |
-| `Open` | Customer can make an initial proposal | `CustomerProposed`, `Expired`, `Cancelled` |
-| `CustomerProposed` | Seller must accept, reject, or counter | `Accepted`, `SellerCountered`, `Rejected`, `Expired` |
-| `SellerCountered` | Customer must accept, reject, or propose again if attempts remain | `Accepted`, `CustomerProposed`, `Rejected`, `Expired` |
-| `Accepted` | Price is agreed and locked for 24 hours | `Paid`, `Expired` |
-| `Paid` | Customer paid using accepted locked price | None |
-| `Rejected` | Bargaining ended without agreement | None |
-| `Expired` | 24-hour lock or thread window expired | None |
-| `Cancelled` | Customer or system cancelled before agreement | None |
-
-## Customer Flow
-
-1. Customer opens an eligible product.
-2. Product page shows listed price, bargaining availability, attempts remaining, and historical minimum accepted price if available.
-3. Customer taps propose price.
-4. Customer enters a CFA amount.
-5. App validates that the proposal is lower than or equal to the listed price and meets backend minimum input rules.
-6. Backend creates or updates the bargaining thread.
-7. Seller accepts, rejects, or counters.
-8. If accepted, the accepted price is locked for 24 hours.
-9. Customer checks out and pays through Yas Togo or Moov Africa before the lock expires.
-10. Order snapshot records the negotiated price.
-
-## Validation Rules
-
-- Proposals must be positive whole-CFA amounts.
-- Proposals must be tied to a product or variant.
-- Proposals must be lower than or equal to the current customer-visible list price unless backend policy allows another use case.
-- A customer cannot bypass attempt limits by opening duplicate active threads for the same product/variant and seller.
-- The backend must reject proposals after lock expiry, product deactivation, seller suspension, or stock unavailability.
-- Accepted prices cannot be applied to a different product, seller, customer, or variant.
-
-## UI Requirements
-
-Product detail must show:
-
-- Whether bargaining is available.
-- Listed price.
-- Historical minimum accepted price when available.
-- Attempts remaining for the customer.
-- Current seller response if a thread is active.
-- Lock expiry countdown after acceptance.
-- Checkout call to action using the accepted price.
-
-Do not show bargaining controls when the seller has disabled bargaining for the product.
-
-## Notifications
-
-Customers should receive notifications for:
-
-- Seller accepted proposal.
-- Seller countered.
-- Seller rejected.
-- Price lock expiring soon.
-- Price lock expired.
-
-Sellers should receive notifications for:
-
-- New customer proposal.
-- Customer accepted seller counter.
-- Customer rejected seller counter.
-- Locked price paid.
-
-## Audit And Analytics
-
-Store:
-
-- Product ID and variant ID.
-- Seller ID.
-- Customer ID.
-- Listed price at start.
-- Historical minimum shown to customer.
-- Every proposal/counter amount.
-- Attempt counts per party.
-- Accepted price.
-- Lock start and expiry.
-- Order ID if paid.
-- Rejection, expiry, and cancellation reasons.
-
-Useful metrics:
-
-- Bargaining conversion rate.
-- Average accepted discount.
-- Products with high proposal volume and low acceptance.
-- Sellers disabling bargaining after high failed negotiation volume.
-
-## Acceptance Criteria
-
-- Seller can enable or disable bargaining per product.
-- Customer and seller each have at most 3 price attempts.
-- Agreed price locks for 24 hours.
-- Customer sees historical minimum accepted prices where available.
-- Checkout applies only valid, unexpired, accepted bargain prices.
-- Payment still follows Yas Togo or Moov Africa validation before order completion.
-
+Statuses are `OPEN`, `REJECTED`, `ACCEPTED`, `EXPIRED`, `CANCELLED` and `LOCKED_ATTEMPTS_EXHAUSTED`.
+`nextActor` controls who may reply while attempts remain. The customer UI displays expired/closed
+states read-only; it does not promise a reset, reopen or cancellation control.
+Vendor inbox/actions are merchant-scoped. Neither side sees another customer's or merchant's threads.
+Refresh is the MVP update mechanism; this flow does not promise new push notifications, expiry
+reminders, countdowns or delivery guarantees.

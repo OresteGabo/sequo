@@ -63,6 +63,7 @@ internal fun HomeContent(
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
         onProductSelected = onProductSelected,
+        onNegotiateClick = { product -> catalog.products.firstOrNull { it.product.id == product.id }?.shop?.let { onProductSelected(SequoProductListing(it, product)) } },
     )
     MarketplaceCategorySection(
         types = orderedTypes,
@@ -81,6 +82,7 @@ internal fun HomeContent(
         onAddProduct = onAddProduct,
         onSeeAll = { onDestinationSelected(SequoSection.Markets) },
         onProductSelected = { shop, product -> onProductSelected(SequoProductListing(shop, product)) },
+        onNegotiateClick = { product -> featuredProducts.firstOrNull { it.second.id == product.id }?.let { onProductSelected(SequoProductListing(it.first, product)) } },
     )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(

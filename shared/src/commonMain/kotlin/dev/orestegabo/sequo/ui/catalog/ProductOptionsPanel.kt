@@ -67,7 +67,7 @@ internal fun ProductOptionsPanel(
         if (failed) Text(appText(Res.string.product_option_error), color = MaterialTheme.colorScheme.error)
         confirmedPrice?.let { Text(appText(Res.string.product_option_added) + " · ${formatCfa(it)}") }
         SequoPrimaryButton(
-            label = appText(Res.string.product_option_add),
+            label = appText(if (product.customizations.isEmpty()) Res.string.home_add else Res.string.product_option_add),
             enabled = !busy,
             modifier = Modifier.fillMaxWidth(),
             onClick = {

@@ -48,6 +48,8 @@ import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import dev.orestegabo.sequo.core.bargaining.BargainingRepository
+import dev.orestegabo.sequo.core.bargaining.NetworkBargainingRepository
 import dev.orestegabo.sequo.core.catalog.CartApiClient
 import dev.orestegabo.sequo.core.catalog.CartSnapshot
 import org.jetbrains.compose.resources.painterResource
@@ -73,6 +75,10 @@ internal fun SequoShell(
     var notificationBackDestination by remember { mutableStateOf<SequoSection?>(null) }
     val cartClient = remember { CartApiClient() }
     DisposableEffect(cartClient) { onDispose(cartClient::close) }
+    val bargainingRepository = remember(currentUser?.id, isGuest) {
+        if (isGuest || currentUser == null) null else NetworkBargainingRepository(cartAccessToken)
+    }
+    DisposableEffect(bargainingRepository) { onDispose { bargainingRepository?.close() } }
     var cart by remember(currentUser?.id, isGuest) { mutableStateOf<CartSnapshot?>(null) }
     var cartBusy by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
     var cartFailed by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
@@ -114,10 +120,10 @@ internal fun SequoShell(
         }
     }
 
-    suspend fun saveProduct(token: String, productId: String, selections: List<ProductOptionSelection>): CartSnapshot {
+    suspend fun saveProduct(token: String, productId: String, selections: List<ProductOptionSelection>, bargainingThreadId: String? = null): CartSnapshot {
         val saved = cartClient.cart(token)
-        val quantity = saved.findLine(productId, selections)?.quantity ?: 0
-        return cartClient.put(token, productId, quantity + 1, selections)
+        val quantity = saved.findLine(productId, selections, bargainingThreadId)?.quantity ?: 0
+        return cartClient.put(token, productId, quantity + 1, selections, bargainingThreadId)
     }
 
     suspend fun addConfiguredProduct(productId: String, selections: List<ProductOptionSelection>): Int? {
@@ -127,6 +133,13 @@ internal fun SequoShell(
         }
         val saved = checkNotNull(changeCart { saveProduct(it, productId, selections) })
         val line = checkNotNull(saved.findLine(productId, selections))
+        return checkNotNull(line.lineTotalCfa) / line.quantity
+    }
+
+    suspend fun addNegotiatedProduct(productId: String, selections: List<ProductOptionSelection>, threadId: String): Int? {
+        if (isGuest) { onSignInRequested(); return null }
+        val saved = checkNotNull(changeCart { saveProduct(it, productId, selections, threadId) })
+        val line = checkNotNull(saved.findLine(productId, selections, threadId))
         return checkNotNull(line.lineTotalCfa) / line.quantity
     }
 
@@ -224,7 +237,7 @@ internal fun SequoShell(
                         onQuantity = { line, quantity ->
                             updateCart { token ->
                                 if (quantity == 0) cartClient.remove(token, line.id)
-                                else cartClient.put(token, line.product.id, quantity, line.selections)
+                                else cartClient.put(token, line.product.id, quantity, line.selections, line.bargainingThreadId)
                             }
                         },
                         loadAddresses = loadSavedAddresses,
@@ -268,6 +281,8 @@ internal fun SequoShell(
                     else updateCart { saveProduct(it, productId, emptyList()) }
                 },
                 onAddCustomized = ::addConfiguredProduct,
+                onAddNegotiated = ::addNegotiatedProduct,
+                bargainingRepository = bargainingRepository,
                 catalogState = catalogState,
                 onReloadCatalog = ::reloadCatalog,
                 currentUser = currentUser,
@@ -341,6 +356,8 @@ internal fun SequoContentStage(
     onToggleCategoryPinned: (String) -> Unit,
     onAddProduct: (String) -> Unit,
     onAddCustomized: suspend (String, List<ProductOptionSelection>) -> Int?,
+    onAddNegotiated: suspend (String, List<ProductOptionSelection>, String) -> Int?,
+    bargainingRepository: BargainingRepository?,
     catalogState: CatalogUiState,
     onReloadCatalog: () -> Unit,
     currentUser: CurrentUser?,
@@ -374,7 +391,9 @@ internal fun SequoContentStage(
                 allShops = catalog.shops,
                 onAddProduct = onAddProduct,
                 onProductSelected = onProductSelected,
-                onNegotiateClick = {},
+                bargainingRepository = bargainingRepository,
+                onSignInRequested = onSignInRequested,
+                onAddNegotiated = onAddNegotiated,
             )
         }
     } else {

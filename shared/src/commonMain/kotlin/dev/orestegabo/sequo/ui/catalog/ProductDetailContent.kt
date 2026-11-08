@@ -50,7 +50,9 @@ internal fun ProductDetailContent(
     allShops: List<SequoShop>,
     onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
-    onNegotiateClick: () -> Unit,
+    bargainingRepository: BargainingRepository?,
+    onSignInRequested: () -> Unit,
+    onAddNegotiated: suspend (String, List<ProductOptionSelection>, String) -> Int?,
 ) {
     val product = listing.product
     val shop = listing.shop
@@ -85,7 +87,9 @@ internal fun ProductDetailContent(
             listing = listing,
             onAddCustomized = onAddCustomized,
             onAddProduct = onAddProduct,
-            onNegotiateClick = onNegotiateClick,
+            bargainingRepository = bargainingRepository,
+            onSignInRequested = onSignInRequested,
+            onAddNegotiated = onAddNegotiated,
         )
         ProductSellerCard(shop = shop)
         ProductSuggestionsSection(
@@ -431,9 +435,12 @@ private fun ProductDetailInfoCard(
     listing: SequoProductListing,
     onAddCustomized: suspend (String, List<ProductOptionSelection>) -> Int?,
     onAddProduct: (String) -> Unit,
-    onNegotiateClick: () -> Unit,
+    bargainingRepository: BargainingRepository?,
+    onSignInRequested: () -> Unit,
+    onAddNegotiated: suspend (String, List<ProductOptionSelection>, String) -> Int?,
 ) {
     val product = listing.product
+    var acceptedThreadId by remember(product.id, bargainingRepository) { mutableStateOf<String?>(null) }
     SequoCard(shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -456,122 +463,20 @@ private fun ProductDetailInfoCard(
             }
             ProductConcernPanel(product = product)
             if (product.isNegotiable) {
-                ProductBargainingPanel(product = product, onNegotiateClick = onNegotiateClick)
+                ProductBargainingPanel(product, bargainingRepository, onSignInRequested) { acceptedThreadId = it }
             }
-            if (product.customizations.isEmpty()) {
+            if (product.customizations.isEmpty() && acceptedThreadId == null) {
                 SequoPrimaryButton(appText(Res.string.home_add), { onAddProduct(listing.product.id) }, Modifier.fillMaxWidth())
             } else {
-                ProductOptionsPanel(listing.product, onAddCustomized)
+                ProductOptionsPanel(listing.product) { productId, selections ->
+                    val threadId = acceptedThreadId
+                    if (threadId == null) onAddCustomized(productId, selections)
+                    else onAddNegotiated(productId, selections, threadId)
+                }
             }
         }
     }
 }
-@Composable
-private fun ProductBargainingPanel(
-    product: SequoProduct,
-    onNegotiateClick: () -> Unit,
-    repository: BargainingRepository = remember { LocalBargainingRepository() },
-) {
-    var state by remember(product.id) { mutableStateOf(repository.stateFor(product)) }
-    var offerText by remember(product.id) { mutableStateOf("") }
-    var isSubmitting by remember(product.id) { mutableStateOf(false) }
-    var feedback by remember(product.id) { mutableStateOf<String?>(null) }
-    val offerAmount = offerText.toIntOrNull()
-    val canSubmit = !isSubmitting && offerAmount != null && offerAmount in 1..product.priceCfa && state.attemptsRemaining > 0
-    val offerSavedText = appText(Res.string.bargain_offer_saved)
-    val disabledText = appText(Res.string.bargain_disabled)
-    val attemptsExhaustedText = appText(Res.string.bargain_attempts_exhausted)
-    val invalidAmountText = appText(Res.string.bargain_invalid_amount)
-
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(appText(Res.string.home_make_offer), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text(product.bargainNote ?: appText(Res.string.bargain_detail_default), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                IconButton(onClick = onNegotiateClick) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = appText(Res.string.home_make_offer), tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-            BargainInfoLine(appText(Res.string.bargain_attempts_remaining), state.attemptsRemaining.toString())
-            BargainInfoLine(
-                appText(Res.string.bargain_lowest_accepted),
-                state.historicalMinimumAcceptedCfa?.let(::formatCfa) ?: appText(Res.string.bargain_no_history),
-            )
-            state.acceptedLockedPriceCfa?.let { lockedPrice ->
-                BargainInfoLine(
-                    appText(Res.string.bargain_locked_price),
-                    "${formatCfa(lockedPrice)} / ${state.lockedPriceExpiresLabel ?: "24h"}",
-                )
-            }
-            OutlinedTextField(
-                value = offerText,
-                onValueChange = { next ->
-                    offerText = next.filter(Char::isDigit).take(9)
-                    feedback = null
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text(appText(Res.string.bargain_offer_label)) },
-                suffix = { Text("CFA") },
-                supportingText = {
-                    Text(
-                        appText(Res.string.bargain_local_mock),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-            )
-            feedback?.let {
-                Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-            }
-            Button(
-                onClick = {
-                    val amount = offerAmount ?: return@Button
-                    isSubmitting = true
-                    when (val result = repository.submitCustomerOffer(product, amount, state)) {
-                        is BargainingSubmitResult.Accepted -> {
-                            state = result.state
-                            feedback = offerSavedText
-                        }
-                        BargainingSubmitResult.Disabled -> feedback = disabledText
-                        BargainingSubmitResult.AttemptsExhausted -> feedback = attemptsExhaustedText
-                        BargainingSubmitResult.InvalidAmount -> feedback = invalidAmountText
-                    }
-                    isSubmitting = false
-                },
-                enabled = canSubmit,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(appText(Res.string.bargain_submit_offer))
-            }
-        }
-    }
-}
-
-@Composable
-private fun BargainInfoLine(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-    }
-}
-
 @Composable
 private fun ProductConcernPanel(product: SequoProduct) {
     val isFood = product.isFoodOrGrocery()
@@ -773,6 +678,7 @@ private fun ProductSuggestionsSection(
                     relationLabel = productRelationLabel(current.product),
                     onAddProduct = onAddProduct,
                     onProductClick = { onProductSelected(suggestion) },
+                    onNegotiateClick = { onProductSelected(suggestion) },
                 )
             }
         }
