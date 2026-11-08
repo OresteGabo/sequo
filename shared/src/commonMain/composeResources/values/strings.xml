@@ -337,4 +337,9 @@
     <string name="cart_relay_title">Delivery destination</string>
     <string name="cart_relay_unavailable">No eligible relay is currently available for this basket.</string>
     <string name="cart_relay_contact">Recipient contact (saved address)</string>
+    <string name="relay_pickup_show">Show pickup code / QR</string>
+    <string name="relay_pickup_identity">Present this code or QR and your identity document to the relay operator.</string>
+    <string name="relay_pickup_renew_note">Pickup credential unavailable or expired. Request a new code.</string>
+    <string name="relay_pickup_renew">Create or renew pickup code</string>
+    <string name="relay_pickup_closed">Pickup closed. No active credential.</string>
 </resources>

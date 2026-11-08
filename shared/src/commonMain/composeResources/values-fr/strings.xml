@@ -337,4 +337,9 @@
     <string name="cart_relay_title">Destination de livraison</string>
     <string name="cart_relay_unavailable">Aucun relais éligible disponible actuellement pour ce panier.</string>
     <string name="cart_relay_contact">Coordonnées du destinataire (adresse enregistrée)</string>
+    <string name="relay_pickup_show">Afficher le code / QR de retrait</string>
+    <string name="relay_pickup_identity">Présentez ce code ou QR et votre pièce d’identité à l’opérateur du relais.</string>
+    <string name="relay_pickup_renew_note">Code indisponible ou expiré. Demandez un nouveau code.</string>
+    <string name="relay_pickup_renew">Créer ou renouveler le code</string>
+    <string name="relay_pickup_closed">Retrait clôturé. Aucun code actif.</string>
 </resources>

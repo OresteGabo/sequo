@@ -49,6 +49,13 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
     suspend fun orders(token: String): List<CustomerOrderDetails> =
         client.get("/api/orders") { bearerAuth(token) }.body()
 
+    suspend fun relayPickups(token: String, orderId: String): List<CustomerRelayPickup> =
+        client.get("/api/orders/$orderId/relay-pickups") { bearerAuth(token) }.body()
+
+    suspend fun renewRelayPickup(token: String, orderId: String, parcelId: String) {
+        client.post("/api/orders/$orderId/relay-pickups/$parcelId/credential") { bearerAuth(token) }
+    }
+
     fun close() = client.close()
 }
 
@@ -144,3 +151,8 @@ internal data class CheckoutProvider(
     val apiConfigured: Boolean = false,
     val checkoutConnected: Boolean = false,
 )
+
+@Serializable
+internal data class CustomerRelayPickup(val parcelId: String, val relayPointId: String, val status: String,
+    val depositedAt: String? = null, val pickedUpAt: String? = null, val expiresAt: String? = null,
+    val credentialState: String, val numericCode: String? = null, val qrModules: List<String> = emptyList())

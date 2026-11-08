@@ -243,6 +243,9 @@ internal fun SequoShell(
                     OrdersContent(
                         loadCheckouts = { cartClient.checkouts(checkNotNull(cartAccessToken())) },
                         loadOrders = { cartClient.orders(checkNotNull(cartAccessToken())) },
+                        sessionKey = currentUser?.id,
+                        loadRelayPickups = { orderId -> cartClient.relayPickups(checkNotNull(cartAccessToken()), orderId) },
+                        renewRelayPickup = { orderId, parcelId -> cartClient.renewRelayPickup(checkNotNull(cartAccessToken()), orderId, parcelId) },
                     )
                 },
                 searchVisible = searchVisible,

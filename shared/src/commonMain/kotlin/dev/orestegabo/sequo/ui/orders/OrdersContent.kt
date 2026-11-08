@@ -26,6 +26,7 @@ import dev.orestegabo.sequo.core.catalog.CustomerDeliveryTracking
 import dev.orestegabo.sequo.core.catalog.OrderedProduct
 import dev.orestegabo.sequo.data.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.*
@@ -48,13 +49,16 @@ import sequo.shared.generated.resources.*
 internal fun OrdersContent(
     loadCheckouts: suspend () -> List<CheckoutSummary>,
     loadOrders: suspend () -> List<CustomerOrderDetails>,
+    sessionKey: String?,
+    loadRelayPickups: suspend (String) -> List<dev.orestegabo.sequo.core.catalog.CustomerRelayPickup>,
+    renewRelayPickup: suspend (String, String) -> Unit,
 ) {
     var refresh by remember { mutableStateOf(0) }
-    var checkouts by remember { mutableStateOf(emptyList<CheckoutSummary>()) }
-    var orders by remember { mutableStateOf(emptyList<CustomerOrderDetails>()) }
+    var checkouts by remember(sessionKey) { mutableStateOf(emptyList<CheckoutSummary>()) }
+    var orders by remember(sessionKey) { mutableStateOf(emptyList<CustomerOrderDetails>()) }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
-    LaunchedEffect(refresh) {
+    LaunchedEffect(refresh, sessionKey) {
         loading = true
         failed = false
         try {
@@ -99,9 +103,70 @@ internal fun OrdersContent(
                     delivery.relayDestination?.let { relay -> Text(listOfNotNull(relay.name, relay.neighborhood, relay.city).joinToString(" · ")) }
                     delivery.relayDepositedAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }
+                if (row.deliveries.any { it.relayDestination != null }) {
+                    key(sessionKey, row.id, refresh) { RelayPickupContent(row.id, loadRelayPickups, renewRelayPickup) }
+                }
                 Text(formatCfa(row.totalCfa))
             }
         }
+    }
+}
+
+@Composable
+private fun RelayPickupContent(orderId: String,
+    load: suspend (String) -> List<dev.orestegabo.sequo.core.catalog.CustomerRelayPickup>,
+    renew: suspend (String, String) -> Unit) {
+    var pickups by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.CustomerRelayPickup>?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    TextButton(enabled = !busy, onClick = {
+        busy = true; failed = false; pickups = null
+        scope.launch {
+            try { pickups = load(orderId) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { failed = true }
+            finally { busy = false }
+        }
+    }) { Text(appText(Res.string.relay_pickup_show)) }
+    if (busy) Text(appText(Res.string.orders_loading))
+    if (failed) Text(appText(Res.string.orders_load_failed), color = MaterialTheme.colorScheme.error)
+    for (pickup in pickups.orEmpty()) {
+        val expiry = pickup.expiresAt?.let { runCatching { kotlin.time.Instant.parse(it) }.getOrNull() }
+        var expired by remember(pickup) { mutableStateOf(expiry == null || expiry <= kotlin.time.Clock.System.now()) }
+        LaunchedEffect(pickup) {
+            if (expiry != null) {
+                kotlinx.coroutines.delay((expiry.toEpochMilliseconds() - kotlin.time.Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0))
+                expired = true
+            }
+        }
+        Text(pickup.parcelId, style = MaterialTheme.typography.bodySmall)
+        Text(appText(Res.string.relay_pickup_identity))
+        if (pickup.credentialState == "READY" && !expired) {
+            Text(pickup.numericCode.orEmpty(), style = MaterialTheme.typography.headlineMedium)
+            val modules = pickup.qrModules
+            if (modules.isNotEmpty()) Canvas(Modifier.size(240.dp)) {
+                drawRect(Color.White)
+                val cell = size.width / modules.size
+                modules.forEachIndexed { y, row -> row.forEachIndexed { x, bit ->
+                    if (bit == '1') drawRect(Color.Black, androidx.compose.ui.geometry.Offset(x * cell, y * cell), androidx.compose.ui.geometry.Size(cell, cell))
+                } }
+            }
+            Text(pickup.expiresAt.orEmpty(), style = MaterialTheme.typography.bodySmall)
+        } else if (pickup.credentialState != "CLOSED" && pickup.credentialState != "USED") {
+            Text(appText(Res.string.relay_pickup_renew_note))
+            TextButton(enabled = !busy, onClick = {
+                busy = true; failed = false; pickups = null
+                scope.launch {
+                    try { renew(orderId, pickup.parcelId); pickups = load(orderId) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) { failed = true }
+                    finally { busy = false }
+                }
+            }) { Text(appText(Res.string.relay_pickup_renew)) }
+        } else Text(appText(Res.string.relay_pickup_closed))
+        pickup.depositedAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        pickup.pickedUpAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }
 
