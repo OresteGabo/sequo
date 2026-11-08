@@ -59,7 +59,7 @@ internal fun ProductDetailContent(
     val suggestions = remember(listing, allShops) { similarProductListings(listing, allShops) }
     var galleryExpanded by remember(listing) { mutableStateOf(false) }
     var selectedPhotoIndex by remember(listing) { mutableStateOf(0) }
-    val galleryProducts = remember(product, suggestions) { productGalleryProducts(product, suggestions) }
+    val galleryProducts = remember(product) { listOf(product) }
 
     ProductDetailHero(
         product = product,
@@ -461,7 +461,6 @@ private fun ProductDetailInfoCard(
                 }
                 ProductDiscountBadge(product = product)
             }
-            ProductConcernPanel(product = product)
             if (product.isNegotiable) {
                 ProductBargainingPanel(product, bargainingRepository, onSignInRequested) { acceptedThreadId = it }
             }
@@ -813,18 +812,3 @@ private fun productRelationKey(product: SequoProduct): String {
 
 private fun normalizedProductSubcategory(product: SequoProduct): String =
     productSubcategory(product).lowercase().trim()
-
-private fun productGalleryProducts(
-    product: SequoProduct,
-    suggestions: List<SequoProductListing>,
-): List<SequoProduct> =
-    buildList {
-        add(product)
-        suggestions
-            .map { it.product }
-            .filterNot { it.name == product.name }
-            .forEach { add(it) }
-        while (size < 4) {
-            add(product)
-        }
-    }.take(4)
