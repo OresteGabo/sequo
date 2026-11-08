@@ -53,11 +53,13 @@ internal fun BasketContent(
     LaunchedEffect(busy) {
         if (busy) return@LaunchedEffect
         providersFailed = false
+        providers = null
         try {
             providers = loadPaymentProviders()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
+            providers = null
             providersFailed = true
         }
     }
@@ -232,7 +234,7 @@ internal fun BasketContent(
                 Text(appText(when {
                     providersFailed -> Res.string.checkout_provider_status_failed
                     providers == null -> Res.string.cart_loading
-                    configuration?.apiConfigured == true && configuration.checkoutConnected -> Res.string.checkout_provider_ready
+                    configuration?.paymentAvailable == true -> Res.string.checkout_provider_ready
                     configuration?.apiConfigured == true -> Res.string.checkout_provider_prepared
                     else -> Res.string.basket_payment_not_configured_detail
                 }), style = MaterialTheme.typography.bodySmall)

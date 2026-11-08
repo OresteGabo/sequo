@@ -179,7 +179,9 @@ internal data class CheckoutProvider(
     val providerId: String,
     val apiConfigured: Boolean = false,
     val checkoutConnected: Boolean = false,
-)
+) {
+    val paymentAvailable: Boolean get() = apiConfigured && checkoutConnected
+}
 
 @Serializable
 internal data class CustomerRelayPickup(val parcelId: String, val relayPointId: String, val status: String,
