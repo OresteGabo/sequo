@@ -170,64 +170,74 @@ private fun SequoApp(
     }
 
     LaunchedEffect(authRepository) {
-        rememberedUser = authRepository.getRememberedUser()
+        try {
+            rememberedUser = authRepository.getRememberedUser()
 
-        if (authRepository.getSavedSession() != null && !authRepository.hasCachedRefreshToken()) {
-            authRepository.migrateSavedSessionToSecureCache()
-        }
+            if (authRepository.getSavedSession() != null && !authRepository.hasCachedRefreshToken()) {
+                authRepository.migrateSavedSessionToSecureCache()
+            }
 
-        val restoredUser = runCatching { authRepository.restoreSavedSession() }.getOrNull()
-        if (restoredUser != null) {
-            currentUser = restoredUser
-            rememberedUser = restoredUser
-            isAuthenticated = true
-            guestMode = false
-            authErrorMessage = null
-            sessionRestoreChecked = true
-            return@LaunchedEffect
-        }
+            val restoredUser = runCatching { authRepository.restoreSavedSession() }.getOrNull()
+            if (restoredUser != null) {
+                currentUser = restoredUser
+                rememberedUser = restoredUser
+                isAuthenticated = true
+                guestMode = false
+                authErrorMessage = null
+                sessionRestoreChecked = true
+                return@LaunchedEffect
+            }
 
-        if (authRepository.hasCachedRefreshToken()) {
-            when (val unlockResult = authRepository.unlockCachedSession(
-                BiometricPromptConfig(
-                    title = biometricPromptTitle,
-                    subtitle = biometricPromptSubtitle,
-                    negativeButtonText = biometricPromptCancel,
-                ),
-            )) {
-                is SecureSessionUnlockResult.Unlocked -> {
-                    val user = runCatching { authRepository.restoreSavedSession() }.getOrNull()
-                    currentUser = user
-                    user?.let {
-                        rememberedUser = it
-                        authRepository.rememberUser(it)
+            if (authRepository.hasCachedRefreshToken()) {
+                when (val unlockResult = authRepository.unlockCachedSession(
+                    BiometricPromptConfig(
+                        title = biometricPromptTitle,
+                        subtitle = biometricPromptSubtitle,
+                        negativeButtonText = biometricPromptCancel,
+                    ),
+                )) {
+                    is SecureSessionUnlockResult.Unlocked -> {
+                        val user = runCatching { authRepository.restoreSavedSession() }.getOrNull()
+                        currentUser = user
+                        user?.let {
+                            rememberedUser = it
+                            authRepository.rememberUser(it)
+                        }
+                        isAuthenticated = user != null
+                        guestMode = false
+                        authErrorMessage = if (user == null) signInAgain else null
                     }
-                    isAuthenticated = true
-                    guestMode = false
-                    authErrorMessage = null
-                }
-                SecureSessionUnlockResult.Cancelled,
-                SecureSessionUnlockResult.NoCachedSession,
-                -> {
-                    currentUser = null
-                    isAuthenticated = false
-                    guestMode = false
-                }
-                is SecureSessionUnlockResult.Unavailable -> {
-                    currentUser = null
-                    isAuthenticated = false
-                    guestMode = false
-                    authErrorMessage = biometricUnavailable
-                }
-                is SecureSessionUnlockResult.Failed -> {
-                    currentUser = null
-                    isAuthenticated = false
-                    guestMode = false
-                    authErrorMessage = biometricFailed
+                    SecureSessionUnlockResult.Cancelled,
+                    SecureSessionUnlockResult.NoCachedSession,
+                    -> {
+                        currentUser = null
+                        isAuthenticated = false
+                        guestMode = false
+                    }
+                    is SecureSessionUnlockResult.Unavailable -> {
+                        currentUser = null
+                        isAuthenticated = false
+                        guestMode = false
+                        authErrorMessage = biometricUnavailable
+                    }
+                    is SecureSessionUnlockResult.Failed -> {
+                        currentUser = null
+                        isAuthenticated = false
+                        guestMode = false
+                        authErrorMessage = biometricFailed
+                    }
                 }
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            currentUser = null
+            isAuthenticated = false
+            guestMode = false
+            authErrorMessage = signInAgain
+        } finally {
+            sessionRestoreChecked = true
         }
-        sessionRestoreChecked = true
     }
 
     if (showSplash) {
