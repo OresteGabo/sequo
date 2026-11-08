@@ -58,8 +58,8 @@
     <string name="onboarding_relay_subtitle">Envoyez vos colis vers un point relais Sequo quand un retrait proche est plus simple que l'attente a domicile.</string>
     <string name="onboarding_deals_title">Trouvez de meilleures offres</string>
     <string name="onboarding_deals_subtitle">Reperez les produits en promo, gardez vos favoris et revenez quand le bon prix apparait.</string>
-    <string name="nav_home_title">Tokoin Gbadago</string>
-    <string name="nav_home_subtitle">Livraison Pharmacie des Etoiles</string>
+    <string name="nav_home_title">SEQUO</string>
+    <string name="nav_home_subtitle">Choisissez votre destination dans le panier</string>
     <string name="nav_markets_title">Marches</string>
     <string name="nav_markets_subtitle">Vendeurs verifies a Lome</string>
     <string name="nav_basket_title">Panier</string>
@@ -422,4 +422,5 @@
     <string name="photo_export_in_progress">Terminez d'abord la boite d'enregistrement ouverte.</string>
     <string name="export_interrupted">L'enregistrement a ete interrompu. Reessayez.</string>
     <string name="auth_local_practice">Essai local · aucun paiement réel</string>
+    <string name="orders_hide_detail">Masquer les détails</string>
 </resources>

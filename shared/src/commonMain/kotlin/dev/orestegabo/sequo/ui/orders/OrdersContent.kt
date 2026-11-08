@@ -83,7 +83,6 @@ internal fun OrdersContent(
             loading = false
         }
     }
-    Text(appText(Res.string.nav_orders_title), style = MaterialTheme.typography.headlineSmall)
     TextButton(onClick = { refresh++ }, enabled = !loading) { Text(appText(Res.string.cart_refresh)) }
     if (loading) Text(appText(Res.string.orders_loading))
     if (failed) Text(appText(Res.string.orders_load_failed), color = MaterialTheme.colorScheme.error)
@@ -101,12 +100,28 @@ internal fun OrdersContent(
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
     if (!loading && !failed && rows.isEmpty()) Text(appText(Res.string.orders_empty))
     for (row in rows) {
+        key(sessionKey, row.id) {
+        var expanded by remember { mutableStateOf(false) }
         OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(appText(orderHistoryStatus(row.status)), style = MaterialTheme.typography.titleMedium)
-                Text(row.id, style = MaterialTheme.typography.bodySmall)
-                row.destination?.let { Text(it) }
-                row.lines.forEach { Text("${it.quantity} × ${it.productName}") }
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(appText(orderHistoryStatus(row.status)), style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                    Text(formatCfa(row.totalCfa), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                }
+                Text(row.id, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                row.lines.take(if (expanded) row.lines.size else 2).forEach {
+                    Text("${it.quantity} × ${it.productName}", style = MaterialTheme.typography.bodyMedium)
+                }
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(appText(if (expanded) Res.string.orders_hide_detail else Res.string.orders_detail_title))
+                    Icon(if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
+                }
+                if (expanded) {
+                HorizontalDivider()
+                row.destination?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 row.deliveries.forEach { delivery ->
                     Text(appText(customerDeliveryStatus(delivery.status)), style = MaterialTheme.typography.titleSmall)
                     Text(delivery.deliveryCode, style = MaterialTheme.typography.bodySmall)
@@ -117,14 +132,15 @@ internal fun OrdersContent(
                 if (row.deliveries.any { it.relayDestination != null }) {
                     key(sessionKey, row.id, refresh) { RelayPickupContent(row.id, loadRelayPickups, renewRelayPickup) }
                 }
-                Text(formatCfa(row.totalCfa))
                 if (row.persistedOrder) {
                     key(sessionKey, row.id) {
                         CustomerReturnContent(row.id, refresh, loadReturnEligibility, loadReturns, submitReturn,
                             onRequested = { refresh++ })
                     }
                 }
+                }
             }
+        }
         }
     }
 }

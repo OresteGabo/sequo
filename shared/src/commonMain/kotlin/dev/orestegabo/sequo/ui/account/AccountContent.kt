@@ -56,10 +56,6 @@ internal fun AccountContent(
     pendingAdminLoginRequestCount: Int = 0,
     onAdminLoginRequestsClick: () -> Unit = {},
 ) {
-    SequoSectionCard(title = appText(Res.string.account_build), action = NetworkConfig.Environment) {
-        SettingRow(appText(Res.string.account_release), NetworkConfig.ReleaseId)
-        SettingRow(appText(Res.string.account_api_target), NetworkConfig.BaseUrl)
-    }
     if (isGuest) {
         GuestAccountCard(onSignInRequested = onSignInRequested)
         return
@@ -85,6 +81,10 @@ internal fun AccountContent(
         }
         SettingRow(appText(Res.string.account_payments), "Yas / Moov")
         SettingRow(appText(Res.string.account_returns), appText(Res.string.account_return_eligibility))
+    }
+    if (NetworkConfig.Environment != "PRODUCTION") {
+        Text("${NetworkConfig.Environment} · ${NetworkConfig.ReleaseId}",
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -223,7 +223,7 @@ private fun AccountProfileCard(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        currentUser?.displayName?.firstOrNull()?.uppercase() ?: "S",
+                        currentUser?.displayName?.firstOrNull { it.isLetter() }?.uppercase() ?: "S",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.Black,

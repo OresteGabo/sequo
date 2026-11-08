@@ -58,8 +58,8 @@
     <string name="onboarding_relay_subtitle">Send packages to a Sequo relay point when pickup nearby is easier than waiting at home.</string>
     <string name="onboarding_deals_title">Catch better deals</string>
     <string name="onboarding_deals_subtitle">Spot products on sale, save favorites, and come back when the right price shows up.</string>
-    <string name="nav_home_title">Tokoin Gbadago</string>
-    <string name="nav_home_subtitle">Deliver to Pharmacie des Etoiles area</string>
+    <string name="nav_home_title">SEQUO</string>
+    <string name="nav_home_subtitle">Choose your destination in the basket</string>
     <string name="nav_markets_title">Markets</string>
     <string name="nav_markets_subtitle">Verified Lome sellers</string>
     <string name="nav_basket_title">Cart</string>
@@ -422,4 +422,5 @@
     <string name="photo_export_in_progress">Finish the current save dialog first.</string>
     <string name="export_interrupted">Saving was interrupted. Please try again.</string>
     <string name="auth_local_practice">Local practice · no real payments</string>
+    <string name="orders_hide_detail">Hide details</string>
 </resources>
