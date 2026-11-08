@@ -297,6 +297,20 @@ internal fun SequoShell(
                         submitReturn = { orderId, returnId, reason -> cartClient.requestReturn(checkNotNull(cartAccessToken()), orderId, returnId, reason) },
                     )
                 },
+                notificationsContent = {
+                    if (isGuest || currentUser == null) NotificationsContent(
+                        onOpenOrders = { currentDestination = SequoSection.Orders },
+                        onOpenPrivacy = { onOpenLegal(LegalInitialTab.Privacy) },
+                        onOpenTerms = { onOpenLegal(LegalInitialTab.Terms) },
+                        onUnreadCountChanged = { notificationUnreadCount = it },
+                    ) else LiveCustomerNotificationsContent(
+                        accountId = currentUser.id,
+                        accessToken = cartAccessToken,
+                        onUnreadCountChanged = { notificationUnreadCount = it },
+                        onSignInRequested = onSignInRequested,
+                        onOpenOrders = { currentDestination = SequoSection.Orders },
+                    )
+                },
                 searchVisible = searchVisible,
                 onCloseSearch = { searchVisible = false },
                 selectedMarketTypeKey = selectedMarketTypeKey,
@@ -376,6 +390,7 @@ internal fun SequoContentStage(
     onCloseProduct: () -> Unit,
     cartContent: @Composable () -> Unit,
     ordersContent: @Composable () -> Unit,
+    notificationsContent: @Composable () -> Unit,
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
     selectedMarketTypeKey: String,
@@ -468,12 +483,7 @@ internal fun SequoContentStage(
                 } else {
                     ordersContent()
                 }
-                SequoSection.Notifications -> NotificationsContent(
-                    onOpenOrders = { onDestinationSelected(SequoSection.Orders) },
-                    onOpenPrivacy = { onOpenLegal(LegalInitialTab.Privacy) },
-                    onOpenTerms = { onOpenLegal(LegalInitialTab.Terms) },
-                    onUnreadCountChanged = onNotificationUnreadCountChanged,
-                )
+                SequoSection.Notifications -> notificationsContent()
                 SequoSection.Account -> AccountContent(
                     currentUser = currentUser,
                     loadSavedAddresses = loadSavedAddresses,
