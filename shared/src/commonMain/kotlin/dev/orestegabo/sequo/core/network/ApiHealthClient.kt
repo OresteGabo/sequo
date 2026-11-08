@@ -11,7 +11,7 @@ import sequo.shared.generated.resources.Res
 import sequo.shared.generated.resources.api_health_unreachable
 
 class ApiHealthClient(
-    private val baseUrl: String = NetworkConfig.ProductionBaseUrl,
+    private val baseUrl: String = NetworkConfig.BaseUrl,
     private val httpClient: HttpClient = createSequoHttpClient(baseUrl),
     private val json: Json = defaultNetworkJson,
 ) {

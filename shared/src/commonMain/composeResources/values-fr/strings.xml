@@ -412,4 +412,7 @@
     <string name="benefits_referral_credit">Crédit de livraison de parrainage appliqué</string>
     <string name="benefits_delivery_final">Livraison après avantages</string>
     <string name="account_return_eligibility">Consulter l’éligibilité dans Commandes</string>
+    <string name="account_build">Cible de compilation</string>
+    <string name="account_release">Version</string>
+    <string name="account_api_target">Cible API</string>
 </resources>

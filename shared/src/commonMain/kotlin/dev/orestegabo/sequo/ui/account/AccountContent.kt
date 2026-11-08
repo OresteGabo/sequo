@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.account
 
+import dev.orestegabo.sequo.core.network.NetworkConfig
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -54,6 +56,10 @@ internal fun AccountContent(
     pendingAdminLoginRequestCount: Int = 0,
     onAdminLoginRequestsClick: () -> Unit = {},
 ) {
+    SequoSectionCard(title = appText(Res.string.account_build), action = NetworkConfig.Environment) {
+        SettingRow(appText(Res.string.account_release), NetworkConfig.ReleaseId)
+        SettingRow(appText(Res.string.account_api_target), NetworkConfig.BaseUrl)
+    }
     if (isGuest) {
         GuestAccountCard(onSignInRequested = onSignInRequested)
         return

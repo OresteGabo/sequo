@@ -412,4 +412,7 @@
     <string name="benefits_referral_credit">Referral delivery credit applied</string>
     <string name="benefits_delivery_final">Delivery after benefits</string>
     <string name="account_return_eligibility">Check eligibility in Orders</string>
+    <string name="account_build">Build target</string>
+    <string name="account_release">Release</string>
+    <string name="account_api_target">API target</string>
 </resources>

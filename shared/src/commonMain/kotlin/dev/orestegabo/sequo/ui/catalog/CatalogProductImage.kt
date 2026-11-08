@@ -31,7 +31,7 @@ internal fun CatalogProductImage(product: SequoProduct, modifier: Modifier, cont
     LaunchedEffect(source) {
         val url = when {
             source == "/api/catalog/products/${product.id}/image" ->
-                NetworkConfig.ProductionBaseUrl.trimEnd('/') + source
+                NetworkConfig.BaseUrl.trimEnd('/') + source
             source?.startsWith("https://") == true -> source
             else -> return@LaunchedEffect
         }
