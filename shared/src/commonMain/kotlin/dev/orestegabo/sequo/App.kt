@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +23,7 @@ import dev.orestegabo.sequo.core.auth.AuthApiException
 import dev.orestegabo.sequo.core.auth.AuthUserMessage
 import dev.orestegabo.sequo.core.auth.AuthRepository
 import dev.orestegabo.sequo.core.auth.BiometricPromptConfig
+import dev.orestegabo.sequo.core.auth.LocalFixtureAccount
 import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.auth.GoogleSignInFailureReason
 import dev.orestegabo.sequo.core.auth.GoogleSignInResult
@@ -130,6 +132,12 @@ private fun SequoApp(
             sessionStore = authSessionStore,
             secureSessionCache = secureSessionCache,
         )
+    }
+    var localFixtureAccounts by remember { mutableStateOf<List<LocalFixtureAccount>>(emptyList()) }
+    LaunchedEffect(authRepository) {
+        try { localFixtureAccounts = authRepository.localFixtureAccounts() }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { localFixtureAccounts = emptyList() }
     }
     val scope = rememberCoroutineScope()
     val biometricPromptTitle = appText(Res.string.biometric_prompt_title)
@@ -247,6 +255,28 @@ private fun SequoApp(
                 language = language,
                 onLanguageChange = onLanguageChange,
                 emailAuthInProgress = emailAuthInProgress,
+                localFixtureAccounts = localFixtureAccounts,
+                onLocalFixtureLogin = { account ->
+                    if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
+                    scope.launch {
+                        emailAuthInProgress = true
+                        authErrorMessage = null
+                        try {
+                            clearSuggestedAccountSession()
+                            authRepository.loginWithLocalFixture(account.key)
+                            val user = checkNotNull(authRepository.currentUser())
+                            authRepository.rememberUser(user)
+                            currentUser = user
+                            rememberedUser = user
+                            isAuthenticated = true
+                            guestMode = false
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            authErrorMessage = userFacingAuthError(error, emailSignInFailed, language)
+                        } finally { emailAuthInProgress = false }
+                    }
+                },
                 rememberedUser = rememberedUser,
                 onContinueRememberedUser = {
                     if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
@@ -431,6 +461,7 @@ private fun SequoApp(
     }
 
     CompositionLocalProvider(LocalAppLanguage provides language) {
+        key(currentUser?.id, guestMode) {
         SequoShell(
             currentUser = currentUser,
             cartAccessToken = { authRepository.getSavedSession()?.accessToken },
@@ -457,6 +488,7 @@ private fun SequoApp(
                 }
             },
         )
+        }
     }
 }
 

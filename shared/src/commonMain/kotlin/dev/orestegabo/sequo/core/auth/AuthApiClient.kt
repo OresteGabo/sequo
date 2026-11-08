@@ -22,7 +22,25 @@ class AuthApiClient(
     private val baseUrl: String = NetworkConfig.BaseUrl,
     private val httpClient: HttpClient = createSequoHttpClient(baseUrl),
     private val deviceIdProvider: () -> String,
+    private val environment: String = NetworkConfig.Environment,
 ) {
+    suspend fun localFixtureAccounts(): List<LocalFixtureAccount> {
+        if (!allowsLocalFixtureAccess(environment, baseUrl)) return emptyList()
+        val access = httpClient.get("${baseUrl.trimEnd('/')}/api/auth/development-access") {
+            url.parameters.append("appSource", "SEQUO_APP")
+        }.body<LocalFixtureAccess>()
+        return if (access.enabled && access.mode == "LOCAL_FIXTURE") access.accounts else emptyList()
+    }
+
+    suspend fun loginWithLocalFixture(accountKey: String): AuthSession {
+        check(allowsLocalFixtureAccess(environment, baseUrl)) { "Local practice access is unavailable." }
+        check(localFixtureAccounts().any { it.key == accountKey }) { "Practice account is unavailable." }
+        return httpClient.post("${baseUrl.trimEnd('/')}/api/auth/development-session") {
+            headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(LocalFixtureSessionRequest(appSource = "SEQUO_APP", accountKey = accountKey, deviceId = deviceIdProvider()))
+        }.body()
+    }
+
     suspend fun loginWithGoogle(idToken: String): AuthApiResponse {
         return loginWithSocialToken(SocialLoginProvider.Google, idToken)
     }
@@ -343,3 +361,19 @@ private enum class AppSource {
     @SerialName("SEQUO_APP")
     SequoApp,
 }
+
+@Serializable
+data class LocalFixtureAccount(val key: String, val label: String)
+
+@Serializable
+private data class LocalFixtureAccess(val enabled: Boolean = false, val mode: String? = null, val accounts: List<LocalFixtureAccount> = emptyList())
+
+@Serializable
+private data class LocalFixtureSessionRequest(val appSource: String, val accountKey: String, val deviceId: String)
+
+internal fun allowsLocalFixtureAccess(environment: String, baseUrl: String): Boolean = runCatching {
+    val url = io.ktor.http.Url(baseUrl)
+    environment == "LOCAL_FIXTURE" && url.host.lowercase() in setOf("127.0.0.1", "localhost", "10.0.2.2", "::1", "[::1]") &&
+        url.protocol.name in setOf("http", "https") && url.user.isNullOrEmpty() && url.password.isNullOrEmpty() &&
+        url.encodedPath in setOf("", "/") && url.parameters.isEmpty() && url.fragment.isEmpty()
+}.getOrDefault(false)

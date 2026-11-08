@@ -421,4 +421,5 @@
     <string name="photo_export_cancelled">Enregistrement de la photo annule.</string>
     <string name="photo_export_in_progress">Terminez d'abord la boite d'enregistrement ouverte.</string>
     <string name="export_interrupted">L'enregistrement a ete interrompu. Reessayez.</string>
+    <string name="auth_local_practice">Essai local · aucun paiement réel</string>
 </resources>

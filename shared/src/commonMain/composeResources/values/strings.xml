@@ -421,4 +421,5 @@
     <string name="photo_export_cancelled">Photo saving cancelled.</string>
     <string name="photo_export_in_progress">Finish the current save dialog first.</string>
     <string name="export_interrupted">Saving was interrupted. Please try again.</string>
+    <string name="auth_local_practice">Local practice · no real payments</string>
 </resources>

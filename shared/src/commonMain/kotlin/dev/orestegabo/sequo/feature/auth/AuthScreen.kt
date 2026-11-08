@@ -84,6 +84,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.orestegabo.sequo.core.auth.LocalFixtureAccount
 import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.designsystem.component.Package2
 import dev.orestegabo.sequo.core.designsystem.component.SequoShapes
@@ -98,6 +99,8 @@ fun AuthScreen(
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
     emailAuthInProgress: Boolean = false,
+    localFixtureAccounts: List<LocalFixtureAccount> = emptyList(),
+    onLocalFixtureLogin: (LocalFixtureAccount) -> Unit = {},
     rememberedUser: CurrentUser? = null,
     onContinueRememberedUser: () -> Unit = {},
     onEmailLogin: (email: String, password: String) -> Unit,
@@ -133,6 +136,9 @@ fun AuthScreen(
         SocialAuthPage(
             language = language,
             onLanguageChange = onLanguageChange,
+            localFixtureAccounts = localFixtureAccounts,
+            onLocalFixtureLogin = onLocalFixtureLogin,
+            localFixtureBusy = emailAuthInProgress || googleSignInInProgress,
             onAppleLogin = onAppleLogin,
             googleSignInInProgress = googleSignInInProgress,
             rememberedUser = rememberedUser,
@@ -150,6 +156,9 @@ fun AuthScreen(
 
 @Composable
 private fun SocialAuthPage(
+    localFixtureAccounts: List<LocalFixtureAccount>,
+    onLocalFixtureLogin: (LocalFixtureAccount) -> Unit,
+    localFixtureBusy: Boolean,
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
     onAppleLogin: () -> Unit,
@@ -170,6 +179,7 @@ private fun SocialAuthPage(
         modifier = Modifier
             .fillMaxSize()
             .safeContentPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
             .padding(top = 22.dp, bottom = 22.dp),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -209,6 +219,15 @@ private fun SocialAuthPage(
                     onPasskeyLogin = onPasskeyLogin,
                     onSequoLogin = onSequoLogin,
                 )
+
+                if (localFixtureAccounts.isNotEmpty()) {
+                    Text(appText(Res.string.auth_local_practice), style = MaterialTheme.typography.labelMedium,
+                        color = colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    localFixtureAccounts.forEach { account ->
+                        OutlinedButton(onClick = { onLocalFixtureLogin(account) }, enabled = !localFixtureBusy,
+                            modifier = Modifier.fillMaxWidth()) { Text(account.label) }
+                    }
+                }
 
                 GuestBrowseLink(onClick = onSkipAuth)
 

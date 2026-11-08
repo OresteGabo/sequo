@@ -1,12 +1,23 @@
 package dev.orestegabo.sequo.core.auth
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 class AuthRepository(
     private val authApiClient: AuthApiClient,
     private val sessionStore: AuthSessionStore,
     private val secureSessionCache: SecureSessionCache,
     private val logger: AuthDebugLogger = AuthDebugLogger,
 ) {
-    suspend fun loginWithGoogle(idToken: String): AuthSession {
+    private val sessionMutation = Mutex()
+
+    suspend fun localFixtureAccounts(): List<LocalFixtureAccount> = authApiClient.localFixtureAccounts()
+
+    suspend fun loginWithLocalFixture(accountKey: String): AuthSession = sessionMutation.withLock {
+        authApiClient.loginWithLocalFixture(accountKey).also { saveSession(it) }
+    }
+
+    suspend fun loginWithGoogle(idToken: String): AuthSession = sessionMutation.withLock {
         if (idToken.isBlank()) {
             throw GoogleIdTokenMissingException()
         }
@@ -15,10 +26,10 @@ class AuthRepository(
         val response = authApiClient.loginWithGoogle(idToken)
         logger.logBackendStatus(response.statusCode)
         saveSession(response.session)
-        return response.session
+        response.session
     }
 
-    suspend fun loginWithFacebook(accessToken: String): AuthSession {
+    suspend fun loginWithFacebook(accessToken: String): AuthSession = sessionMutation.withLock {
         if (accessToken.isBlank()) {
             throw FacebookAccessTokenMissingException()
         }
@@ -26,19 +37,19 @@ class AuthRepository(
         val response = authApiClient.loginWithFacebook(accessToken)
         logger.logBackendStatus(response.statusCode, "Facebook")
         saveSession(response.session)
-        return response.session
+        response.session
     }
 
-    suspend fun signUpWithEmail(email: String, password: String, name: String?): AuthSession {
+    suspend fun signUpWithEmail(email: String, password: String, name: String?): AuthSession = sessionMutation.withLock {
         val response = authApiClient.signUpWithEmail(email = email, password = password, name = name)
         saveSession(response.session)
-        return response.session
+        response.session
     }
 
-    suspend fun loginWithEmail(email: String, password: String): AuthSession {
+    suspend fun loginWithEmail(email: String, password: String): AuthSession = sessionMutation.withLock {
         val response = authApiClient.loginWithEmail(email = email, password = password)
         saveSession(response.session)
-        return response.session
+        response.session
     }
 
     internal suspend fun savedAddresses(): List<SavedDeliveryAddress> {
@@ -51,10 +62,10 @@ class AuthRepository(
         return authApiClient.currentUser(session.accessToken)
     }
 
-    suspend fun restoreSavedSession(): CurrentUser? {
-        val session = sessionStore.get() ?: return null
+    suspend fun restoreSavedSession(): CurrentUser? = sessionMutation.withLock {
+        val session = sessionStore.get() ?: return@withLock null
 
-        return runCatching {
+        runCatching {
             authApiClient.currentUser(session.accessToken)
         }.getOrElse { firstError ->
             if ((firstError as? AuthApiException)?.statusCode != 401) throw firstError
@@ -88,7 +99,7 @@ class AuthRepository(
     suspend fun unlockCachedSession(promptConfig: BiometricPromptConfig = BiometricPromptConfig()): SecureSessionUnlockResult =
         secureSessionCache.unlockCachedSession(promptConfig)
 
-    suspend fun logout() {
+    suspend fun logout() = sessionMutation.withLock {
         val session = sessionStore.get()
         if (session != null) {
             runCatching {
