@@ -342,4 +342,9 @@
     <string name="relay_pickup_renew_note">Pickup credential unavailable or expired. Request a new code.</string>
     <string name="relay_pickup_renew">Create or renew pickup code</string>
     <string name="relay_pickup_closed">Pickup closed. No active credential.</string>
+    <string name="delivery_mode_title">Delivery service</string>
+    <string name="delivery_mode_express">Express</string>
+    <string name="delivery_mode_classic">Classic</string>
+    <string name="delivery_mode_deferred">Deferred</string>
+    <string name="delivery_eta_unavailable">Current service: arrival estimate is not configured.</string>
 </resources>

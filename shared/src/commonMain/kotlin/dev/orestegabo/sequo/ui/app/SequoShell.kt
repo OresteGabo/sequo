@@ -228,7 +228,7 @@ internal fun SequoShell(
                             }
                         },
                         loadAddresses = loadSavedAddresses,
-                        loadQuote = { addressId, relayPointId -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId) },
+                        loadQuote = { addressId, relayPointId, mode -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId, mode) },
                         loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },
                         loadPaymentProviders = cartClient::paymentProviders,
                         submitCheckout = { quote, provider ->

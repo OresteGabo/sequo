@@ -26,10 +26,11 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
     suspend fun remove(token: String, lineId: String): CartSnapshot =
         client.delete("/api/cart/items/$lineId") { bearerAuth(token) }.body()
 
-    suspend fun quote(token: String, addressId: String, relayPointId: String? = null): CartQuote = client.get("/api/cart/quote") {
+    suspend fun quote(token: String, addressId: String, relayPointId: String? = null, deliveryMode: String? = null): CartQuote = client.get("/api/cart/quote") {
         bearerAuth(token)
         parameter("addressId", addressId)
         relayPointId?.let { parameter("relayPointId", it) }
+        deliveryMode?.let { parameter("deliveryMode", it) }
     }.body()
 
     suspend fun relayPoints(token: String): List<RelayDestination> = client.get("/api/cart/relay-points") { bearerAuth(token) }.body()
@@ -40,7 +41,7 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
     suspend fun checkout(token: String, quote: CartQuote, paymentProvider: String): CheckoutSummary =
         client.post("/api/orders/checkouts") {
             bearerAuth(token)
-            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider, quote.relayPointId))
+            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider, quote.relayPointId, quote.deliveryOption?.id))
         }.body()
 
     suspend fun checkouts(token: String): List<CheckoutSummary> =
@@ -100,11 +101,13 @@ internal data class CartQuote(
     val totalCfa: Int,
     val relayPointId: String? = null,
     val fulfillmentMode: String = "HOME",
+    val deliveryOption: DeliveryModeOffer? = null,
+    val availableDeliveryModes: List<DeliveryModeOffer> = emptyList(),
 )
 
 
 @Serializable
-private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String, val relayPointId: String? = null)
+private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String, val relayPointId: String? = null, val deliveryMode: String? = null)
 
 @Serializable
 internal data class CheckoutSummary(
@@ -126,7 +129,7 @@ internal data class CustomerOrderDetails(
 
 @Serializable
 internal data class CustomerDeliveryTracking(val deliveryCode: String, val status: String, val updatedAt: String,
-    val relayDestination: RelayDestination? = null, val relayDepositedAt: String? = null)
+    val relayDestination: RelayDestination? = null, val relayDepositedAt: String? = null, val deliveryOption: DeliveryModeOffer? = null)
 
 @Serializable
 internal data class RelayDestination(val id: String, val name: String, val city: String? = null,
@@ -156,3 +159,7 @@ internal data class CheckoutProvider(
 internal data class CustomerRelayPickup(val parcelId: String, val relayPointId: String, val status: String,
     val depositedAt: String? = null, val pickedUpAt: String? = null, val expiresAt: String? = null,
     val credentialState: String, val numericCode: String? = null, val qrModules: List<String> = emptyList())
+
+@Serializable
+internal data class DeliveryModeOffer(val id: String, val missionMode: String, val etaMinMinutes: Int,
+    val etaMaxMinutes: Int, val zoneId: String, val deliveryFeeCfa: Int)

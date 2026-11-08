@@ -100,6 +100,7 @@ internal fun OrdersContent(
                 row.deliveries.forEach { delivery ->
                     Text(appText(customerDeliveryStatus(delivery.status)), style = MaterialTheme.typography.titleSmall)
                     Text(delivery.deliveryCode, style = MaterialTheme.typography.bodySmall)
+                    delivery.deliveryOption?.let { mode -> Text("${appText(deliveryModeName(mode.id))} · ${mode.etaMinMinutes}–${mode.etaMaxMinutes} min · ${formatCfa(mode.deliveryFeeCfa)}") }
                     delivery.relayDestination?.let { relay -> Text(listOfNotNull(relay.name, relay.neighborhood, relay.city).joinToString(" · ")) }
                     delivery.relayDepositedAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }

@@ -41,7 +41,7 @@ internal fun BasketContent(
     onRefresh: () -> Unit,
     onQuantity: (CartLine, Int) -> Unit,
     loadAddresses: suspend () -> List<SavedDeliveryAddress>,
-    loadQuote: suspend (String, String?) -> CartQuote,
+    loadQuote: suspend (String, String?, String?) -> CartQuote,
     loadRelayPoints: suspend () -> List<dev.orestegabo.sequo.core.catalog.RelayDestination>,
     loadPaymentProviders: suspend () -> List<CheckoutProvider>,
     submitCheckout: suspend (CartQuote, String) -> CheckoutSummary,
@@ -106,8 +106,10 @@ internal fun BasketContent(
     var relayPointId by remember { mutableStateOf<String?>(null) }
     var relayPoints by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.RelayDestination>?>(null) }
     var relaysFailed by remember { mutableStateOf(false) }
-    var quote by remember(cart, addressId, relayPointId) { mutableStateOf<CartQuote?>(null) }
-    var quoteFailed by remember(cart, addressId, relayPointId) { mutableStateOf(false) }
+    var deliveryMode by remember { mutableStateOf<String?>(null) }
+    var modes by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.DeliveryModeOffer>>(emptyList()) }
+    var quote by remember(cart, addressId, relayPointId, deliveryMode) { mutableStateOf<CartQuote?>(null) }
+    var quoteFailed by remember(cart, addressId, relayPointId, deliveryMode) { mutableStateOf(false) }
     LaunchedEffect(cart) {
         try {
             addresses = loadAddresses().filter { it.id.isNotBlank() }
@@ -130,7 +132,7 @@ internal fun BasketContent(
         catch (_: Exception) { relayPoints = null; relaysFailed = true }
     }
     var quoteRefresh by remember { mutableStateOf(0) }
-    LaunchedEffect(cart, addressId, relayPointId, relayPoints, relaysFailed, busy, quoteRefresh) {
+    LaunchedEffect(cart, addressId, relayPointId, deliveryMode, relayPoints, relaysFailed, busy, quoteRefresh) {
         quote = null
         quoteFailed = false
         if (busy) return@LaunchedEffect
@@ -140,7 +142,8 @@ internal fun BasketContent(
             return@LaunchedEffect
         }
         try {
-            quote = loadQuote(selected, relayPointId)
+            quote = loadQuote(selected, relayPointId, deliveryMode)
+            modes = quote?.availableDeliveryModes.orEmpty()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
@@ -184,6 +187,20 @@ internal fun BasketContent(
                 Text(listOfNotNull(address.area, address.city).joinToString(", "))
             }
         }
+    }
+    if (modes.isNotEmpty()) {
+        Text(appText(Res.string.delivery_mode_title), style = MaterialTheme.typography.titleMedium)
+        for (mode in modes) Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(selected = (deliveryMode ?: quote?.deliveryOption?.id) == mode.id, enabled = editingEnabled,
+                onClick = { deliveryMode = mode.id; checkoutError = null })
+            Column {
+                Text(appText(deliveryModeName(mode.id)))
+                Text("${mode.etaMinMinutes}–${mode.etaMaxMinutes} min · ${formatCfa(mode.deliveryFeeCfa)}")
+            }
+        }
+    } else if (quote != null) Text(appText(Res.string.delivery_eta_unavailable))
+    if (quoteFailed && deliveryMode != null) TextButton(onClick = { deliveryMode = null; quoteRefresh++ }, enabled = editingEnabled) {
+        Text(appText(Res.string.cart_refresh))
     }
     when {
         quoteFailed -> Text(appText(Res.string.cart_quote_failed), color = MaterialTheme.colorScheme.error)
@@ -264,4 +281,10 @@ private fun CartAmount(label: String, amount: Int) {
         Text(label)
         Text(formatCfa(amount))
     }
+}
+
+internal fun deliveryModeName(id: String) = when (id) {
+    "CLASSIC" -> Res.string.delivery_mode_classic
+    "DEFERRED" -> Res.string.delivery_mode_deferred
+    else -> Res.string.delivery_mode_express
 }

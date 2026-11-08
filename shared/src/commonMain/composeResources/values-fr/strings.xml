@@ -342,4 +342,9 @@
     <string name="relay_pickup_renew_note">Code indisponible ou expiré. Demandez un nouveau code.</string>
     <string name="relay_pickup_renew">Créer ou renouveler le code</string>
     <string name="relay_pickup_closed">Retrait clôturé. Aucun code actif.</string>
+    <string name="delivery_mode_title">Service de livraison</string>
+    <string name="delivery_mode_express">Express</string>
+    <string name="delivery_mode_classic">Classique</string>
+    <string name="delivery_mode_deferred">Différée</string>
+    <string name="delivery_eta_unavailable">Service actuel : délai estimé non configuré.</string>
 </resources>
