@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.feature.auth
 
+import dev.orestegabo.sequo.core.platform.PlatformBackHandler
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -892,6 +894,7 @@ private fun ProviderIconRow(
     onSequoLogin: () -> Unit,
 ) {
     var showMoreProviders by rememberSaveable { mutableStateOf(false) }
+    PlatformBackHandler(enabled = showMoreProviders) { showMoreProviders = false }
     var lastUsedProvider by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun providerClick(provider: AuthProviderShortcut, action: () -> Unit): () -> Unit = {

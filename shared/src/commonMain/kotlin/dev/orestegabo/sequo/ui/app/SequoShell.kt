@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.app
 
+import dev.orestegabo.sequo.core.platform.PlatformBackHandler
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -183,6 +185,36 @@ internal fun SequoShell(
         }
     }
 
+    val backAction = customerBackAction(
+        drawerOpen = drawerState.isOpen,
+        searchOpen = searchVisible,
+        productOpen = selectedProductListing != null,
+        hasNotificationOrigin = currentDestination == SequoSection.Notifications && notificationBackDestination != null,
+        isHome = currentDestination == SequoSection.Home,
+    )
+    fun handleBack() {
+        when (backAction) {
+            CustomerBackAction.CloseDrawer -> { scope.launch { drawerState.close() } }
+            CustomerBackAction.CloseSearch -> { searchVisible = false }
+            CustomerBackAction.CloseProduct -> { selectedProductListing = null }
+            CustomerBackAction.NotificationOrigin -> {
+                currentDestination = notificationBackDestination ?: SequoSection.Home
+                notificationBackDestination = null
+                selectedProductListing = null
+                searchVisible = false
+            }
+            CustomerBackAction.Home -> {
+                currentDestination = SequoSection.Home
+                notificationBackDestination = null
+                selectedProductListing = null
+                searchVisible = false
+            }
+            CustomerBackAction.None -> Unit
+        }
+    }
+    // Child Material dialogs/drawers retain their own native Back handling.
+    PlatformBackHandler(enabled = backAction != CustomerBackAction.None, onBack = ::handleBack)
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -316,15 +348,7 @@ internal fun SequoShell(
                 notificationUnreadCount = notificationUnreadCount,
                 productListing = selectedProductListing,
                 showBackButton = notificationBackDestination != null && currentDestination == SequoSection.Notifications,
-                onBackClick = {
-                    val notificationReturn = notificationBackDestination
-                    if (notificationReturn != null && currentDestination == SequoSection.Notifications) {
-                        currentDestination = notificationReturn
-                        notificationBackDestination = null
-                    }
-                    selectedProductListing = null
-                    searchVisible = false
-                },
+                onBackClick = ::handleBack,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             SequoBottomBar(

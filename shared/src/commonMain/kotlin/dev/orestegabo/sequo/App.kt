@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo
 
+import dev.orestegabo.sequo.core.platform.PlatformBackHandler
+
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -107,9 +109,9 @@ private fun SequoApp(
     var guestMode by rememberSaveable { mutableStateOf(false) }
     var legalScreenTab by rememberSaveable { mutableStateOf<LegalInitialTab?>(null) }
     var authErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    var googleSignInInProgress by rememberSaveable { mutableStateOf(false) }
-    var emailAuthInProgress by rememberSaveable { mutableStateOf(false) }
-    var sessionRestoreChecked by rememberSaveable { mutableStateOf(false) }
+    var googleSignInInProgress by remember { mutableStateOf(false) }
+    var emailAuthInProgress by remember { mutableStateOf(false) }
+    var sessionRestoreChecked by remember { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<CurrentUser?>(null) }
     var rememberedUser by remember { mutableStateOf<CurrentUser?>(null) }
     val authSessionStore = rememberAuthSessionStore()
@@ -231,6 +233,7 @@ private fun SequoApp(
     }
 
     legalScreenTab?.let { tab ->
+        PlatformBackHandler(enabled = true) { legalScreenTab = null }
         LegalScreen(
             initialTab = tab,
             onBack = { legalScreenTab = null },
