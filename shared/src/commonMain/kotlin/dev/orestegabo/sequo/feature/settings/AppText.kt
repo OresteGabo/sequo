@@ -29,6 +29,15 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.returns_status_collected.key to "Collected by SEQUO",
+    Res.string.returns_inspection_accepted.key to "Inspection accepted",
+    Res.string.returns_inspection_rejected.key to "Inspection rejected",
+    Res.string.returns_inspection_recorded.key to "Inspection recorded",
+    Res.string.returns_refund_instruction.key to "Refund instruction reference",
+    Res.string.returns_refund_instruction_recorded.key to "Refund instruction recorded",
+    Res.string.returns_refund_not_submitted.key to "Payment has not been submitted to the provider.",
+    Res.string.returns_refund_timeline_pending.key to "Processing timeline pending confirmation.",
+    Res.string.returns_refund_due.key to "SEQUO processing target:",
     Res.string.returns_customer_managed.key to "Return through the seller",
     Res.string.returns_instruction_relay.key to "Bring the packaged item, return ID and return PIN to an available eligible relay below. Have the operator confirm receipt; reimbursement requires SEQUO receipt and inspection.",
     Res.string.returns_instruction_pending.key to "Keep the packaged item and your return ID. Contact SEQUO for an approved drop-off location; do not leave the item unattended.",
@@ -398,6 +407,15 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.returns_status_collected.key to "Collecté par SEQUO",
+    Res.string.returns_inspection_accepted.key to "Examen accepté",
+    Res.string.returns_inspection_rejected.key to "Examen refusé",
+    Res.string.returns_inspection_recorded.key to "Examen enregistré",
+    Res.string.returns_refund_instruction.key to "Référence de l’instruction de remboursement",
+    Res.string.returns_refund_instruction_recorded.key to "Instruction de remboursement enregistrée",
+    Res.string.returns_refund_not_submitted.key to "Le paiement n’a pas été envoyé au prestataire.",
+    Res.string.returns_refund_timeline_pending.key to "Délai de traitement en attente de confirmation.",
+    Res.string.returns_refund_due.key to "Échéance de traitement fournie par SEQUO :",
     Res.string.returns_customer_managed.key to "Retour auprès du vendeur",
     Res.string.returns_instruction_relay.key to "Apportez l’article emballé, la référence et le code PIN de retour à un relais disponible et autorisé ci-dessous. Faites confirmer le dépôt par l’opérateur ; le remboursement nécessite la réception et l’examen par SEQUO.",
     Res.string.returns_instruction_pending.key to "Conservez l’article emballé et la référence de retour. Contactez SEQUO pour connaître un lieu de dépôt autorisé ; ne laissez pas l’article sans surveillance.",

@@ -386,4 +386,13 @@
     <string name="returns_instruction_refund_pending">Refund processing is pending. This status does not confirm a completed payment.</string>
     <string name="returns_instruction_rejected">This return was rejected. Contact SEQUO for further instructions.</string>
     <string name="returns_instruction_current">Contact SEQUO for the current return instructions.</string>
+    <string name="returns_status_collected">Collected by SEQUO</string>
+    <string name="returns_inspection_accepted">Inspection accepted</string>
+    <string name="returns_inspection_rejected">Inspection rejected</string>
+    <string name="returns_inspection_recorded">Inspection recorded</string>
+    <string name="returns_refund_instruction">Refund instruction reference</string>
+    <string name="returns_refund_instruction_recorded">Refund instruction recorded</string>
+    <string name="returns_refund_not_submitted">Payment has not been submitted to the provider.</string>
+    <string name="returns_refund_timeline_pending">Processing timeline pending confirmation.</string>
+    <string name="returns_refund_due">SEQUO processing target:</string>
 </resources>

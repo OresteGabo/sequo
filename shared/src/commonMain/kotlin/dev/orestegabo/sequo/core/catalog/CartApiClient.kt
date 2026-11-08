@@ -188,7 +188,14 @@ internal data class CustomerReturnRequest(val id: String, val orderId: String, v
     val reason: String, val requestedAt: String, val relayPointId: String? = null,
     val droppedAt: String? = null, val receivedBySequoAt: String? = null,
     val dropoffMethod: String? = null, val instructions: String? = null,
-    val relayPoints: List<RelayDestination> = emptyList(), val returnPin: String? = null)
+    val relayPoints: List<RelayDestination> = emptyList(), val returnPin: String? = null,
+    val collectedBySequoAt: String? = null, val inspectionDecision: String? = null,
+    val inspectedAt: String? = null, val refundInstruction: CustomerRefundInstruction? = null,
+    val refundDeadlineState: String? = null, val refundDueAt: String? = null)
+
+@Serializable
+internal data class CustomerRefundInstruction(val id: String, val amountCfa: Int,
+    val currency: String, val requestedAt: String, val status: String, val paymentStatus: String)
 
 @Serializable
 internal data class CustomerReturnEligibility(val orderId: String, val eligible: Boolean,

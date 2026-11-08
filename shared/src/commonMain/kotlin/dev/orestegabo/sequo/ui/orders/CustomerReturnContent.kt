@@ -10,6 +10,7 @@ import dev.orestegabo.sequo.core.catalog.CustomerReturnEligibility
 import dev.orestegabo.sequo.core.catalog.CustomerReturnRequest
 import dev.orestegabo.sequo.core.catalog.RelayDestination
 import dev.orestegabo.sequo.feature.settings.appText
+import dev.orestegabo.sequo.logic.formatCfa
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -74,7 +75,24 @@ internal fun CustomerReturnContent(
                 }
             }
             request.droppedAt?.let { Text(appText(Res.string.orders_return_status_dropped_relay) + " · " + it) }
+            request.collectedBySequoAt?.let { Text(appText(Res.string.returns_status_collected) + " · " + it) }
             request.receivedBySequoAt?.let { Text(appText(Res.string.returns_status_received) + " · " + it) }
+            request.inspectionDecision?.let { decision ->
+                Text(appText(when (decision) {
+                    "ACCEPTED" -> Res.string.returns_inspection_accepted
+                    "REJECTED" -> Res.string.returns_inspection_rejected
+                    else -> Res.string.returns_inspection_recorded
+                }) + request.inspectedAt?.let { " · " + it }.orEmpty())
+            }
+            request.refundInstruction?.let { instruction ->
+                Text(appText(Res.string.returns_refund_instruction) + " · " + instruction.id)
+                Text(if (instruction.currency == "XOF") formatCfa(instruction.amountCfa) else "${instruction.amountCfa} ${instruction.currency}")
+                Text(if (instruction.status == "REQUESTED") appText(Res.string.returns_refund_instruction_recorded) else instruction.status)
+                Text(if (instruction.paymentStatus == "NOT_SUBMITTED") appText(Res.string.returns_refund_not_submitted) else instruction.paymentStatus)
+                Text(instruction.requestedAt, style = MaterialTheme.typography.bodySmall)
+                if (request.refundDeadlineState == "UNCONFIGURED") Text(appText(Res.string.returns_refund_timeline_pending))
+                else request.refundDueAt?.let { Text(appText(Res.string.returns_refund_due) + " " + it) }
+            }
         }
         val policy = eligibility
         if (!failed && policy != null && requests.isEmpty()) {
@@ -138,6 +156,7 @@ private fun returnStatus(status: String) = when (status) {
     "Requested" -> Res.string.orders_return_status_requested
     "AwaitingRelayDropoff" -> Res.string.orders_return_status_dropoff_pending
     "DroppedAtRelay" -> Res.string.orders_return_status_dropped_relay
+    "CollectedBySequo" -> Res.string.returns_status_collected
     "ReceivedBySequo" -> Res.string.returns_status_received
     "RefundPending" -> Res.string.returns_status_refund_pending
     "Rejected" -> Res.string.orders_return_status_rejected

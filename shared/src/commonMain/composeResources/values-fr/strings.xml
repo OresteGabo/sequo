@@ -386,4 +386,13 @@
     <string name="returns_instruction_refund_pending">Le traitement du remboursement est en attente. Ce statut ne confirme pas un paiement effectué.</string>
     <string name="returns_instruction_rejected">Ce retour a été refusé. Contactez SEQUO pour connaître la suite.</string>
     <string name="returns_instruction_current">Contactez SEQUO pour obtenir les instructions de retour actuelles.</string>
+    <string name="returns_status_collected">Collecté par SEQUO</string>
+    <string name="returns_inspection_accepted">Examen accepté</string>
+    <string name="returns_inspection_rejected">Examen refusé</string>
+    <string name="returns_inspection_recorded">Examen enregistré</string>
+    <string name="returns_refund_instruction">Référence de l’instruction de remboursement</string>
+    <string name="returns_refund_instruction_recorded">Instruction de remboursement enregistrée</string>
+    <string name="returns_refund_not_submitted">Le paiement n’a pas été envoyé au prestataire.</string>
+    <string name="returns_refund_timeline_pending">Délai de traitement en attente de confirmation.</string>
+    <string name="returns_refund_due">Échéance de traitement fournie par SEQUO :</string>
 </resources>
