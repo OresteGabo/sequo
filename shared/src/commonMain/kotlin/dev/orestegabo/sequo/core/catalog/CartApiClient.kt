@@ -144,6 +144,8 @@ internal data class CheckoutSummary(
     val destinationLabel: String? = null,
     val createdAt: String,
     val lines: List<OrderedProduct>,
+    val publicReference: String? = null,
+    val orderReference: String? = null,
 )
 
 @Serializable
@@ -155,7 +157,8 @@ internal data class CustomerOrderDetails(
 
 @Serializable
 internal data class CustomerDeliveryTracking(val deliveryCode: String, val status: String, val updatedAt: String,
-    val relayDestination: RelayDestination? = null, val relayDepositedAt: String? = null, val deliveryOption: DeliveryModeOffer? = null)
+    val relayDestination: RelayDestination? = null, val relayDepositedAt: String? = null, val deliveryOption: DeliveryModeOffer? = null,
+    val publicReference: String? = null, val orderReference: String? = null)
 
 @Serializable
 internal data class RelayDestination(val id: String, val name: String, val city: String? = null,
@@ -168,6 +171,8 @@ internal data class CustomerOrder(
     val orderStatus: String,
     val totalCfa: Int,
     val createdAt: String,
+    val publicReference: String? = null,
+    val checkoutReference: String? = null,
 )
 
 @Serializable
@@ -186,7 +191,8 @@ internal data class CheckoutProvider(
 @Serializable
 internal data class CustomerRelayPickup(val parcelId: String, val relayPointId: String, val status: String,
     val depositedAt: String? = null, val pickedUpAt: String? = null, val expiresAt: String? = null,
-    val credentialState: String, val numericCode: String? = null, val qrModules: List<String> = emptyList())
+    val credentialState: String, val numericCode: String? = null, val qrModules: List<String> = emptyList(),
+    val publicReference: String? = null, val parcelReference: String? = null)
 
 @Serializable
 internal data class DeliveryModeOffer(val id: String, val missionMode: String, val etaMinMinutes: Int,
@@ -203,17 +209,20 @@ internal data class CustomerReturnRequest(val id: String, val orderId: String, v
     val relayPoints: List<RelayDestination> = emptyList(), val returnPin: String? = null,
     val collectedBySequoAt: String? = null, val inspectionDecision: String? = null,
     val inspectedAt: String? = null, val refundInstruction: CustomerRefundInstruction? = null,
-    val refundDeadlineState: String? = null, val refundDueAt: String? = null)
+    val refundDeadlineState: String? = null, val refundDueAt: String? = null,
+    val publicReference: String? = null, val orderReference: String? = null)
 
 @Serializable
 internal data class CustomerRefundInstruction(val id: String, val amountCfa: Int,
-    val currency: String, val requestedAt: String, val status: String, val paymentStatus: String)
+    val currency: String, val requestedAt: String, val status: String, val paymentStatus: String,
+    val publicReference: String? = null)
 
 @Serializable
 internal data class CustomerReturnEligibility(val orderId: String, val eligible: Boolean,
     val code: String? = null, val message: String? = null, val deliveredAt: String? = null,
     val returnWindowEndsAt: String? = null, val existingReturnId: String? = null,
-    val dropoffMethod: String, val instructions: String, val relayPoints: List<RelayDestination> = emptyList())
+    val dropoffMethod: String, val instructions: String, val relayPoints: List<RelayDestination> = emptyList(),
+    val orderReference: String? = null, val existingReturnReference: String? = null)
 
 @Serializable
 internal data class CustomerBenefits(val subscriptionActive: Boolean,

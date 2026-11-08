@@ -89,13 +89,15 @@ internal fun OrdersContent(
 
     val completedCheckoutIds = orders.map { it.order.checkoutId }.toSet()
     val pendingRows = checkouts.filter { it.checkoutId !in completedCheckoutIds }.map {
-        OrderHistoryRow(it.checkoutId, it.status, it.totalCfa, it.destinationLabel, it.createdAt, it.lines)
+        OrderHistoryRow(it.checkoutId, it.status, it.totalCfa, it.destinationLabel, it.createdAt, it.lines,
+            displayReference = it.publicReference?.takeIf(String::isNotBlank) ?: it.checkoutId)
     }
     val orderRows = orders.map { details ->
         val order = details.order
         val destination = details.deliveries.mapNotNull { it.relayDestination?.name }.distinct().takeIf { it.isNotEmpty() }?.joinToString(" / ")
             ?: checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
-        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries, persistedOrder = true)
+        OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries, persistedOrder = true,
+            displayReference = order.publicReference?.takeIf(String::isNotBlank) ?: order.id)
     }
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
     if (!loading && !failed && rows.isEmpty()) Text(appText(Res.string.orders_empty))
@@ -110,7 +112,7 @@ internal fun OrdersContent(
                         color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
                     Text(formatCfa(row.totalCfa), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                 }
-                Text(row.id, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text(row.displayReference, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 row.lines.take(if (expanded) row.lines.size else 2).forEach {
                     Text("${it.quantity} × ${it.productName}", style = MaterialTheme.typography.bodyMedium)
@@ -124,7 +126,7 @@ internal fun OrdersContent(
                 row.destination?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 row.deliveries.forEach { delivery ->
                     Text(appText(customerDeliveryStatus(delivery.status)), style = MaterialTheme.typography.titleSmall)
-                    Text(delivery.deliveryCode, style = MaterialTheme.typography.bodySmall)
+                    Text(delivery.publicReference?.takeIf(String::isNotBlank) ?: delivery.deliveryCode, style = MaterialTheme.typography.bodySmall)
                     delivery.deliveryOption?.let { mode -> Text("${appText(deliveryModeName(mode.id))} · ${mode.etaMinMinutes}–${mode.etaMaxMinutes} min · ${formatCfa(mode.deliveryFeeCfa)}") }
                     delivery.relayDestination?.let { relay -> Text(listOfNotNull(relay.name, relay.neighborhood, relay.city).joinToString(" · ")) }
                     delivery.relayDepositedAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
@@ -173,7 +175,7 @@ private fun RelayPickupContent(orderId: String,
                 expired = true
             }
         }
-        Text(pickup.parcelId, style = MaterialTheme.typography.bodySmall)
+        Text(pickup.parcelReference?.takeIf(String::isNotBlank) ?: pickup.publicReference?.takeIf(String::isNotBlank) ?: pickup.parcelId, style = MaterialTheme.typography.bodySmall)
         Text(appText(Res.string.relay_pickup_identity))
         if (pickup.credentialState == "READY" && !expired) {
             Text(pickup.numericCode.orEmpty(), style = MaterialTheme.typography.headlineMedium)
@@ -212,6 +214,7 @@ private data class OrderHistoryRow(
     val lines: List<OrderedProduct>,
     val deliveries: List<CustomerDeliveryTracking> = emptyList(),
     val persistedOrder: Boolean = false,
+    val displayReference: String = id,
 )
 
 private fun customerDeliveryStatus(status: String) = when (status) {

@@ -64,7 +64,7 @@ internal fun CustomerReturnContent(
         if (failed) Text(appText(Res.string.returns_load_failed), color = MaterialTheme.colorScheme.error)
         if (submitFailed) Text(appText(Res.string.returns_request_failed), color = MaterialTheme.colorScheme.error)
         for (request in requests) {
-            Text(appText(Res.string.orders_return_reference) + " · " + request.id)
+            Text(appText(Res.string.orders_return_reference) + " · " + (request.publicReference?.takeIf(String::isNotBlank) ?: request.id))
             Text(appText(returnStatus(request.status)), style = MaterialTheme.typography.titleSmall)
             Text(request.reason)
             Text(request.requestedAt, style = MaterialTheme.typography.bodySmall)
@@ -85,7 +85,7 @@ internal fun CustomerReturnContent(
                 }) + request.inspectedAt?.let { " · " + it }.orEmpty())
             }
             request.refundInstruction?.let { instruction ->
-                Text(appText(Res.string.returns_refund_instruction) + " · " + instruction.id)
+                Text(appText(Res.string.returns_refund_instruction) + " · " + (instruction.publicReference?.takeIf(String::isNotBlank) ?: instruction.id))
                 Text(if (instruction.currency == "XOF") formatCfa(instruction.amountCfa) else "${instruction.amountCfa} ${instruction.currency}")
                 Text(if (instruction.status == "REQUESTED") appText(Res.string.returns_refund_instruction_recorded) else instruction.status)
                 Text(if (instruction.paymentStatus == "NOT_SUBMITTED") appText(Res.string.returns_refund_not_submitted) else instruction.paymentStatus)
@@ -97,7 +97,7 @@ internal fun CustomerReturnContent(
         val policy = eligibility
         if (!failed && policy != null && requests.isEmpty()) {
             if (policy.existingReturnId != null) {
-                Text(appText(Res.string.orders_return_reference) + " · " + policy.existingReturnId)
+                Text(appText(Res.string.orders_return_reference) + " · " + (policy.existingReturnReference?.takeIf(String::isNotBlank) ?: policy.existingReturnId))
                 Text(appText(Res.string.returns_refresh_existing))
             } else if (policy.eligible) {
                 policy.returnWindowEndsAt?.let { Text(appText(Res.string.returns_request_by) + " " + it) }

@@ -245,6 +245,7 @@ data class CurrentUser(
     val backendDisplayName: String? = null,
     val provider: String,
     val status: String,
+    val publicReference: String? = null,
 ) {
     val displayName: String
         get() = backendDisplayName?.takeIf { it.isNotBlank() }

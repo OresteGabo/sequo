@@ -56,11 +56,15 @@ class CheckoutHistoryClientTest {
                 assertTrue(client.orders("customer-fixture").isEmpty())
             }
             checkoutBody = "[${pending.replace("AWAITING_WEBHOOK", "COMPLETED")}]"
-            orderBody = "[$completed]"
+            orderBody = "[${completed.replace("\"id\":\"order-fixture\"", "\"id\":\"order-fixture\",\"publicReference\":\"C12-345-6E6\",\"checkoutReference\":\"H00-000-0TP\"")}]"
             val confirmedCheckout = client.checkouts("customer-fixture").single()
             val order = client.orders("customer-fixture").single()
             assertEquals("COMPLETED", confirmedCheckout.status)
             assertEquals(confirmedCheckout.checkoutId, order.order.checkoutId)
+            assertEquals("order-fixture", order.order.id)
+            assertEquals("C12-345-6E6", order.order.publicReference)
+            assertEquals("H00-000-0TP", order.order.checkoutReference)
+            assertNull(waiting.publicReference, "Legacy responses remain readable without invented references.")
             assertEquals("ACCEPTED_FOR_FULFILLMENT", order.order.orderStatus)
             assertTrue(order.deliveries.isEmpty(), "Legacy order reads need not invent a delivery record.")
             assertEquals(2400, order.order.totalCfa)

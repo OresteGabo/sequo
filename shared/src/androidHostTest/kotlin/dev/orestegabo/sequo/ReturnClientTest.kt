@@ -59,7 +59,7 @@ class ReturnClientTest {
         val bodies = mutableListOf<String>()
         var droppedOff = false
         var inspected = false
-        val canonical = """{"id":"canonical-return","orderId":"order-1","status":"AwaitingRelayDropoff","reason":"Package damaged",
+        val canonical = """{"id":"canonical-return","publicReference":"R98-765-4Q4","orderReference":"C12-345-6E6","orderId":"order-1","status":"AwaitingRelayDropoff","reason":"Package damaged",
             "requestedAt":"2026-11-08T10:00:00Z","dropoffMethod":"RELAY","instructions":"Bring the item to Fixture relay.",
             "returnPin":"654321","relayPoints":[{"id":"relay-1","name":"Fixture relay"}]}"""
         server.createContext("/api/returns") { exchange ->
@@ -85,6 +85,8 @@ class ReturnClientTest {
             }.statusCode)
             val saved = client.requestReturn("customer-fixture", "order-1", "stable-proposed-return", "Package damaged")
             assertEquals("canonical-return", saved.id)
+            assertEquals("R98-765-4Q4", saved.publicReference)
+            assertEquals("C12-345-6E6", saved.orderReference)
             assertEquals("AwaitingRelayDropoff", saved.status)
             assertEquals("654321", saved.returnPin)
             val expected = Json.parseToJsonElement("""{"orderId":"order-1","returnId":"stable-proposed-return","reason":"Package damaged"}""")
