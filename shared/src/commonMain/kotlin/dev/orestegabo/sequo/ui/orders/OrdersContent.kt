@@ -61,18 +61,23 @@ internal fun OrdersContent(
     var refresh by remember { mutableStateOf(0) }
     var checkouts by remember(sessionKey) { mutableStateOf(emptyList<CheckoutSummary>()) }
     var orders by remember(sessionKey) { mutableStateOf(emptyList<CustomerOrderDetails>()) }
-    var loading by remember { mutableStateOf(true) }
-    var failed by remember { mutableStateOf(false) }
+    var loading by remember(sessionKey) { mutableStateOf(true) }
+    var failed by remember(sessionKey) { mutableStateOf(false) }
     LaunchedEffect(refresh, sessionKey) {
         loading = true
         failed = false
+        checkouts = emptyList()
+        orders = emptyList()
         try {
             val savedCheckouts = loadCheckouts()
-            orders = loadOrders()
+            val savedOrders = loadOrders()
             checkouts = savedCheckouts
+            orders = savedOrders
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
+            checkouts = emptyList()
+            orders = emptyList()
             failed = true
         } finally {
             loading = false
