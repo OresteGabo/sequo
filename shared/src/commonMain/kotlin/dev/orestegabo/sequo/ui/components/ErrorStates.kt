@@ -1,5 +1,6 @@
 package dev.orestegabo.sequo.ui.components
 
+import dev.orestegabo.sequo.design.sequoBrandSymbolPainter
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,8 +42,6 @@ import dev.orestegabo.sequo.theme.SequoPrimary
 import dev.orestegabo.sequo.theme.SequoSecondary
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequo_icon_green
-
 internal enum class SequoErrorKind {
     Offline,
     Server,
@@ -96,7 +95,7 @@ internal fun SequoErrorPanel(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Image(
-                painter = painterResource(Res.drawable.sequo_icon_green),
+                painter = sequoBrandSymbolPainter(),
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)

@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.feature.splash
 
+import dev.orestegabo.sequo.design.sequoBrandWordmarkPainter
+import dev.orestegabo.sequo.design.sequoBrandSymbolPainter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,8 +42,6 @@ import dev.orestegabo.sequo.theme.SequoTheme
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.Res
-import sequo.shared.generated.resources.sequo_app_icon
-import sequo.shared.generated.resources.sequo_primary_dark
 import kotlin.math.max
 
 private const val SplashTimeoutMillis = 2_000L
@@ -80,7 +80,7 @@ fun SplashScreen(
                 .padding(horizontal = 34.dp),
         ) {
             Image(
-                painter = painterResource(Res.drawable.sequo_app_icon),
+                painter = sequoBrandSymbolPainter(),
                 contentDescription = "Sequo",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
@@ -88,7 +88,7 @@ fun SplashScreen(
             )
             Spacer(modifier = Modifier.height(14.dp))
             Image(
-                painter = painterResource(Res.drawable.sequo_primary_dark),
+                painter = sequoBrandWordmarkPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier

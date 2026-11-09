@@ -1,5 +1,6 @@
 package dev.orestegabo.sequo.ui.chrome
 
+import dev.orestegabo.sequo.design.sequoBrandSymbolPainter
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -245,7 +246,7 @@ internal fun SequoShoppingMark(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(Res.drawable.sequo_shopping_icon),
+            painter = sequoBrandSymbolPainter(),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize(),

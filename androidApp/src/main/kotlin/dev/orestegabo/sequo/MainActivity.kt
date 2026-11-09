@@ -169,7 +169,7 @@ class MainActivity : ComponentActivity() {
             @Suppress("DEPRECATION")
             android.app.Notification.Builder(this)
         }
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_sequo)
             .setContentTitle(title)
             .setContentText(body)
             .setContentIntent(openNotificationsPendingIntent)
