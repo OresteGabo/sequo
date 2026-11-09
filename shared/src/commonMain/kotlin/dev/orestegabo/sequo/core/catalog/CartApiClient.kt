@@ -47,7 +47,7 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
     suspend fun checkout(token: String, quote: CartQuote, paymentProvider: String): CheckoutSummary =
         client.post("/api/orders/checkouts") {
             bearerAuth(token)
-            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider, quote.relayPointId, quote.deliveryOption?.id))
+            setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider, quote.relayPointId, quote.deliveryOption?.id, quote.testOrderAvailable))
         }.body()
 
     suspend fun checkouts(token: String): List<CheckoutSummary> =
@@ -74,6 +74,10 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
             bearerAuth(token)
             setBody(CustomerReturnRequestBody(orderId, returnId, reason))
         }.body()
+
+    suspend fun confirmTestPayment(token:String,id:String): CheckoutSummary = client.post("/api/orders/checkouts/$id/test-payment") { bearerAuth(token) }.body()
+    suspend fun testDispatch(token:String,id:String): TestDispatchState = client.get("/api/orders/checkouts/$id/test-dispatch") { bearerAuth(token) }.body()
+    suspend fun assignTestRider(token:String,id:String,rider:String): TestDispatchState = client.post("/api/orders/checkouts/$id/test-dispatch") { bearerAuth(token);setBody(TestRiderAssignment(rider)) }.body()
 
     suspend fun demoJourney(token: String, checkoutId: String): DemoJourneyState {
         check(dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO")
@@ -141,11 +145,12 @@ internal data class CartQuote(
     val subscriptionDiscountCfa: Int = 0,
     val loyaltyDiscountCfa: Int = 0,
     val referralCreditAppliedCfa: Int = 0,
+    val testOrderAvailable: Boolean = false,
 )
 
 
 @Serializable
-private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String, val relayPointId: String? = null, val deliveryMode: String? = null)
+private data class CartCheckoutRequest(val addressId: String, val quoteRevision: String, val paymentProvider: String, val relayPointId: String? = null, val deliveryMode: String? = null, val testOrder: Boolean = false)
 
 @Serializable
 internal data class CheckoutSummary(
@@ -158,6 +163,7 @@ internal data class CheckoutSummary(
     val lines: List<OrderedProduct>,
     val publicReference: String? = null,
     val orderReference: String? = null,
+    val testOrder: Boolean = false,
 )
 
 @Serializable
@@ -185,6 +191,7 @@ internal data class CustomerOrder(
     val createdAt: String,
     val publicReference: String? = null,
     val checkoutReference: String? = null,
+    val testOrder: Boolean = false,
 )
 
 @Serializable
@@ -241,3 +248,7 @@ internal data class CustomerBenefits(val subscriptionActive: Boolean,
     val subscriptionStatus: String? = null, val planName: String? = null, val monthlyPriceCfa: Int? = null,
     val deliveryDiscountPercent: Int = 0, val loyaltyEnabled: Boolean = false,
     val availableReferralCreditCfa: Int = 0, val currency: String = "XOF", val status: String)
+
+@Serializable internal data class TestDispatchRider(val id:String,val name:String)
+@Serializable internal data class TestDispatchState(val ready:Boolean,val assigned:Boolean,val message:String,val riders:List<TestDispatchRider> = emptyList())
+@Serializable private data class TestRiderAssignment(val riderId:String)

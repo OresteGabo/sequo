@@ -1,0 +1,16 @@
+{
+  "credentialLoginsVerified": 27,
+  "checkoutId": "cart-c64996602d2d948946edf73c05557d5fbd4f3dbd2bf89ea5ef7b2f19e7dc9ff3",
+  "orderId": "SQ-cart-c64996602d2d948946edf73c05557d5fbd4f3dbd2bf89ea5ef7b2f19e7dc9ff3",
+  "missionId": "e8688ae6-a2e3-4a94-bfd3-9537d1ffa333",
+  "status": "DELIVERED",
+  "relayStatus": "RELEASED_BY_RELAY",
+  "merchantPayouts": 0,
+  "riderSettlements": 0,
+  "ledgerEntries": 0,
+  "providerReceipts": 0,
+  "benefitApplications": 0,
+  "slotReleased": true,
+  "verifiedAt": "2026-11-09T23:28:38.049110+00:00",
+  "note": "HTTP/service verification with explicitly scripted test custody, not a human physical delivery."
+}

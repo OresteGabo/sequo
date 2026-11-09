@@ -24,6 +24,11 @@ class AuthApiClient(
     private val deviceIdProvider: () -> String,
     private val environment: String = NetworkConfig.Environment,
 ) {
+    suspend fun testAccountsAvailable(): Boolean = httpClient.get("${baseUrl.trimEnd('/')}/api/auth/test-accounts").body<TestCapability>().enabled
+    suspend fun loginWithTestAccount(username:String,password:String): AuthSession = httpClient.post("${baseUrl.trimEnd('/')}/api/auth/test-accounts/session") {
+        setBody(TestLoginRequest(username,password,"CUSTOMER",TestLoginDevice(deviceIdProvider(),"SEQUO_APP")))
+    }.body()
+
     suspend fun loginWithDemo(accessCode: String): AuthSession {
         check(environment == "DEMO") { "Demo sign-in is unavailable in this build." }
         return httpClient.post("${baseUrl.trimEnd('/')}/api/auth/demo/session") {
@@ -404,3 +409,7 @@ internal fun allowsLocalFixtureAccess(environment: String, baseUrl: String): Boo
 
 @Serializable
 private data class DemoSessionRequest(val accessCode: String, val deviceId: String)
+
+@Serializable private data class TestCapability(val enabled:Boolean=false)
+@Serializable private data class TestLoginRequest(val username:String,val password:String,val appFamily:String,val device:TestLoginDevice)
+@Serializable private data class TestLoginDevice(val deviceId:String,val appSource:String)

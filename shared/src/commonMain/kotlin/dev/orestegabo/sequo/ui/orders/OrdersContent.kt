@@ -55,6 +55,9 @@ internal fun OrdersContent(
     loadCheckouts: suspend () -> List<CheckoutSummary>,
     loadOrders: suspend () -> List<CustomerOrderDetails>,
     sessionKey: String?,
+    confirmTestPayment: suspend (String) -> CheckoutSummary,
+    loadTestDispatch: suspend (String) -> dev.orestegabo.sequo.core.catalog.TestDispatchState,
+    assignTestRider: suspend (String,String) -> dev.orestegabo.sequo.core.catalog.TestDispatchState,
     loadDemoJourney: suspend (String) -> dev.orestegabo.sequo.core.catalog.DemoJourneyState,
     advanceDemoJourney: suspend (String, String, String?) -> dev.orestegabo.sequo.core.catalog.DemoJourneyState,
     loadRelayPickups: suspend (String) -> List<dev.orestegabo.sequo.core.catalog.CustomerRelayPickup>,
@@ -94,14 +97,14 @@ internal fun OrdersContent(
     val completedCheckoutIds = orders.map { it.order.checkoutId }.toSet()
     val pendingRows = checkouts.filter { it.checkoutId !in completedCheckoutIds }.map {
         OrderHistoryRow(it.checkoutId, it.status, it.totalCfa, it.destinationLabel, it.createdAt, it.lines,
-            displayReference = it.publicReference?.takeIf(String::isNotBlank) ?: it.checkoutId)
+            displayReference = it.publicReference?.takeIf(String::isNotBlank) ?: it.checkoutId, testOrder = it.testOrder)
     }
     val orderRows = orders.map { details ->
         val order = details.order
         val destination = details.deliveries.mapNotNull { it.relayDestination?.name }.distinct().takeIf { it.isNotEmpty() }?.joinToString(" / ")
             ?: checkouts.firstOrNull { it.checkoutId == order.checkoutId }?.destinationLabel
         OrderHistoryRow(order.id, order.orderStatus, order.totalCfa, destination, order.createdAt, details.lines, details.deliveries, persistedOrder = true,
-            displayReference = order.publicReference?.takeIf(String::isNotBlank) ?: order.id)
+            displayReference = order.publicReference?.takeIf(String::isNotBlank) ?: order.id, testOrder = order.testOrder)
     }
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
     if (!loading && !failed && rows.isEmpty()) {
@@ -136,6 +139,10 @@ internal fun OrdersContent(
                     it.optionLabel?.takeIf(String::isNotBlank)?.let { label ->
                         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                }
+                if(row.testOrder) {
+                    val checkoutId=orders.firstOrNull {it.order.id==row.id}?.order?.checkoutId ?: row.id
+                    TestOrderControls(checkoutId,row.persistedOrder,row.status,refresh,confirmTestPayment,loadTestDispatch,assignTestRider,onChanged={refresh++})
                 }
                 if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
                     val checkoutId = orders.firstOrNull { it.order.id == row.id }?.order?.checkoutId ?: row.id
@@ -239,6 +246,7 @@ private data class OrderHistoryRow(
     val deliveries: List<CustomerDeliveryTracking> = emptyList(),
     val persistedOrder: Boolean = false,
     val displayReference: String = id,
+    val testOrder: Boolean = false,
 )
 
 private fun customerDeliveryStatus(status: String) = when (status) {

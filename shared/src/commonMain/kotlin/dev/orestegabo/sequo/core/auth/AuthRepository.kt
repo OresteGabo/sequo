@@ -11,6 +11,11 @@ class AuthRepository(
 ) {
     private val sessionMutation = Mutex()
 
+    suspend fun testAccountsAvailable() = authApiClient.testAccountsAvailable()
+    suspend fun loginWithTestAccount(username:String,password:String): AuthSession = sessionMutation.withLock {
+        authApiClient.loginWithTestAccount(username,password).also { saveSession(it) }
+    }
+
     suspend fun loginWithDemo(accessCode: String): AuthSession = sessionMutation.withLock {
         authApiClient.loginWithDemo(accessCode).also { saveSession(it) }
     }

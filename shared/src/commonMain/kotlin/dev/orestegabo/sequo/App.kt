@@ -287,6 +287,14 @@ private fun SequoApp(
                 onLanguageChange = onLanguageChange,
                 emailAuthInProgress = emailAuthInProgress,
                 localFixtureAccounts = localFixtureAccounts,
+                testAccountsAvailable = authRepository::testAccountsAvailable,
+                onTestAccountLogin = { username, password ->
+                    clearSuggestedAccountSession()
+                    authRepository.loginWithTestAccount(username,password)
+                    val user=checkNotNull(authRepository.currentUser())
+                    authRepository.rememberUser(user)
+                    currentUser=user;rememberedUser=user;isAuthenticated=true;guestMode=false
+                },
                 onDemoLogin = { code ->
                     if (emailAuthInProgress || googleSignInInProgress || appleSignInInProgress) return@AuthScreen
                     scope.launch {

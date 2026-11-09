@@ -277,6 +277,8 @@ internal fun BasketContent(
                 Text("DEMO · No charge. After submitting, open Orders to simulate payment and delivery.", color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.bodyMedium)
             }
             var provider by remember { mutableStateOf("yas_togo") }
+            if (reviewedQuote.testOrderAvailable) Text("TEST · No charge or wallet request. Confirm the test payment from Orders after submitting.", color=MaterialTheme.colorScheme.primary)
+            if (!reviewedQuote.testOrderAvailable) {
             for ((id, label) in listOf("yas_togo" to "Mixx by Yas", "moov_africa" to "Flooz")) {
                 val configuration = providers?.firstOrNull { it.providerId == id }
                 Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface,
@@ -298,6 +300,7 @@ internal fun BasketContent(
                         }
                     }
                 }
+            }
             }
             Button(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
@@ -330,7 +333,7 @@ internal fun BasketContent(
                     }
                 },
             ) {
-                Text(appText(if (submitting) Res.string.checkout_submitting else Res.string.checkout_submit))
+                Text(if(reviewedQuote.testOrderAvailable && !submitting) "Place test order · no charge" else appText(if (submitting) Res.string.checkout_submitting else Res.string.checkout_submit))
             }
         }
     }

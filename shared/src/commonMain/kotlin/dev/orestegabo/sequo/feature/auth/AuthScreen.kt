@@ -104,6 +104,8 @@ fun AuthScreen(
     emailAuthInProgress: Boolean = false,
     localFixtureAccounts: List<LocalFixtureAccount> = emptyList(),
     onDemoLogin: (String) -> Unit = {},
+    testAccountsAvailable: suspend () -> Boolean = { false },
+    onTestAccountLogin: suspend (String,String) -> Unit = { _,_ -> },
     onLocalFixtureLogin: (LocalFixtureAccount) -> Unit = {},
     rememberedUser: CurrentUser? = null,
     onContinueRememberedUser: () -> Unit = {},
@@ -143,6 +145,8 @@ fun AuthScreen(
             onLanguageChange = onLanguageChange,
             localFixtureAccounts = localFixtureAccounts,
             onDemoLogin = onDemoLogin,
+            testAccountsAvailable = testAccountsAvailable,
+            onTestAccountLogin = onTestAccountLogin,
             onLocalFixtureLogin = onLocalFixtureLogin,
             localFixtureBusy = emailAuthInProgress || googleSignInInProgress || appleSignInInProgress,
             onAppleLogin = onAppleLogin,
@@ -163,6 +167,8 @@ fun AuthScreen(
 
 @Composable
 private fun SocialAuthPage(
+    testAccountsAvailable: suspend () -> Boolean,
+    onTestAccountLogin: suspend (String,String) -> Unit,
     onDemoLogin: (String) -> Unit,
     localFixtureAccounts: List<LocalFixtureAccount>,
     onLocalFixtureLogin: (LocalFixtureAccount) -> Unit,
@@ -245,6 +251,7 @@ private fun SocialAuthPage(
                     }
                 }
 
+                TestAccountLoginEntry(testAccountsAvailable,onTestAccountLogin,language==AppLanguage.French,Modifier.fillMaxWidth())
                 GuestBrowseLink(onClick = onSkipAuth)
 
                 TermsLine(onPrivacyTermsClick = onPrivacyTermsClick)
