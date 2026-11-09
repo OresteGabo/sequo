@@ -192,15 +192,18 @@ internal fun ProductLine(
 ) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProductImage(product, onClick = onProductClick, modifier = Modifier.size(80.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(product.name, modifier = Modifier.clickable(onClick = onProductClick),
-                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(product.optionHint.takeIf { it.isNotBlank() } ?: appCatalogText(productSubcategory(product)),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val imageSize = (maxWidth * .4f).coerceIn(104.dp, 140.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                ProductImage(product, onClick = onProductClick, modifier = Modifier.size(imageSize))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(product.name, modifier = Modifier.clickable(onClick = onProductClick),
+                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                        maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    Text(product.optionHint.takeIf { it.isNotBlank() } ?: appCatalogText(productSubcategory(product)),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3, overflow = TextOverflow.Ellipsis)
+                }
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
