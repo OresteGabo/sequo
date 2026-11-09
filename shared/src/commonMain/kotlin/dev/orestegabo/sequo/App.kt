@@ -271,6 +271,27 @@ private fun SequoApp(
                 onLanguageChange = onLanguageChange,
                 emailAuthInProgress = emailAuthInProgress,
                 localFixtureAccounts = localFixtureAccounts,
+                onDemoLogin = { code ->
+                    if (emailAuthInProgress || googleSignInInProgress || appleSignInInProgress) return@AuthScreen
+                    scope.launch {
+                        emailAuthInProgress = true
+                        authErrorMessage = null
+                        try {
+                            clearSuggestedAccountSession()
+                            authRepository.loginWithDemo(code)
+                            val user = checkNotNull(authRepository.currentUser())
+                            authRepository.rememberUser(user)
+                            currentUser = user
+                            rememberedUser = user
+                            isAuthenticated = true
+                            guestMode = false
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            authErrorMessage = userFacingAuthError(error, emailSignInFailed, language)
+                        } finally { emailAuthInProgress = false }
+                    }
+                },
                 onLocalFixtureLogin = { account ->
                     if (emailAuthInProgress || googleSignInInProgress || appleSignInInProgress) return@AuthScreen
                     scope.launch {

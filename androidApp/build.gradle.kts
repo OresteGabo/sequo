@@ -48,7 +48,7 @@ android {
     buildTypes {
         debug {
             if (sequoAcceptance) {
-                applicationIdSuffix = if (sequoEnvironment == "LOCAL_FIXTURE") ".fixture" else ".staging"
+                applicationIdSuffix = when(sequoEnvironment) { "LOCAL_FIXTURE" -> ".fixture"; "DEMO" -> ".demo"; else -> ".staging" }
                 versionNameSuffix = "-${sequoReleaseId ?: "acceptance"}"
             }
             manifestPlaceholders["sequoCleartextAllowed"] = (sequoEnvironment == "LOCAL_FIXTURE").toString()

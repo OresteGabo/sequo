@@ -55,6 +55,8 @@ internal fun OrdersContent(
     loadCheckouts: suspend () -> List<CheckoutSummary>,
     loadOrders: suspend () -> List<CustomerOrderDetails>,
     sessionKey: String?,
+    loadDemoJourney: suspend (String) -> dev.orestegabo.sequo.core.catalog.DemoJourneyState,
+    advanceDemoJourney: suspend (String, String, String?) -> dev.orestegabo.sequo.core.catalog.DemoJourneyState,
     loadRelayPickups: suspend (String) -> List<dev.orestegabo.sequo.core.catalog.CustomerRelayPickup>,
     renewRelayPickup: suspend (String, String) -> Unit,
     loadReturnEligibility: suspend (String) -> CustomerReturnEligibility,
@@ -134,6 +136,10 @@ internal fun OrdersContent(
                     it.optionLabel?.takeIf(String::isNotBlank)?.let { label ->
                         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                }
+                if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
+                    val checkoutId = orders.firstOrNull { it.order.id == row.id }?.order?.checkoutId ?: row.id
+                    DemoOrderControls(checkoutId, refresh, loadDemoJourney, advanceDemoJourney, onChanged = { refresh++ })
                 }
                 TextButton(onClick = { expanded = !expanded }) {
                     Text(appText(if (expanded) Res.string.orders_hide_detail else Res.string.orders_detail_title))

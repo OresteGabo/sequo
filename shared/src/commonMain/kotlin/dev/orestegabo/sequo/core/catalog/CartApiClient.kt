@@ -75,6 +75,18 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
             setBody(CustomerReturnRequestBody(orderId, returnId, reason))
         }.body()
 
+    suspend fun demoJourney(token: String, checkoutId: String): DemoJourneyState {
+        check(dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO")
+        return client.get("/api/demo/checkouts/$checkoutId") { bearerAuth(token) }.body()
+    }
+
+    suspend fun advanceDemo(token: String, checkoutId: String, action: String, riderId: String?): DemoJourneyState {
+        check(dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO")
+        return client.post("/api/demo/checkouts/$checkoutId/advance") {
+            bearerAuth(token); setBody(DemoJourneyStep(action, riderId))
+        }.body()
+    }
+
     fun close() = client.close()
 }
 

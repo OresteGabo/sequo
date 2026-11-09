@@ -11,6 +11,10 @@ class AuthRepository(
 ) {
     private val sessionMutation = Mutex()
 
+    suspend fun loginWithDemo(accessCode: String): AuthSession = sessionMutation.withLock {
+        authApiClient.loginWithDemo(accessCode).also { saveSession(it) }
+    }
+
     suspend fun localFixtureAccounts(): List<LocalFixtureAccount> = authApiClient.localFixtureAccounts()
 
     suspend fun loginWithLocalFixture(accountKey: String): AuthSession = sessionMutation.withLock {

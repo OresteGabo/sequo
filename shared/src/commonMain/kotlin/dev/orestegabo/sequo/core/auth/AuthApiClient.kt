@@ -24,6 +24,13 @@ class AuthApiClient(
     private val deviceIdProvider: () -> String,
     private val environment: String = NetworkConfig.Environment,
 ) {
+    suspend fun loginWithDemo(accessCode: String): AuthSession {
+        check(environment == "DEMO") { "Demo sign-in is unavailable in this build." }
+        return httpClient.post("${baseUrl.trimEnd('/')}/api/auth/demo/session") {
+            setBody(DemoSessionRequest(accessCode.trim(), deviceIdProvider()))
+        }.body()
+    }
+
     suspend fun localFixtureAccounts(): List<LocalFixtureAccount> {
         if (!allowsLocalFixtureAccess(environment, baseUrl)) return emptyList()
         val access = httpClient.get("${baseUrl.trimEnd('/')}/api/auth/development-access") {
@@ -394,3 +401,6 @@ internal fun allowsLocalFixtureAccess(environment: String, baseUrl: String): Boo
         url.protocol.name in setOf("http", "https") && url.user.isNullOrEmpty() && url.password.isNullOrEmpty() &&
         url.encodedPath in setOf("", "/") && url.parameters.isEmpty() && url.fragment.isEmpty()
 }.getOrDefault(false)
+
+@Serializable
+private data class DemoSessionRequest(val accessCode: String, val deviceId: String)

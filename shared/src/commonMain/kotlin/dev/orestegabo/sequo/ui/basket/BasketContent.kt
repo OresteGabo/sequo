@@ -273,6 +273,9 @@ internal fun BasketContent(
             }
             }
             val reviewedQuote = it
+            if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
+                Text("DEMO · No charge. After submitting, open Orders to simulate payment and delivery.", color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.bodyMedium)
+            }
             var provider by remember { mutableStateOf("yas_togo") }
             for ((id, label) in listOf("yas_togo" to "Mixx by Yas", "moov_africa" to "Flooz")) {
                 val configuration = providers?.firstOrNull { it.providerId == id }

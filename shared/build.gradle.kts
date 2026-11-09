@@ -67,7 +67,7 @@ require(sequoOverrides.values.all { it == null } || sequoOverrides.values.all { 
 val sequoApiBaseUrl = sequoOverrides["sequoApiBaseUrl"]?.trimEnd('/') ?: "https://api.sequoservice.com"
 val sequoReleaseId = sequoOverrides["sequoReleaseId"] ?: "development"
 val sequoEnvironment = sequoOverrides["sequoEnvironment"] ?: "PRODUCTION"
-require(sequoEnvironment in setOf("PRODUCTION", "STAGING", "LOCAL_FIXTURE")) { "Unsupported sequoEnvironment." }
+require(sequoEnvironment in setOf("PRODUCTION", "STAGING", "LOCAL_FIXTURE", "DEMO")) { "Unsupported sequoEnvironment." }
 require(sequoReleaseId.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,79}"))) { "Invalid sequoReleaseId." }
 val sequoTarget = runCatching { URI(sequoApiBaseUrl) }.getOrElse { error("Invalid sequoApiBaseUrl.") }
 require(sequoTarget.host != null && sequoTarget.rawUserInfo == null && sequoTarget.rawQuery == null &&

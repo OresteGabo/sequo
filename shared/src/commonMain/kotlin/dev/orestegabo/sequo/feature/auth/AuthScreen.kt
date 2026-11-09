@@ -53,6 +53,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -102,6 +103,7 @@ fun AuthScreen(
     onLanguageChange: (AppLanguage) -> Unit,
     emailAuthInProgress: Boolean = false,
     localFixtureAccounts: List<LocalFixtureAccount> = emptyList(),
+    onDemoLogin: (String) -> Unit = {},
     onLocalFixtureLogin: (LocalFixtureAccount) -> Unit = {},
     rememberedUser: CurrentUser? = null,
     onContinueRememberedUser: () -> Unit = {},
@@ -140,6 +142,7 @@ fun AuthScreen(
             language = language,
             onLanguageChange = onLanguageChange,
             localFixtureAccounts = localFixtureAccounts,
+            onDemoLogin = onDemoLogin,
             onLocalFixtureLogin = onLocalFixtureLogin,
             localFixtureBusy = emailAuthInProgress || googleSignInInProgress || appleSignInInProgress,
             onAppleLogin = onAppleLogin,
@@ -160,6 +163,7 @@ fun AuthScreen(
 
 @Composable
 private fun SocialAuthPage(
+    onDemoLogin: (String) -> Unit,
     localFixtureAccounts: List<LocalFixtureAccount>,
     onLocalFixtureLogin: (LocalFixtureAccount) -> Unit,
     localFixtureBusy: Boolean,
@@ -226,6 +230,9 @@ private fun SocialAuthPage(
                     onSequoLogin = onSequoLogin,
                 )
 
+                if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
+                    DemoLoginPanel(language, localFixtureBusy, onDemoLogin)
+                }
                 if (localFixtureAccounts.isNotEmpty()) {
                     Text(appText(Res.string.auth_local_practice), style = MaterialTheme.typography.labelMedium,
                         color = colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
@@ -2124,3 +2131,18 @@ private val AppleIcon: ImageVector
     }
 
 private var _appleIcon: ImageVector? = null
+
+@Composable
+private fun DemoLoginPanel(language: AppLanguage, busy: Boolean, onLogin: (String) -> Unit) {
+    var code by remember { mutableStateOf("") }
+    val french = language == AppLanguage.French
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Text(if(french) "SEQUO DEMO · aucun paiement reel" else "SEQUO DEMO · no real payments", fontWeight = FontWeight.Bold)
+        Text(if(french) "120 produits fictifs. Entrez votre code prive pour commander et essayer chaque etape." else "120 sample products. Enter your private code to order and try every step.", style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(value=code,onValueChange={code=it},singleLine=true,label={Text(if(french) "Code demo" else "Demo access code")},
+            visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation(),modifier=Modifier.fillMaxWidth(),enabled=!busy)
+        Button(onClick={onLogin(code)},enabled=!busy && code.isNotBlank(),modifier=Modifier.fillMaxWidth()) {
+            Text(if(french) "Entrer dans la demo" else "Enter demo")
+        }
+    }
+}
