@@ -210,6 +210,7 @@ private fun SocialAuthPage(
                     )
                 }
 
+                if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment != "DEMO") {
                 Text(
                     text = appText(Res.string.auth_sign_in_with),
                     color = colorScheme.onSurfaceVariant,
@@ -229,6 +230,8 @@ private fun SocialAuthPage(
                     onPasskeyLogin = onPasskeyLogin,
                     onSequoLogin = onSequoLogin,
                 )
+
+                }
 
                 if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
                     DemoLoginPanel(language, localFixtureBusy, onDemoLogin)
