@@ -316,8 +316,6 @@ internal fun ShopTypeRail(
         types = types,
         selectedTypeKey = selectedTypeKey,
         onTypeSelected = onTypeSelected,
-        onSeeAll = {},
-        action = null,
     )
 }
 
@@ -326,28 +324,11 @@ internal fun MarketplaceCategorySection(
     types: List<SequoShopType>,
     selectedTypeKey: String,
     onTypeSelected: (String) -> Unit,
-    onSeeAll: () -> Unit = {},
-    action: String? = "See all",
     pinnedCategoryKeys: List<String> = emptyList(),
     onTogglePinned: (String) -> Unit = {},
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val actionLabel = when (action) {
-        null -> null
-        "See all" -> appText(Res.string.home_see_all)
-        else -> action
-    }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        MarketplaceSectionHeader(
-            title = appText(Res.string.home_categories),
-            action = actionLabel?.let { if (expanded) appText(Res.string.home_less) else it },
-            onAction = {
-                expanded = !expanded
-                if (expanded) {
-                    onSeeAll()
-                }
-            },
-        )
+        MarketplaceSectionHeader(title = appText(Res.string.home_categories), action = null, onAction = {})
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -365,29 +346,7 @@ internal fun MarketplaceCategorySection(
             }
             Spacer(Modifier.width(2.dp))
         }
-        if (expanded) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                types.chunked(3).forEach { rowTypes ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        rowTypes.forEach { type ->
-                            val pinned = type.key in pinnedCategoryKeys
-                            MarketplaceCategoryBubble(
-                                type = type,
-                                selected = type.key == selectedTypeKey,
-                                pinned = pinned,
-                                canTogglePinned = pinned || pinnedCategoryKeys.size < 3,
-                                onClick = { onTypeSelected(type.key) },
-                                onTogglePinned = { onTogglePinned(type.key) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        repeat(3 - rowTypes.size) {
-                            Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
+
     }
 }
 
