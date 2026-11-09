@@ -1,0 +1,632 @@
+{
+  "vendorOwners": [
+    {
+      "merchant_id": "demo-v1-shop-bistro",
+      "user_id": "demo-v1-shop-bistro-owner",
+      "display_name": "[TEST] Yawa Afi — vendeur bistro"
+    },
+    {
+      "merchant_id": "demo-v1-shop-boissons",
+      "user_id": "demo-v1-shop-boissons-owner",
+      "display_name": "[TEST] Dede Akou — vendeur boissons"
+    },
+    {
+      "merchant_id": "demo-v1-shop-essentiels",
+      "user_id": "demo-v1-shop-essentiels-owner",
+      "display_name": "[TEST] Eyram Dede — vendeur essentiels"
+    },
+    {
+      "merchant_id": "demo-v1-shop-grains",
+      "user_id": "demo-v1-shop-grains-owner",
+      "display_name": "[TEST] Ama Esi — vendeur grains"
+    },
+    {
+      "merchant_id": "demo-v1-shop-maison",
+      "user_id": "demo-v1-shop-maison-owner",
+      "display_name": "[TEST] Akossua Ama — vendeur maison"
+    },
+    {
+      "merchant_id": "demo-v1-shop-marche",
+      "user_id": "demo-v1-shop-marche-owner",
+      "display_name": "[TEST] Mawuli Koffi — vendeur marche"
+    },
+    {
+      "merchant_id": "demo-v1-shop-mode",
+      "user_id": "demo-v1-shop-mode-owner",
+      "display_name": "[TEST] Afi Yawa — vendeur mode"
+    },
+    {
+      "merchant_id": "demo-v1-shop-pas",
+      "user_id": "demo-v1-shop-pas-owner",
+      "display_name": "[TEST] Sena Kossi — vendeur pas"
+    },
+    {
+      "merchant_id": "demo-v1-shop-petits",
+      "user_id": "demo-v1-shop-petits-owner",
+      "display_name": "[TEST] Komlan Eyram — vendeur petits"
+    },
+    {
+      "merchant_id": "demo-v1-shop-saveurs",
+      "user_id": "demo-v1-shop-saveurs-owner",
+      "display_name": "[TEST] Kossi Sena — vendeur saveurs"
+    },
+    {
+      "merchant_id": "demo-v1-shop-tech",
+      "user_id": "demo-v1-shop-tech-owner",
+      "display_name": "[TEST] Esso Mawuli — vendeur tech"
+    },
+    {
+      "merchant_id": "demo-v1-shop-tissus",
+      "user_id": "demo-v1-shop-tissus-owner",
+      "display_name": "[TEST] Yao Komlan — vendeur tissus"
+    }
+  ],
+  "staff": [
+    {
+      "id": "live-test-v1-vendor-staff-1-membership",
+      "user_id": "live-test-v1-vendor-staff-1",
+      "merchant_id": "demo-v1-shop-bistro",
+      "role_code": "MERCHANT_STAFF"
+    },
+    {
+      "id": "live-test-v1-vendor-staff-2-membership",
+      "user_id": "live-test-v1-vendor-staff-2",
+      "merchant_id": "demo-v1-shop-saveurs",
+      "role_code": "MERCHANT_STAFF"
+    },
+    {
+      "id": "live-test-v1-vendor-staff-3-membership",
+      "user_id": "live-test-v1-vendor-staff-3",
+      "merchant_id": "demo-v1-shop-grains",
+      "role_code": "MERCHANT_STAFF"
+    },
+    {
+      "id": "live-test-v1-vendor-staff-4-membership",
+      "user_id": "live-test-v1-vendor-staff-4",
+      "merchant_id": "demo-v1-shop-marche",
+      "role_code": "MERCHANT_STAFF"
+    }
+  ],
+  "hubs": [
+    {
+      "id": "live-test-v1-hub-adidogome",
+      "operator_user_id": "live-test-v1-hub-adidogome-operator",
+      "name": "[TEST] SequoHub Adidogome",
+      "city": "Lome",
+      "neighborhood": "Adidogome",
+      "latitude": 6.1945,
+      "longitude": 1.168
+    },
+    {
+      "id": "live-test-v1-hub-agoe",
+      "operator_user_id": "live-test-v1-hub-agoe-operator",
+      "name": "[TEST] SequoHub Agoe",
+      "city": "Lome",
+      "neighborhood": "Agoe",
+      "latitude": 6.2445,
+      "longitude": 1.212
+    },
+    {
+      "id": "live-test-v1-hub-assigame",
+      "operator_user_id": "live-test-v1-hub-assigame-operator",
+      "name": "[TEST] SequoHub Assigame",
+      "city": "Lome",
+      "neighborhood": "Assigame",
+      "latitude": 6.1256,
+      "longitude": 1.2254
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota",
+      "operator_user_id": "live-test-v1-hub-be-kpota-operator",
+      "name": "[TEST] SequoHub Be-Kpota",
+      "city": "Lome",
+      "neighborhood": "Be-Kpota",
+      "latitude": 6.1675,
+      "longitude": 1.262
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe",
+      "operator_user_id": "live-test-v1-hub-hedzranawoe-operator",
+      "name": "[TEST] SequoHub Hedzranawoe",
+      "city": "Lome",
+      "neighborhood": "Hedzranawoe",
+      "latitude": 6.187,
+      "longitude": 1.251
+    },
+    {
+      "id": "live-test-v1-hub-tokoin",
+      "operator_user_id": "live-test-v1-hub-tokoin-operator",
+      "name": "[TEST] SequoHub Tokoin",
+      "city": "Lome",
+      "neighborhood": "Tokoin",
+      "latitude": 6.1725,
+      "longitude": 1.2314
+    }
+  ],
+  "grids": [
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a",
+      "relay_point_id": "live-test-v1-hub-adidogome"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b",
+      "relay_point_id": "live-test-v1-hub-adidogome"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a",
+      "relay_point_id": "live-test-v1-hub-agoe"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b",
+      "relay_point_id": "live-test-v1-hub-agoe"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a",
+      "relay_point_id": "live-test-v1-hub-assigame"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b",
+      "relay_point_id": "live-test-v1-hub-assigame"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a",
+      "relay_point_id": "live-test-v1-hub-be-kpota"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b",
+      "relay_point_id": "live-test-v1-hub-be-kpota"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a",
+      "relay_point_id": "live-test-v1-hub-tokoin"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b",
+      "relay_point_id": "live-test-v1-hub-tokoin"
+    }
+  ],
+  "slots": [
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a-1",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-A1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a-2",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-A2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a-3",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-A3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a-4",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-A4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a-5",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-A5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-a-6",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-A6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b-1",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-B1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b-2",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-B2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b-3",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-B3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b-4",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-B4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b-5",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-B5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-adidogome-grid-b-6",
+      "relay_point_id": "live-test-v1-hub-adidogome",
+      "locker_code": "TEST-B6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a-1",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-A1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a-2",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-A2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a-3",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-A3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a-4",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-A4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a-5",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-A5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-a-6",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-A6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b-1",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-B1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b-2",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-B2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b-3",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-B3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b-4",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-B4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b-5",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-B5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-agoe-grid-b-6",
+      "relay_point_id": "live-test-v1-hub-agoe",
+      "locker_code": "TEST-B6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a-1",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-A1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a-2",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-A2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a-3",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-A3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a-4",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-A4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a-5",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-A5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-a-6",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-A6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b-1",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-B1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b-2",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-B2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b-3",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-B3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b-4",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-B4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b-5",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-B5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-assigame-grid-b-6",
+      "relay_point_id": "live-test-v1-hub-assigame",
+      "locker_code": "TEST-B6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a-1",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-A1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a-2",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-A2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a-3",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-A3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a-4",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-A4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a-5",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-A5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-a-6",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-A6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b-1",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-B1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b-2",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-B2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b-3",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-B3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b-4",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-B4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b-5",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-B5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-be-kpota-grid-b-6",
+      "relay_point_id": "live-test-v1-hub-be-kpota",
+      "locker_code": "TEST-B6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a-1",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-A1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a-2",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-A2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a-3",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-A3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a-4",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-A4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a-5",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-A5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-a-6",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-A6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b-1",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-B1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b-2",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-B2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b-3",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-B3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b-4",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-B4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b-5",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-B5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-hedzranawoe-grid-b-6",
+      "relay_point_id": "live-test-v1-hub-hedzranawoe",
+      "locker_code": "TEST-B6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a-1",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-A1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a-2",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-A2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a-3",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-A3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a-4",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-A4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a-5",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-A5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-a-6",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-A6",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b-1",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-B1",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b-2",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-B2",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b-3",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-B3",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b-4",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-B4",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b-5",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-B5",
+      "status": "AVAILABLE"
+    },
+    {
+      "id": "live-test-v1-hub-tokoin-grid-b-6",
+      "relay_point_id": "live-test-v1-hub-tokoin",
+      "locker_code": "TEST-B6",
+      "status": "AVAILABLE"
+    }
+  ],
+  "verifiedAt": "2026-11-09T22:37:54.541315+00:00",
+  "note": "Fictional records only; normal authentication and parcel rules apply. Logical storage slots, not physical hardware."
+}

@@ -11,3 +11,11 @@ Images are now served independently by the normal HTTPS host under `/test-catalo
 Normal payment validation, merchant account scoping, dispatch and photo requirements still apply. This catalog import does not connect wallet providers or enable synthetic payment confirmation in the normal app. Food listings requiring camera evidence need genuine seller capture before ordinary checkout can accept them.
 
 For cleanup, first unpublish the manifest's products/storefronts and disable unused test rider records. Preserve any resulting real order references and history; do not blindly delete merchant/user rows referenced by orders or audit trails. Hard deletion can be reviewed when testing is finished.
+
+## Vendor profiles and relay hubs
+
+The follow-up live dataset completes the twelve shops' named vendor-owner profiles and adds four scoped vendor staff profiles. Six `[TEST] SequoHub` relay points are configured in Tokoin, Assigame, Adidogome, Hedzranawoe, Agoe and Be-Kpota, each with its own assigned `RELAY_PARTNER` operator. Each has two logical shelves and twelve available logical slots (72 total), with the existing default active/always-open test configuration.
+
+`vendors-and-hubs-manifest.json` records the exact users, memberships, points, grids and slots for later cleanup. Vendor owners remain scoped to their original shops; staff each belong to one shop; operators are each assigned to one hub. Normal sign-in is unchanged; these profile records do not introduce test passwords or a passwordless entry path.
+
+Relay destinations appear for eligible non-food baskets at checkout. Existing category, capacity, payment, custody and pickup-proof rules apply. These are fictional sites and logical slots, not physical lockers or real pickup locations. No parcel, paid order or custody evidence was fabricated.
