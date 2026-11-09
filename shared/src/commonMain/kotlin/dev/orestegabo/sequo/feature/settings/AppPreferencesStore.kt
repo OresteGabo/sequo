@@ -3,6 +3,8 @@ package dev.orestegabo.sequo.feature.settings
 import androidx.compose.runtime.Composable
 
 interface AppPreferencesStore {
+    suspend fun getShoppingPreferences(): ShoppingPreferences
+    suspend fun saveShoppingPreferences(preferences: ShoppingPreferences)
     suspend fun getLanguage(): AppLanguage?
     suspend fun saveLanguage(language: AppLanguage)
     suspend fun getThemePreference(): AppThemePreference?

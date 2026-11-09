@@ -14,6 +14,16 @@ actual fun rememberAppPreferencesStore(): AppPreferencesStore {
 private class AndroidAppPreferencesStore(context: Context) : AppPreferencesStore {
     private val preferences = context.getSharedPreferences(PreferencesName, Context.MODE_PRIVATE)
 
+    override suspend fun getShoppingPreferences() = ShoppingPreferences(
+        largerText = preferences.getBoolean("larger_text", false),
+        tapFeedback = preferences.getBoolean("tap_feedback", true),
+    )
+
+    override suspend fun saveShoppingPreferences(preferences: ShoppingPreferences) {
+        this.preferences.edit().putBoolean("larger_text", preferences.largerText)
+            .putBoolean("tap_feedback", preferences.tapFeedback).apply()
+    }
+
     override suspend fun getLanguage(): AppLanguage? =
         preferences.getString(LanguageKey, null)?.let { value ->
             runCatching { AppLanguage.valueOf(value) }.getOrNull()

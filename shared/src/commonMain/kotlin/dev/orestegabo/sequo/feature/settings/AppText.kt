@@ -29,6 +29,16 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.settings_comfort_alerts.key to "Comfort & alerts",
+    Res.string.settings_text_size.key to "Text size",
+    Res.string.settings_text_size_hint.key to "Make text easier to read. Your phone’s text size is always respected.",
+    Res.string.settings_text_device.key to "Device default",
+    Res.string.settings_text_larger.key to "Larger",
+    Res.string.settings_tap_feedback.key to "Tap feedback",
+    Res.string.settings_tap_feedback_hint.key to "A gentle vibration when an item is added to your cart.",
+    Res.string.settings_phone_notifications.key to "Notification settings",
+    Res.string.settings_phone_notifications_hint.key to "Manage permission, alerts and sounds in your phone settings.",
+    Res.string.settings_phone_notifications_failed.key to "Open your phone’s Settings, choose Sequo, then Notifications.",
     Res.string.selling_choose_one.key to "Choose one available option",
     Res.string.selling_portion_hint.key to "Cart quantity counts portions of the selected amount.",
     Res.string.selling_required_choices.key to "Choose the required options before adding this product.",
@@ -544,6 +554,16 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.settings_comfort_alerts.key to "Confort et alertes",
+    Res.string.settings_text_size.key to "Taille du texte",
+    Res.string.settings_text_size_hint.key to "Facilitez la lecture. La taille du texte de votre téléphone reste prise en compte.",
+    Res.string.settings_text_device.key to "Selon le téléphone",
+    Res.string.settings_text_larger.key to "Plus grand",
+    Res.string.settings_tap_feedback.key to "Retour tactile",
+    Res.string.settings_tap_feedback_hint.key to "Une légère vibration quand un article est ajouté au panier.",
+    Res.string.settings_phone_notifications.key to "Réglages des notifications",
+    Res.string.settings_phone_notifications_hint.key to "Gérez les autorisations, alertes et sons dans les réglages du téléphone.",
+    Res.string.settings_phone_notifications_failed.key to "Ouvrez les réglages du téléphone, choisissez Sequo, puis Notifications.",
     Res.string.selling_choose_one.key to "Choisissez une option disponible",
     Res.string.selling_portion_hint.key to "La quantité du panier compte les portions de la mesure choisie.",
     Res.string.selling_required_choices.key to "Choisissez les options obligatoires avant d’ajouter ce produit.",

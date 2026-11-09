@@ -11,6 +11,16 @@ actual fun rememberAppPreferencesStore(): AppPreferencesStore =
 private class IosAppPreferencesStore(
     private val userDefaults: NSUserDefaults = NSUserDefaults.standardUserDefaults,
 ) : AppPreferencesStore {
+    override suspend fun getShoppingPreferences() = ShoppingPreferences(
+        largerText = userDefaults.boolForKey("larger_text"),
+        tapFeedback = if (userDefaults.objectForKey("tap_feedback") == null) true else userDefaults.boolForKey("tap_feedback"),
+    )
+
+    override suspend fun saveShoppingPreferences(preferences: ShoppingPreferences) {
+        userDefaults.setBool(preferences.largerText, forKey = "larger_text")
+        userDefaults.setBool(preferences.tapFeedback, forKey = "tap_feedback")
+    }
+
     override suspend fun getLanguage(): AppLanguage? =
         userDefaults.stringForKey(LanguageKey)?.let { value ->
             runCatching { AppLanguage.valueOf(value) }.getOrNull()

@@ -37,6 +37,9 @@ import dev.orestegabo.sequo.core.auth.rememberSecureTokenStorage
 import dev.orestegabo.sequo.feature.auth.AuthScreen
 import dev.orestegabo.sequo.feature.legal.LegalInitialTab
 import dev.orestegabo.sequo.feature.legal.LegalScreen
+import dev.orestegabo.sequo.feature.settings.*
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import dev.orestegabo.sequo.feature.settings.AppLanguage
 import dev.orestegabo.sequo.feature.settings.AppThemePreference
 import dev.orestegabo.sequo.feature.settings.LocalAppLanguage
@@ -65,6 +68,8 @@ fun App(
     val appScope = rememberCoroutineScope()
     var language by rememberSaveable { mutableStateOf(AppLanguage.English) }
     var themePreference by rememberSaveable { mutableStateOf(AppThemePreference.System) }
+    var shoppingPreferences by remember { mutableStateOf(ShoppingPreferences()) }
+    val systemDensity = LocalDensity.current
     val systemDarkTheme = isSystemInDarkTheme()
     val darkTheme = when (themePreference) {
         AppThemePreference.System -> systemDarkTheme
@@ -73,28 +78,39 @@ fun App(
     }
 
     LaunchedEffect(appPreferencesStore) {
+        shoppingPreferences = appPreferencesStore.getShoppingPreferences()
         appPreferencesStore.getLanguage()?.let { language = it }
         appPreferencesStore.getThemePreference()?.let { themePreference = it }
     }
 
-    SequoTheme(darkTheme = darkTheme) {
-        SequoApp(
-            language = language,
-            onLanguageChange = { selectedLanguage ->
-                language = selectedLanguage
-                appScope.launch { appPreferencesStore.saveLanguage(selectedLanguage) }
-            },
-            themePreference = themePreference,
-            onThemePreferenceChange = { selectedTheme ->
-                themePreference = selectedTheme
-                appScope.launch { appPreferencesStore.saveThemePreference(selectedTheme) }
-            },
-            onGoogleSignIn = onGoogleSignIn,
-            onAppleSignIn = onAppleSignIn,
-            onGoogleSignOut = onGoogleSignOut,
-            onHomeEntered = onHomeEntered,
-            openNotificationsRequest = openNotificationsRequest,
-        )
+    CompositionLocalProvider(
+        LocalShoppingPreferences provides ShoppingPreferencesControl(shoppingPreferences) { selected ->
+            shoppingPreferences = selected
+            appScope.launch { appPreferencesStore.saveShoppingPreferences(selected) }
+        },
+        LocalDensity provides if (shoppingPreferences.largerText) {
+            Density(systemDensity.density, systemDensity.fontScale * 1.15f)
+        } else systemDensity,
+    ) {
+        SequoTheme(darkTheme = darkTheme) {
+            SequoApp(
+                language = language,
+                onLanguageChange = { selectedLanguage ->
+                    language = selectedLanguage
+                    appScope.launch { appPreferencesStore.saveLanguage(selectedLanguage) }
+                },
+                themePreference = themePreference,
+                onThemePreferenceChange = { selectedTheme ->
+                    themePreference = selectedTheme
+                    appScope.launch { appPreferencesStore.saveThemePreference(selectedTheme) }
+                },
+                onGoogleSignIn = onGoogleSignIn,
+                onAppleSignIn = onAppleSignIn,
+                onGoogleSignOut = onGoogleSignOut,
+                onHomeEntered = onHomeEntered,
+                openNotificationsRequest = openNotificationsRequest,
+            )
+        }
     }
 }
 

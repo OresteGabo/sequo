@@ -509,4 +509,14 @@
     <string name="selling_required_choices">Choose the required options before adding this product.</string>
     <string name="selling_price_error">Could not confirm this selection’s price. Try again.</string>
     <string name="selling_selected_price">Price for your selection</string>
+    <string name="settings_comfort_alerts">Comfort &amp; alerts</string>
+    <string name="settings_text_size">Text size</string>
+    <string name="settings_text_size_hint">Make text easier to read. Your phone’s text size is always respected.</string>
+    <string name="settings_text_device">Device default</string>
+    <string name="settings_text_larger">Larger</string>
+    <string name="settings_tap_feedback">Tap feedback</string>
+    <string name="settings_tap_feedback_hint">A gentle vibration when an item is added to your cart.</string>
+    <string name="settings_phone_notifications">Notification settings</string>
+    <string name="settings_phone_notifications_hint">Manage permission, alerts and sounds in your phone settings.</string>
+    <string name="settings_phone_notifications_failed">Open your phone’s Settings, choose Sequo, then Notifications.</string>
 </resources>

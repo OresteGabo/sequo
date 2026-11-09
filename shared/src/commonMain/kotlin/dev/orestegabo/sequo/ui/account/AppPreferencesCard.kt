@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,6 +25,10 @@ internal fun AppPreferencesCard(
     themePreference: AppThemePreference,
     onThemePreferenceChange: (AppThemePreference) -> Unit,
 ) {
+    val shopping = LocalShoppingPreferences.current
+    val openNotificationSettings = rememberOpenNotificationSettings()
+    var textSizeOpen by remember { mutableStateOf(false) }
+    var notificationSettingsFailed by remember { mutableStateOf(false) }
     var languageOpen by remember { mutableStateOf(false) }
     var themeOpen by remember { mutableStateOf(false) }
     val languages = listOf(AppLanguage.English to appText(Res.string.settings_english),
@@ -36,6 +43,24 @@ internal fun AppPreferencesCard(
         SettingsRow(Icons.Filled.DarkMode, appText(Res.string.settings_appearance),
             value = themes.first { it.first == themePreference }.second, onClick = { themeOpen = true })
     }
+    SettingsGroup(appText(Res.string.settings_comfort_alerts)) {
+        SettingsRow(Icons.Filled.TextFields, appText(Res.string.settings_text_size),
+            value = appText(if (shopping.value.largerText) Res.string.settings_text_larger else Res.string.settings_text_device),
+            subtitle = appText(Res.string.settings_text_size_hint), onClick = { textSizeOpen = true })
+        SettingsDivider()
+        SettingsToggleRow(Icons.Filled.Vibration, appText(Res.string.settings_tap_feedback),
+            appText(Res.string.settings_tap_feedback_hint), shopping.value.tapFeedback,
+            onChange = { shopping.onChange(shopping.value.copy(tapFeedback = it)) })
+        SettingsDivider()
+        SettingsRow(Icons.Filled.NotificationsNone, appText(Res.string.settings_phone_notifications),
+            subtitle = appText(Res.string.settings_phone_notifications_hint),
+            onClick = { notificationSettingsFailed = !openNotificationSettings() })
+    }
+    if (notificationSettingsFailed) Text(appText(Res.string.settings_phone_notifications_failed),
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+    if (textSizeOpen) PreferenceDialog(appText(Res.string.settings_text_size), shopping.value.largerText,
+        listOf(false to appText(Res.string.settings_text_device), true to appText(Res.string.settings_text_larger)),
+        onDismiss = { textSizeOpen = false }, onSelect = { shopping.onChange(shopping.value.copy(largerText = it)); textSizeOpen = false })
     if (languageOpen) PreferenceDialog(appText(Res.string.drawer_language), language, languages,
         onDismiss = { languageOpen = false }, onSelect = { onLanguageChange(it); languageOpen = false })
     if (themeOpen) PreferenceDialog(appText(Res.string.settings_appearance), themePreference, themes,

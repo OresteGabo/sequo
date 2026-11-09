@@ -99,6 +99,8 @@ internal fun SequoShell(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val basketCount = cart?.totalItems ?: 0
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val tapFeedback = dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.tapFeedback
     val catalogLoadError = appText(Res.string.home_catalog_load_error)
 
     suspend fun changeCart(change: suspend (String) -> CartSnapshot): CartSnapshot? {
@@ -129,7 +131,9 @@ internal fun SequoShell(
     suspend fun saveProduct(token: String, productId: String, selections: List<ProductOptionSelection>, bargainingThreadId: String? = null): CartSnapshot {
         val saved = cartClient.cart(token)
         val quantity = saved.findLine(productId, selections, bargainingThreadId)?.quantity ?: 0
-        return cartClient.put(token, productId, quantity + 1, selections, bargainingThreadId)
+        return cartClient.put(token, productId, quantity + 1, selections, bargainingThreadId).also {
+            if (tapFeedback) runCatching { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove) }
+        }
     }
 
     suspend fun addConfiguredProduct(productId: String, selections: List<ProductOptionSelection>): Int? {
