@@ -112,37 +112,31 @@ internal fun MarketsContent(
         selectedSort = selectedSort,
         onSortSelected = { selectedSort = it },
     )
-    CategoryRail(
-        title = appText(Res.string.browse_product_type),
-        categories = subcategories,
-        selectedCategory = selectedSubcategory,
-        onCategorySelected = { selectedSubcategory = it },
-        expanded = subcategoryFiltersExpanded,
-        onExpandedChange = { subcategoryFiltersExpanded = it },
-    )
-    CategoryRail(
-        title = appText(Res.string.browse_shop_area),
-        categories = listOf(
-            "All Lome",
-            "Tokoin",
-            "Assigame",
-            "Hedzranawoe",
-            "Akodessewa",
-            "Agbalepedo",
-            "Be-Kpota",
-            "Baguida",
-            "Adidogome",
-            "Nyekonakpoe",
-            "Agoe",
-            "Ablogame",
-            "Kodjoviakope",
-            "Be",
-        ),
-        selectedCategory = selectedArea,
-        onCategorySelected = { selectedArea = it },
-        expanded = areaFiltersExpanded,
-        onExpandedChange = { areaFiltersExpanded = it },
-    )
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        CatalogFilterMenu(
+            title = appText(Res.string.browse_product_type),
+            categories = subcategories,
+            selectedCategory = selectedSubcategory,
+            onCategorySelected = { selectedSubcategory = it },
+            expanded = subcategoryFiltersExpanded,
+            onExpandedChange = { subcategoryFiltersExpanded = it; areaFiltersExpanded = false },
+            modifier = Modifier.weight(1f),
+        )
+        CatalogFilterMenu(
+            title = appText(Res.string.browse_shop_area),
+            categories = listOf(
+                "All Lome", "Tokoin", "Assigame", "Hedzranawoe", "Akodessewa",
+                "Agbalepedo", "Be-Kpota", "Baguida", "Adidogome", "Nyekonakpoe",
+                "Agoe", "Ablogame", "Kodjoviakope", "Be",
+            ),
+            selectedCategory = selectedArea,
+            onCategorySelected = { selectedArea = it },
+            expanded = areaFiltersExpanded,
+            onExpandedChange = { areaFiltersExpanded = it; subcategoryFiltersExpanded = false },
+            modifier = Modifier.weight(1f),
+            icon = Icons.Filled.LocationOn,
+        )
+    }
     if (visibleShops.isEmpty()) {
         val title = when (browseMode) {
             CatalogBrowseMode.Offers -> Res.string.empty_offers_title

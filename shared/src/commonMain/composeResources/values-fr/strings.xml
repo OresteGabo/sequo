@@ -449,7 +449,7 @@
     <string name="drawer_help">Aide et contact</string>
     <string name="drawer_help_detail">Livraison, paiements et retours</string>
     <string name="browse_product_type">Type de produit</string>
-    <string name="browse_shop_area">Quartier du commerce</string>
+    <string name="browse_shop_area">Quartier</string>
     <string name="browse_expand_filters">Afficher les options</string>
     <string name="browse_collapse_filters">Masquer les options</string>
     <string name="browse_shop_one">commerce</string>

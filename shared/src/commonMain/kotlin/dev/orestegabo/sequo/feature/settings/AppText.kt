@@ -550,7 +550,7 @@ private val FrenchStrings = mapOf(
     Res.string.empty_filter_detail.key to "Aucun résultat ne correspond à ces filtres pour le moment. Réinitialisez-les pour découvrir d’autres produits et commerces.",
 
     Res.string.browse_product_type.key to "Type de produit",
-    Res.string.browse_shop_area.key to "Quartier du commerce",
+    Res.string.browse_shop_area.key to "Quartier",
     Res.string.browse_expand_filters.key to "Afficher les options",
     Res.string.browse_collapse_filters.key to "Masquer les options",
     Res.string.browse_shop_one.key to "commerce",

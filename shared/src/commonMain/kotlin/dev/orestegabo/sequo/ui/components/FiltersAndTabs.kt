@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -40,77 +42,62 @@ import dev.orestegabo.sequo.feature.settings.appText
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
+/** A compact anchored filter: opening choices never pushes the product list down. */
 @Composable
-internal fun CategoryRail(
+internal fun CatalogFilterMenu(
     title: String,
     categories: List<String>,
     selectedCategory: String,
     onCategorySelected: (String) -> Unit,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Filled.FilterList,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val active = selectedCategory != categories.firstOrNull()
+    val selectedLabel = appCatalogText(selectedCategory)
+    Box(modifier) {
         Surface(
             onClick = { onExpandedChange(!expanded) },
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f)),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                .semantics { contentDescription = "$title: $selectedLabel" },
+            shape = RoundedCornerShape(12.dp),
+            color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, if (active) MaterialTheme.colorScheme.primary.copy(alpha = .45f)
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f)),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.FilterList,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = if (active) appCatalogText(selectedCategory) else title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = appCatalogText(selectedCategory),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = appText(if (expanded) Res.string.browse_collapse_filters else Res.string.browse_expand_filters),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp),
-                )
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null,
+                    modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-
-        if (expanded) {
-            categories.chunked(3).forEach { rowItems ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    rowItems.forEach { category ->
-                        SequoFilterChip(
-                            label = appCatalogText(category),
-                            selected = category == selectedCategory,
-                            onClick = { onCategorySelected(category) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    repeat(3 - rowItems.size) {
-                        Box(Modifier.weight(1f))
-                    }
-                }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) },
+            modifier = Modifier.heightIn(max = 320.dp).widthIn(min = 200.dp),
+        ) {
+            categories.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(appCatalogText(category)) },
+                    trailingIcon = {
+                        if (category == selectedCategory) Icon(Icons.Filled.Check, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary)
+                    },
+                    onClick = { onCategorySelected(category); onExpandedChange(false) },
+                )
             }
         }
     }
