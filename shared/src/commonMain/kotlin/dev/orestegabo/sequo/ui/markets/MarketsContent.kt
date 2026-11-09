@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.markets
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -48,9 +50,18 @@ internal fun MarketsContent(
     browseMode: CatalogBrowseMode,
     onCategorySelected: (String) -> Unit,
     onResetFilters: () -> Unit,
+    onRefreshCatalog: () -> Unit,
     onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
 ) {
+    if (catalog.products.isEmpty()) {
+        SequoEmptyState(
+            visual = EmptyStateVisual.Catalog,
+            title = appText(Res.string.empty_catalog_title), detail = appText(Res.string.empty_catalog_detail),
+            actionLabel = appText(Res.string.cart_refresh), onAction = onRefreshCatalog,
+        )
+        return
+    }
     var selectedArea by remember { mutableStateOf("All Lome") }
     var selectedSubcategory by remember { mutableStateOf("All") }
     var selectedSort by remember { mutableStateOf("Nearby") }
@@ -133,19 +144,30 @@ internal fun MarketsContent(
         onExpandedChange = { areaFiltersExpanded = it },
     )
     if (visibleShops.isEmpty()) {
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-            Column(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Icon(Icons.Filled.SearchOff, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(appText(Res.string.browse_empty_title), style = MaterialTheme.typography.titleMedium)
-                Text(appText(Res.string.browse_empty_detail), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = {
-                    selectedArea = "All Lome"
-                    selectedSubcategory = "All"
-                    selectedSort = "Nearby"
-                    onResetFilters()
-                }) { Text(appText(Res.string.browse_reset)) }
-            }
+        val title = when (browseMode) {
+            CatalogBrowseMode.Offers -> Res.string.empty_offers_title
+            CatalogBrowseMode.Negotiable -> Res.string.empty_negotiable_title
+            CatalogBrowseMode.Nearby -> Res.string.empty_nearby_title
+            CatalogBrowseMode.All -> Res.string.empty_filter_title
         }
+        val detail = when (browseMode) {
+            CatalogBrowseMode.Offers -> Res.string.empty_offers_detail
+            CatalogBrowseMode.Negotiable -> Res.string.empty_negotiable_detail
+            CatalogBrowseMode.Nearby -> Res.string.empty_nearby_detail
+            CatalogBrowseMode.All -> Res.string.empty_filter_detail
+        }
+        SequoEmptyState(
+            visual = EmptyStateVisual.Search,
+            compact = true,
+            title = appText(title), detail = appText(detail),
+            actionLabel = appText(Res.string.empty_browse_all),
+            onAction = {
+                selectedArea = "All Lome"
+                selectedSubcategory = "All"
+                selectedSort = "Nearby"
+                onResetFilters()
+            },
+        )
     }
     visibleShops.forEach { shop ->
         SequoShopCard(

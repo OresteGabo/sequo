@@ -1,5 +1,9 @@
 package dev.orestegabo.sequo.ui.notifications
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
+import dev.orestegabo.sequo.feature.settings.appText
+import sequo.shared.generated.resources.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +33,7 @@ internal fun LiveCustomerNotificationsContent(
     var rows by remember(accountId) { mutableStateOf<List<CustomerInboxMessage>>(emptyList()) }
     var loading by remember(accountId) { mutableStateOf(false) }
     var failed by remember(accountId) { mutableStateOf(false) }
+    var hasLoaded by remember(accountId) { mutableStateOf(false) }
     var expired by remember(accountId) { mutableStateOf(false) }
     var archived by remember(accountId) { mutableStateOf(false) }
     var active by remember(accountId) { mutableStateOf(true) }
@@ -57,7 +62,7 @@ internal fun LiveCustomerNotificationsContent(
                         ((failure as? SequoApiException)?.statusCode ?: (failure as? ResponseException)?.response?.status?.value) in setOf(401, 403)
                     onUnreadCountChanged(0)
                 }
-            } finally { if (active) loading = false }
+            } finally { if (active) { loading = false; hasLoaded = true } }
         }
     }
     LaunchedEffect(client) { run() }
@@ -81,9 +86,14 @@ internal fun LiveCustomerNotificationsContent(
         if (failed) {
             Text(if (expired) text.sessionError else text.error, color = MaterialTheme.colorScheme.error)
             if (expired) OutlinedButton(onClick = onSignInRequested) { Text(text.signIn) }
-        } else if (!loading && rows.none { (it.archivedAt != null) == archived }) {
-            Text(text.empty, style = MaterialTheme.typography.titleMedium)
-            Text(text.emptyDetail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else if (hasLoaded && !loading && rows.none { (it.archivedAt != null) == archived }) {
+            SequoEmptyState(
+                visual = if (archived) EmptyStateVisual.Archived else EmptyStateVisual.Notifications,
+                title = appText(if (archived) Res.string.empty_archive_title else Res.string.empty_notifications_title),
+                detail = appText(if (archived) Res.string.empty_archive_detail else Res.string.empty_notifications_detail),
+                actionLabel = if (archived) appText(Res.string.empty_back_to_inbox) else text.orders,
+                onAction = { if (archived) archived = false else onOpenOrders() },
+            )
         }
         rows.filter { (it.archivedAt != null) == archived }.forEach { message ->
             Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
@@ -98,6 +108,8 @@ internal fun LiveCustomerNotificationsContent(
                 }
             }
         }
-        TextButton(onClick = onOpenOrders) { Text(text.orders) }
+        if (rows.any { (it.archivedAt != null) == archived }) {
+            TextButton(onClick = onOpenOrders) { Text(text.orders) }
+        }
     }
 }

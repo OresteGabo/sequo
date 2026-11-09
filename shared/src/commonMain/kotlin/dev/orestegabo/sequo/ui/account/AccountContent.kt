@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.account
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
 import dev.orestegabo.sequo.core.network.NetworkConfig
 
 import androidx.compose.animation.core.*
@@ -159,7 +161,11 @@ private fun SavedAddressesCard(userId: String?, load: suspend () -> List<SavedDe
             }
             else -> {
                 val addresses = result.getOrThrow()
-                if (addresses.isEmpty()) Text(appText(Res.string.account_addresses_empty))
+                if (addresses.isEmpty()) SequoEmptyState(
+                    visual = EmptyStateVisual.Addresses,
+                    title = appText(Res.string.empty_addresses_title), detail = appText(Res.string.empty_addresses_detail),
+                    compact = true,
+                )
                 addresses.forEach { address ->
                     AccountAddressRow(address.label, listOfNotNull(address.streetHint, address.area, address.city).joinToString(", "))
                 }

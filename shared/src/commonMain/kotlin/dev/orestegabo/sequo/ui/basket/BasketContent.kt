@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.basket
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,12 +51,13 @@ internal fun BasketContent(
     loadPaymentProviders: suspend () -> List<CheckoutProvider>,
     submitCheckout: suspend (CartQuote, String) -> CheckoutSummary,
     onOpenOrders: () -> Unit,
+    onBrowse: () -> Unit,
 ) {
     var submitting by remember { mutableStateOf(false) }
     var providers by remember { mutableStateOf<List<CheckoutProvider>?>(null) }
     var providersFailed by remember { mutableStateOf(false) }
-    LaunchedEffect(busy) {
-        if (busy) return@LaunchedEffect
+    LaunchedEffect(busy, cart?.items?.isEmpty()) {
+        if (busy || cart?.items?.isEmpty() != false) return@LaunchedEffect
         providersFailed = false
         providers = null
         try {
@@ -71,12 +74,19 @@ internal fun BasketContent(
     val editingEnabled = !busy && !submitting
     if (busy) Text(appText(Res.string.cart_loading))
     if (failed) Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
-    TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
-    if (cart == null) return
-    if (cart.items.isEmpty()) {
-        Text(appText(Res.string.cart_empty))
+    if (cart == null || ((busy || failed) && cart.items.isEmpty())) {
+        TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
         return
     }
+    if (cart.items.isEmpty()) {
+        SequoEmptyState(
+            visual = EmptyStateVisual.Cart,
+            title = appText(Res.string.empty_cart_title), detail = appText(Res.string.empty_cart_detail),
+            actionLabel = appText(Res.string.empty_explore), onAction = onBrowse,
+        )
+        return
+    }
+    TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
 
     for (line in cart.items) {
         SequoPanel {

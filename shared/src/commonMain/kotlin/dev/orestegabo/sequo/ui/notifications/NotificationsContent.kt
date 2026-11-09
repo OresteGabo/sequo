@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.notifications
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
@@ -82,6 +84,7 @@ private enum class NotificationActionType {
 @Composable
 internal fun NotificationsContent(
     onOpenOrders: () -> Unit,
+    onSignInRequested: (() -> Unit)? = null,
     onOpenPrivacy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
     onUnreadCountChanged: (Int) -> Unit = {},
@@ -106,7 +109,7 @@ internal fun NotificationsContent(
     }
 
     if (inboxIsEmpty) {
-        NotificationEmptyState(filter = NotificationFilter.Today)
+        NotificationEmptyState(filter = NotificationFilter.Today, onOpenOrders = onOpenOrders, onSignInRequested = onSignInRequested)
         return
     }
 
@@ -125,7 +128,8 @@ internal fun NotificationsContent(
     )
     if (visibleItems.isEmpty()) {
         NotificationEmptyState(
-            filter = selectedFilter,
+            filter = selectedFilter, onOpenOrders = onOpenOrders,
+            onResetFilter = { selectedFilter = NotificationFilter.Today },
         )
     } else {
         NotificationList(
@@ -237,116 +241,32 @@ private fun NotificationList(
 @Composable
 private fun NotificationEmptyState(
     filter: NotificationFilter,
+    onOpenOrders: () -> Unit,
+    onResetFilter: (() -> Unit)? = null,
+    onSignInRequested: (() -> Unit)? = null,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 26.dp, bottom = 34.dp, start = 18.dp, end = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        EmptyNotificationBell(
-            modifier = Modifier
-                .size(width = 220.dp, height = 190.dp)
-                .alpha(0.92f),
-        )
-        Text(
-            text = emptyStateTitle(filter),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.64f),
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = appText(Res.string.notif_empty_detail),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.52f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(max = 310.dp),
-        )
+    val archived = filter == NotificationFilter.Archived
+    val title = when {
+        onSignInRequested != null -> appText(Res.string.empty_guest_notifications_title)
+        archived -> appText(Res.string.empty_archive_title)
+        filter == NotificationFilter.Today -> appText(Res.string.empty_notifications_title)
+        else -> emptyStateTitle(filter)
     }
-}
-
-@Composable
-private fun EmptyNotificationBell(
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(
-            modifier = Modifier
-                .matchParentSize()
-                .rotate(-11f),
-        ) {
-            val strokeColor = Color(0xFF7F8781).copy(alpha = 0.43f)
-            val accentColor = SequoPrimary.copy(alpha = 0.20f)
-            val stroke = Stroke(width = 4.2f, cap = StrokeCap.Round)
-            val w = size.width
-            val h = size.height
-            val bell = Path().apply {
-                moveTo(w * 0.50f, h * 0.22f)
-                cubicTo(w * 0.33f, h * 0.25f, w * 0.25f, h * 0.40f, w * 0.24f, h * 0.58f)
-                cubicTo(w * 0.23f, h * 0.69f, w * 0.17f, h * 0.76f, w * 0.13f, h * 0.82f)
-                cubicTo(w * 0.33f, h * 0.90f, w * 0.67f, h * 0.90f, w * 0.87f, h * 0.82f)
-                cubicTo(w * 0.83f, h * 0.76f, w * 0.77f, h * 0.69f, w * 0.76f, h * 0.58f)
-                cubicTo(w * 0.75f, h * 0.40f, w * 0.67f, h * 0.25f, w * 0.50f, h * 0.22f)
-            }
-            drawPath(path = bell, color = strokeColor, style = stroke)
-            drawArc(
-                color = strokeColor,
-                startAngle = 11f,
-                sweepAngle = 158f,
-                useCenter = false,
-                topLeft = Offset(w * 0.36f, h * 0.80f),
-                size = Size(w * 0.28f, h * 0.18f),
-                style = stroke,
-            )
-            drawLine(
-                color = accentColor,
-                start = Offset(w * 0.50f, h * 0.13f),
-                end = Offset(w * 0.50f, h * 0.21f),
-                strokeWidth = 4.2f,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = strokeColor.copy(alpha = 0.34f),
-                start = Offset(w * 0.16f, h * 0.30f),
-                end = Offset(w * 0.06f, h * 0.23f),
-                strokeWidth = 3.2f,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = strokeColor.copy(alpha = 0.28f),
-                start = Offset(w * 0.84f, h * 0.30f),
-                end = Offset(w * 0.95f, h * 0.23f),
-                strokeWidth = 3.2f,
-                cap = StrokeCap.Round,
-            )
-        }
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 24.dp, end = 30.dp)
-                .size(42.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f)),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "0",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.58f),
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
+    val detail = appText(when {
+        onSignInRequested != null -> Res.string.empty_guest_notifications_detail
+        archived -> Res.string.empty_archive_detail
+        else -> Res.string.empty_notifications_detail
+    })
+    SequoEmptyState(
+        visual = if (archived) EmptyStateVisual.Archived else EmptyStateVisual.Notifications,
+        title = title, detail = detail, signInRequired = onSignInRequested != null,
+        actionLabel = appText(when {
+            onSignInRequested != null -> Res.string.account_sign_in_create
+            onResetFilter != null -> Res.string.empty_back_to_inbox
+            else -> Res.string.drawer_orders
+        }),
+        onAction = onSignInRequested ?: onResetFilter ?: onOpenOrders,
+    )
 }
 
 @Composable

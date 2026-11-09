@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.orders
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -49,6 +51,7 @@ import sequo.shared.generated.resources.*
 
 @Composable
 internal fun OrdersContent(
+    onBrowse: () -> Unit,
     loadCheckouts: suspend () -> List<CheckoutSummary>,
     loadOrders: suspend () -> List<CustomerOrderDetails>,
     sessionKey: String?,
@@ -83,7 +86,6 @@ internal fun OrdersContent(
             loading = false
         }
     }
-    TextButton(onClick = { refresh++ }, enabled = !loading) { Text(appText(Res.string.cart_refresh)) }
     if (loading) Text(appText(Res.string.orders_loading))
     if (failed) Text(appText(Res.string.orders_load_failed), color = MaterialTheme.colorScheme.error)
 
@@ -100,7 +102,16 @@ internal fun OrdersContent(
             displayReference = order.publicReference?.takeIf(String::isNotBlank) ?: order.id)
     }
     val rows = (pendingRows + orderRows).sortedByDescending { it.createdAt }
-    if (!loading && !failed && rows.isEmpty()) Text(appText(Res.string.orders_empty))
+    if (!loading && !failed && rows.isEmpty()) {
+        SequoEmptyState(
+            visual = EmptyStateVisual.Orders,
+            title = appText(Res.string.empty_orders_title), detail = appText(Res.string.empty_orders_detail),
+            actionLabel = appText(Res.string.empty_explore), onAction = onBrowse,
+            secondaryLabel = appText(Res.string.cart_refresh), onSecondaryAction = { refresh++ },
+        )
+    } else {
+        TextButton(onClick = { refresh++ }, enabled = !loading) { Text(appText(Res.string.cart_refresh)) }
+    }
     for (row in rows) {
         key(sessionKey, row.id) {
         var expanded by remember { mutableStateOf(false) }

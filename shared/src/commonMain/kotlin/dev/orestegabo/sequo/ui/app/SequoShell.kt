@@ -309,6 +309,7 @@ internal fun SequoShell(
                     onCloseProduct = { selectedProductListing = null },
                     cartContent = {
                         BasketContent(
+                            onBrowse = { openCatalog() },
                             cart = cart,
                             busy = cartBusy,
                             failed = cartFailed,
@@ -333,6 +334,7 @@ internal fun SequoShell(
                     },
                     ordersContent = {
                         OrdersContent(
+                            onBrowse = { openCatalog() },
                             loadCheckouts = { cartClient.checkouts(checkNotNull(cartAccessToken())) },
                             loadOrders = { cartClient.orders(checkNotNull(cartAccessToken())) },
                             sessionKey = currentUser?.id,
@@ -345,6 +347,7 @@ internal fun SequoShell(
                     },
                     notificationsContent = {
                         if (isGuest || currentUser == null) NotificationsContent(
+                            onSignInRequested = onSignInRequested,
                             onOpenOrders = { currentDestination = SequoSection.Orders },
                             onOpenPrivacy = { onOpenLegal(LegalInitialTab.Privacy) },
                             onOpenTerms = { onOpenLegal(LegalInitialTab.Terms) },
@@ -458,6 +461,8 @@ internal fun SequoContentStage(
                 onReload = onReloadCatalog,
                 onAddProduct = onAddProduct,
                 onProductSelected = onProductSelected,
+                onClearQuery = { searchQuery = "" },
+                onBrowse = { onCloseSearch(); onDestinationSelected(SequoSection.Markets) },
             )
         }
     } else if (needsCatalog && catalogState is CatalogUiState.Loading) {
@@ -487,7 +492,13 @@ internal fun SequoContentStage(
     } else {
         SequoScreenColumn(modifier = modifier) {
             when (currentDestination) {
-                SequoSection.Home -> HomeContent(
+                SequoSection.Home -> if (catalog?.products?.isEmpty() == true) {
+                    SequoEmptyState(
+                        visual = EmptyStateVisual.Catalog,
+                        title = appText(Res.string.empty_catalog_title), detail = appText(Res.string.empty_catalog_detail),
+                        actionLabel = appText(Res.string.cart_refresh), onAction = onReloadCatalog,
+                    )
+                } else HomeContent(
                     catalog = requireNotNull(catalog),
                     onDestinationSelected = onDestinationSelected,
                     onAddProduct = onAddProduct,
@@ -503,11 +514,13 @@ internal fun SequoContentStage(
                     browseMode = browseMode,
                     onCategorySelected = onBrowseCategorySelected,
                     onResetFilters = onResetBrowse,
+                    onRefreshCatalog = onReloadCatalog,
                     onAddProduct = onAddProduct,
                     onProductSelected = onProductSelected,
                 )
                 SequoSection.Basket -> if (isGuest) {
                     GuestSignInPanel(
+                        visual = EmptyStateVisual.Cart,
                         title = appText(Res.string.guest_basket_title),
                         detail = appText(Res.string.guest_basket_detail),
                         onSignIn = onSignInRequested,
@@ -518,10 +531,11 @@ internal fun SequoContentStage(
                 }
                 SequoSection.Orders -> if (isGuest) {
                     GuestSignInPanel(
+                        visual = EmptyStateVisual.Orders,
                         title = appText(Res.string.guest_orders_title),
                         detail = appText(Res.string.guest_orders_detail),
                         onSignIn = onSignInRequested,
-                        onBrowse = { onDestinationSelected(SequoSection.Home) },
+                        onBrowse = { onDestinationSelected(SequoSection.Markets) },
                     )
                 } else {
                     ordersContent()
@@ -547,69 +561,17 @@ internal fun SequoContentStage(
 
 @Composable
 private fun GuestSignInPanel(
+    visual: EmptyStateVisual,
     title: String,
     detail: String,
     onSignIn: () -> Unit,
     onBrowse: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.58f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Surface(
-                modifier = Modifier.size(56.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(14.dp),
-                )
-            }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                detail,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                OutlinedButton(
-                    onClick = onBrowse,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Text(appText(Res.string.common_browse))
-                }
-                Button(
-                    onClick = onSignIn,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Text(appText(Res.string.auth_dialog_title))
-                }
-            }
-        }
-    }
+    SequoEmptyState(
+        visual = visual, title = title, detail = detail, signInRequired = true,
+        actionLabel = appText(Res.string.account_sign_in_create), onAction = onSignIn,
+        secondaryLabel = appText(Res.string.empty_explore), onSecondaryAction = onBrowse,
+    )
 }
 
 @Composable

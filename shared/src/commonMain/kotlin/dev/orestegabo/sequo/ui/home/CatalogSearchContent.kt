@@ -1,5 +1,7 @@
 package dev.orestegabo.sequo.ui.home
 
+import dev.orestegabo.sequo.ui.components.SequoEmptyState
+import dev.orestegabo.sequo.ui.components.EmptyStateVisual
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
 import dev.orestegabo.sequo.core.catalog.searchProducts
 import dev.orestegabo.sequo.feature.settings.AppLanguage
+import dev.orestegabo.sequo.feature.settings.appText
+import sequo.shared.generated.resources.*
 import dev.orestegabo.sequo.feature.settings.LocalAppLanguage
 import dev.orestegabo.sequo.model.SequoProductListing
 
@@ -21,6 +25,8 @@ internal fun CatalogSearchContent(
     query: String, catalog: CatalogSnapshot?, loading: Boolean, failed: Boolean,
     onReload: () -> Unit, onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
+    onClearQuery: () -> Unit,
+    onBrowse: () -> Unit,
 ) {
     val french = LocalAppLanguage.current == AppLanguage.French
     val matches = remember(catalog, query) { catalog?.searchProducts(query).orEmpty() }
@@ -29,7 +35,9 @@ internal fun CatalogSearchContent(
             Text(if (french) "Rechercher des produits" else "Search products", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(if (french) "Produits du catalogue actuel" else "Products in the current catalog", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TextButton(onClick = onReload, enabled = !loading) { Text(if (french) "Actualiser" else "Refresh") }
+        if (failed || catalog?.products?.isNotEmpty() == true) {
+            TextButton(onClick = onReload, enabled = !loading) { Text(if (french) "Actualiser" else "Refresh") }
+        }
     }
     when {
         loading -> Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -40,13 +48,23 @@ internal fun CatalogSearchContent(
             if (french) "Catalogue indisponible" else "Catalog unavailable",
             if (french) "Actualisez pour rechercher les produits disponibles." else "Refresh to search available products.",
         )
-        query.isBlank() -> SearchMessage(
-            if (french) "Que recherchez-vous ?" else "What are you looking for?",
-            if (french) "Saisissez un produit, une boutique ou un quartier." else "Enter a product, shop or neighborhood.",
+        catalog.products.isEmpty() -> SequoEmptyState(
+            visual = EmptyStateVisual.Catalog,
+            title = appText(Res.string.empty_catalog_title), detail = appText(Res.string.empty_catalog_detail),
+            actionLabel = appText(Res.string.cart_refresh), onAction = onReload,
         )
-        matches.isEmpty() -> SearchMessage(
-            if (french) "Aucun produit correspondant" else "No matching products",
-            if (french) "Essayez un autre nom de produit, de boutique ou de quartier." else "Try another product, shop or neighborhood.",
+        query.isBlank() -> SequoEmptyState(
+            visual = EmptyStateVisual.Search,
+            compact = true,
+            title = appText(Res.string.empty_search_title), detail = appText(Res.string.empty_search_detail),
+            actionLabel = appText(Res.string.empty_explore), onAction = onBrowse,
+        )
+        matches.isEmpty() -> SequoEmptyState(
+            visual = EmptyStateVisual.Search,
+            compact = true,
+            title = appText(Res.string.empty_search_none_title), detail = appText(Res.string.empty_search_none_detail),
+            actionLabel = appText(Res.string.empty_clear_search), onAction = onClearQuery,
+            secondaryLabel = appText(Res.string.empty_explore), onSecondaryAction = onBrowse,
         )
         else -> {
             Text(if (french) matches.size.toString() + " produit(s)" else matches.size.toString() + " product(s)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)

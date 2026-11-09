@@ -212,6 +212,10 @@ Required states:
 
 Every error state should give a next action: retry, edit address, choose another provider, contact support, or continue browsing.
 
+Confirmed empty results use the shared illustrated `SequoEmptyState`: a contextual drawing, a clear title, a short explanation, and an action only when it leads somewhere useful. Cart and Orders open shopping; search can clear the query; filtered catalog views reset the selection; archived notifications return to the inbox. Saved-address placeholders must not offer an Add button until an address creation flow exists.
+
+Never show an empty result in place of loading, an expired session, or a failed request. Keep empty-state text readable in both themes, allow translated text to wrap, and use the compact layout inside existing cards or beneath search filters.
+
 ## Navigation Ownership
 
 - Bottom navigation owns the main destinations: Markets, Cart, Home, Orders, and Settings.
