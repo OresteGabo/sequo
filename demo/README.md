@@ -1,5 +1,7 @@
 # Sequo Demo
 
+**Current setup:** the owner now uses the normal Sequo app with the labelled test catalog in its existing live database. The separate demo app was removed and its services stopped. See [live catalog records and cleanup notes](live-catalog/README.md). The isolated demo instructions below describe the earlier optional setup.
+
 A separate app and API use a fresh PostgreSQL database, independent JWT secrets/issuer/audience and fictional data. Production catalog, accounts, orders and provider settings are not copied.
 
 ## Practice
