@@ -57,32 +57,8 @@ internal fun ProductDetailContent(
     val product = listing.product
     val shop = listing.shop
     val suggestions = remember(listing, allShops) { similarProductListings(listing, allShops) }
-    var galleryExpanded by remember(listing) { mutableStateOf(false) }
-    var selectedPhotoIndex by remember(listing) { mutableStateOf(0) }
-    val galleryProducts = remember(product) { listOf(product) }
-
-    ProductDetailHero(
-        product = product,
-        galleryProducts = galleryProducts,
-        selectedPhotoIndex = selectedPhotoIndex,
-        galleryExpanded = galleryExpanded,
-        onNextPhoto = { selectedPhotoIndex = (selectedPhotoIndex + 1) % galleryProducts.size },
-        onOpenGallery = { galleryExpanded = true },
-    )
-    Column(
-        modifier = Modifier
-            .offset(y = (-28).dp)
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        if (galleryExpanded) {
-            ProductPhotoStack(
-                galleryProducts = galleryProducts,
-                selectedPhotoIndex = selectedPhotoIndex,
-                onPhotoSelected = { selectedPhotoIndex = it },
-                onClose = { galleryExpanded = false },
-            )
-        }
+    ProductDetailHero(product)
+    Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ProductDetailInfoCard(
             listing = listing,
             onAddCustomized = onAddCustomized,
@@ -103,333 +79,25 @@ internal fun ProductDetailContent(
 }
 
 @Composable
-private fun ProductPhotoStack(
-    galleryProducts: List<SequoProduct>,
-    selectedPhotoIndex: Int,
-    onPhotoSelected: (Int) -> Unit,
-    onClose: () -> Unit,
-) {
-    val selectedProduct = galleryProducts[selectedPhotoIndex]
-    val stackedProducts = galleryProducts
-        .filterIndexed { index, _ -> index != selectedPhotoIndex }
-        .take(3)
-    var photoActionProduct by remember { mutableStateOf<SequoProduct?>(null) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(246.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        stackedProducts.reversed().forEachIndexed { index, galleryProduct ->
-            val visualIndex = 2 - index
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth(0.74f)
-                    .height(184.dp)
-                    .offset(x = ((visualIndex - 1) * 20).dp, y = ((visualIndex + 1) * 8).dp)
-                    .rotate((visualIndex - 1) * 5f),
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.62f)),
-                shadowElevation = 4.dp,
-            ) {
-                CatalogProductImage(
-                    product = galleryProduct,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                PhotoAuthenticityBadge(
-                    product = galleryProduct,
-                    compact = true,
-                    onDark = true,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-                )
-            }
-        }
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.82f)
-                .height(214.dp)
-                .pointerInput(selectedProduct.id) {
-                    detectTapGestures(
-                        onTap = { onPhotoSelected((selectedPhotoIndex + 1) % galleryProducts.size) },
-                        onLongPress = { photoActionProduct = selectedProduct },
-                    )
-                },
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
-            shadowElevation = 8.dp,
-        ) {
-            Box(Modifier.fillMaxSize()) {
-                CatalogProductImage(
-                    product = selectedProduct,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                PhotoAuthenticityBadge(
-                    product = selectedProduct,
-                    onDark = true,
-                    modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
-                )
-                Surface(
-                    onClick = onClose,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).size(34.dp),
-                    shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.52f),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Close photos",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    DetailChip(Icons.Filled.PhotoLibrary, "${selectedPhotoIndex + 1}/${galleryProducts.size}")
-                    DetailChip(Icons.Filled.TouchApp, "Tap next")
-                }
-            }
-        }
-        photoActionProduct?.let { actionProduct ->
-            ProductPhotoActionDialog(
-                product = actionProduct,
-                onDismiss = { photoActionProduct = null },
-            )
-        }
-        Row(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            galleryProducts.indices.forEach { index ->
-                Box(
-                    modifier = Modifier
-                        .size(width = if (index == selectedPhotoIndex) 18.dp else 7.dp, height = 7.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(if (index == selectedPhotoIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
-                        .clickable { onPhotoSelected(index) },
-                )
+private fun ProductDetailHero(product: SequoProduct) {
+    var photoActionProduct by remember(product.id) { mutableStateOf<SequoProduct?>(null) }
+    Box(Modifier.fillMaxWidth().height(280.dp).padding(horizontal = 20.dp)
+        .clip(RoundedCornerShape(24.dp))
+        .combinedClickable(onClick = { photoActionProduct = product }, onLongClick = { photoActionProduct = product })) {
+        CatalogProductImage(product, Modifier.fillMaxSize(), ContentScale.Crop)
+        PhotoAuthenticityBadge(product, onDark = true,
+            modifier = Modifier.align(Alignment.TopStart).padding(14.dp))
+        Surface(shape = CircleShape, color = Color.Black.copy(alpha = .45f),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp).size(40.dp)) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.ZoomIn, appText(Res.string.polish_view_photo), tint = Color.White, modifier = Modifier.size(21.dp))
             }
         }
     }
+    photoActionProduct?.let { ProductPhotoActionDialog(it, onDismiss = { photoActionProduct = null }) }
 }
 
-@Composable
-private fun ProductDetailHero(
-    product: SequoProduct,
-    galleryProducts: List<SequoProduct>,
-    selectedPhotoIndex: Int,
-    galleryExpanded: Boolean,
-    onNextPhoto: () -> Unit,
-    onOpenGallery: () -> Unit,
-) {
-    val selectedProduct = galleryProducts[selectedPhotoIndex]
-    var heroSettled by remember(product.id) { mutableStateOf(false) }
-    var photoActionProduct by remember { mutableStateOf<SequoProduct?>(null) }
-    LaunchedEffect(product.id) {
-        heroSettled = true
-    }
-    val heroHeight by animateDpAsState(
-        targetValue = if (heroSettled) 348.dp else 182.dp,
-        animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
-        label = "productHeroHeight",
-    )
-    val heroHorizontalPadding by animateDpAsState(
-        targetValue = if (heroSettled) 0.dp else 22.dp,
-        animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
-        label = "productHeroHorizontalPadding",
-    )
-    val heroCornerRadius by animateDpAsState(
-        targetValue = if (heroSettled) 0.dp else 24.dp,
-        animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
-        label = "productHeroCornerRadius",
-    )
-    val heroChromeAlpha by animateFloatAsState(
-        targetValue = if (heroSettled) 1f else 0f,
-        animationSpec = tween(durationMillis = 260, delayMillis = 180),
-        label = "productHeroChromeAlpha",
-    )
-    Box(modifier = Modifier.fillMaxWidth().height(348.dp)) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(heroHeight)
-                .align(Alignment.TopCenter)
-                .padding(horizontal = heroHorizontalPadding)
-                .pointerInput(selectedProduct.id) {
-                    detectTapGestures(onLongPress = { photoActionProduct = selectedProduct })
-                },
-            shape = RoundedCornerShape(heroCornerRadius),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shadowElevation = if (heroSettled) 0.dp else 8.dp,
-        ) {
-            Box(Modifier.fillMaxSize()) {
-                CatalogProductImage(
-                    product = selectedProduct,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                PhotoAuthenticityBadge(
-                    product = selectedProduct,
-                    onDark = true,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .statusBarsPadding()
-                        .padding(top = 66.dp, end = 20.dp)
-                        .graphicsLayer { alpha = heroChromeAlpha },
-                )
-                Box(
-                    Modifier
-                        .matchParentSize()
-                        .graphicsLayer { alpha = heroChromeAlpha }
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.Black.copy(alpha = 0.54f),
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.50f),
-                                    MaterialTheme.colorScheme.background,
-                                ),
-                            ),
-                        ),
-                )
-            }
-        }
-        photoActionProduct?.let { actionProduct ->
-            ProductPhotoActionDialog(
-                product = actionProduct,
-                onDismiss = { photoActionProduct = null },
-            )
-        }
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 20.dp, end = 20.dp, bottom = 46.dp)
-                .graphicsLayer { alpha = heroChromeAlpha },
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (product.isNegotiable) DetailChip(Icons.Filled.LocalOffer, "Offer")
-            if (product.hasDiscount) DetailChip(Icons.Filled.Percent, "Discount")
-        }
-        if (!galleryExpanded) {
-            MiniPhotoStack(
-                galleryProducts = galleryProducts,
-                selectedPhotoIndex = selectedPhotoIndex,
-                onNextPhoto = onNextPhoto,
-                onOpenGallery = onOpenGallery,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 20.dp, bottom = 34.dp)
-                    .graphicsLayer { alpha = heroChromeAlpha },
-            )
-        }
-    }
-}
-
-@Composable
-private fun MiniPhotoStack(
-    galleryProducts: List<SequoProduct>,
-    selectedPhotoIndex: Int,
-    onNextPhoto: () -> Unit,
-    onOpenGallery: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val selectedProduct = galleryProducts[selectedPhotoIndex]
-    val stackedProducts = galleryProducts
-        .filterIndexed { index, _ -> index != selectedPhotoIndex }
-        .take(3)
-    var photoActionProduct by remember { mutableStateOf<SequoProduct?>(null) }
-
-    Box(
-        modifier = modifier
-            .size(width = 106.dp, height = 92.dp)
-            .pointerInput(selectedProduct.id) {
-                detectTapGestures(
-                    onTap = { onNextPhoto() },
-                    onLongPress = { photoActionProduct = selectedProduct },
-                )
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        stackedProducts.reversed().forEachIndexed { index, galleryProduct ->
-            val visualIndex = 2 - index
-            Surface(
-                modifier = Modifier
-                    .size(width = 72.dp, height = 62.dp)
-                    .offset(x = ((visualIndex - 1) * 7).dp, y = ((visualIndex + 1) * 3).dp)
-                    .rotate((visualIndex - 1) * 5f),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.70f)),
-                shadowElevation = 3.dp,
-            ) {
-                CatalogProductImage(
-                    product = galleryProduct,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                PhotoAuthenticityBadge(
-                    product = galleryProduct,
-                    compact = true,
-                    onDark = true,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
-                )
-            }
-        }
-        Surface(
-            modifier = Modifier.size(width = 82.dp, height = 72.dp),
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.78f)),
-            shadowElevation = 6.dp,
-        ) {
-            Box(Modifier.fillMaxSize()) {
-                CatalogProductImage(
-                    product = selectedProduct,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-                PhotoAuthenticityBadge(
-                    product = selectedProduct,
-                    compact = true,
-                    onDark = true,
-                    modifier = Modifier.align(Alignment.TopStart).padding(5.dp),
-                )
-                Surface(
-                    onClick = onOpenGallery,
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(5.dp),
-                    shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.52f),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.PhotoLibrary,
-                        contentDescription = "Open photos",
-                        tint = Color.White,
-                        modifier = Modifier.padding(5.dp).size(14.dp),
-                    )
-                }
-            }
-        }
-        photoActionProduct?.let { actionProduct ->
-            ProductPhotoActionDialog(
-                product = actionProduct,
-                onDismiss = { photoActionProduct = null },
-            )
-        }
-    }
-}
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProductDetailInfoCard(
     listing: SequoProductListing,
@@ -443,24 +111,21 @@ private fun ProductDetailInfoCard(
     var acceptedThreadId by remember(product.id, bargainingRepository) { mutableStateOf<String?>(null) }
     SequoCard(shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(product.detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(product.optionHint, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f))
-            }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f))
-            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(formatCfa(product.priceCfa), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
-                    product.originalPriceCfa?.takeIf { product.hasDiscount }?.let { original ->
-                        Text(
-                            "Was ${formatCfa(original)} / save ${formatCfa(original - product.priceCfa)}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+            Text(product.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(formatCfa(product.priceCfa), style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                product.originalPriceCfa?.takeIf { product.hasDiscount }?.let {
+                    Text(formatCfa(it), style = MaterialTheme.typography.bodyMedium,
+                        textDecoration = TextDecoration.LineThrough, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                ProductDiscountBadge(product = product)
+                ProductDiscountBadge(product)
             }
+            if (product.detail.isNotBlank()) Text(product.detail, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (product.optionHint.isNotBlank()) Text(product.optionHint, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (product.isNegotiable) {
                 ProductBargainingPanel(product, bargainingRepository, onSignInRequested) { acceptedThreadId = it }
             }
@@ -535,11 +200,7 @@ private fun ProductSellerCard(shop: SequoShop) {
                 }
                 RatingMark(shop.rating)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                shop.distanceKm?.let { MetaPill(formatDistance(it), SequoPrimary) }
-                shop.distanceKm?.let { MetaPill(formatCfa(baseDelivery(it)), SequoSecondary) }
-                MetaPill(shop.eta, SequoAccent)
-            }
+            ShopFacts(shop)
             RuleRow(shop.openStatus, shop.consolidation)
         }
     }
@@ -613,14 +274,7 @@ private fun ProductSuggestionsSection(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        MarketplaceSectionHeader(
-            title = "More buying options",
-            action = when (selectedTab) {
-                ProductSuggestionTab.SameShop -> "One delivery"
-                ProductSuggestionTab.OtherShops -> "Compare"
-            },
-            onAction = {},
-        )
+        Text(appText(Res.string.polish_more_options), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Surface(
             shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -641,9 +295,9 @@ private fun ProductSuggestionsSection(
                         onClick = { selectedTab = tab },
                         text = {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                Text(tab.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(appText(if (tab == ProductSuggestionTab.SameShop) Res.string.polish_same_shop else Res.string.polish_other_shops), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(
-                                    "$count items",
+                                    "$count ${appText(Res.string.polish_items)}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (selectedTab == tab) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -654,16 +308,11 @@ private fun ProductSuggestionsSection(
                 }
             }
         }
-        Text(
-            suggestionExplainer(selectedTab, current),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         if (visibleSuggestions.isEmpty()) {
             Text(
                 when (selectedTab) {
-                    ProductSuggestionTab.SameShop -> "No other products from this seller yet."
-                    ProductSuggestionTab.OtherShops -> "No close alternatives from other shops yet."
+                    ProductSuggestionTab.SameShop -> appText(Res.string.polish_no_same_shop)
+                    ProductSuggestionTab.OtherShops -> appText(Res.string.polish_no_other_shops)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -674,7 +323,7 @@ private fun ProductSuggestionsSection(
                     shop = suggestion.shop,
                     product = suggestion.product,
                     comparisonPriceCfa = current.product.priceCfa,
-                    relationLabel = productRelationLabel(current.product),
+                    relationLabel = null,
                     onAddProduct = onAddProduct,
                     onProductClick = { onProductSelected(suggestion) },
                     onNegotiateClick = { onProductSelected(suggestion) },

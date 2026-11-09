@@ -1,5 +1,12 @@
 package dev.orestegabo.sequo.ui.catalog
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.FilterChip
@@ -32,18 +39,19 @@ internal fun ProductOptionsPanel(
     var confirmedPrice by remember(product.id) { mutableStateOf<Int?>(null) }
     val scope = rememberCoroutineScope()
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         product.customizations.forEach { group ->
             val choices = selected[group.id].orEmpty()
             val max = minOf(group.maxChoices, group.options.size)
             Text(group.name, style = MaterialTheme.typography.titleSmall)
-            Text(appText(Res.string.product_option_choices) + " ${group.minChoices}–$max")
+            Text(appText(Res.string.product_option_choices) + " ${group.minChoices}–$max",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             group.options.forEach { option ->
                 val checked = option.id in choices
-                FilterChip(
-                    selected = checked,
-                    enabled = !busy && option.active && max > 0 && (checked || max == 1 || choices.size < max),
-                    onClick = {
+                val enabled = !busy && option.active && max > 0 && (checked || max == 1 || choices.size < max)
+                Row(Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled,
+                    role = if (max == 1) Role.RadioButton else Role.Checkbox,
+                    onValueChange = {
                         val next = when {
                             checked -> choices - option.id
                             max == 1 -> setOf(option.id)
@@ -52,16 +60,20 @@ internal fun ProductOptionsPanel(
                         selected = selected + (group.id to next)
                         failed = false
                         confirmedPrice = null
-                    },
-                    label = {
-                        val suffix = when {
-                            !option.active -> " · " + appText(Res.string.product_option_unavailable)
-                            option.priceDeltaCfa > 0 -> " +${formatCfa(option.priceDeltaCfa)}"
-                            else -> ""
-                        }
-                        Text(option.name + suffix)
-                    },
-                )
+                    }).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (max == 1) RadioButton(selected = checked, enabled = enabled, onClick = null)
+                    else Checkbox(checked = checked, enabled = enabled, onCheckedChange = null)
+                    Text(option.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                    val suffix = when {
+                        !option.active -> appText(Res.string.product_option_unavailable)
+                        option.priceDeltaCfa > 0 -> "+${formatCfa(option.priceDeltaCfa)}"
+                        else -> ""
+                    }
+                    if (suffix.isNotBlank()) Text(suffix, style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         if (failed) Text(appText(Res.string.product_option_error), color = MaterialTheme.colorScheme.error)

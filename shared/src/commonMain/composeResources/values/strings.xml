@@ -493,4 +493,15 @@
     <string name="settings_email">Email address</string>
     <string name="settings_close">Close</string>
     <string name="settings_appearance">Appearance</string>
+    <string name="polish_more_items">more products in this shop</string>
+    <string name="polish_discount">Discount</string>
+    <string name="polish_view_photo">View product photo</string>
+    <string name="polish_more_options">More to discover</string>
+    <string name="polish_same_shop">Same shop</string>
+    <string name="polish_other_shops">Other shops</string>
+    <string name="polish_items">products</string>
+    <string name="polish_no_same_shop">No other products from this shop yet.</string>
+    <string name="polish_no_other_shops">No similar products from other shops yet.</string>
+    <string name="polish_decrease_quantity">Decrease quantity</string>
+    <string name="polish_increase_quantity">Increase quantity</string>
 </resources>

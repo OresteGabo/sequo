@@ -182,47 +182,27 @@ private fun MarketSortBar(
     selectedSort: String,
     onSortSelected: (String) -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = selectedType.accent.copy(alpha = 0.11f),
-        border = BorderStroke(1.dp, selectedType.accent.copy(alpha = 0.24f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Tune,
-                    contentDescription = null,
-                    tint = selectedType.accent,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    "$categoryTitle · $visibleCount ${appText(if (visibleCount == 1) Res.string.browse_shop_one else Res.string.browse_shops_count)}",
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+    var expanded by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(categoryTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("$visibleCount ${appText(if (visibleCount == 1) Res.string.browse_shop_one else Res.string.browse_shops_count)}",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Icon(Icons.AutoMirrored.Filled.Sort, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(appCatalogText(selectedSort))
+                Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(18.dp))
             }
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
                 listOf("Nearby", "Fastest", "Rating", "Delivery").forEach { sort ->
-                    SequoFilterChip(
-                        label = appCatalogText(sort),
-                        selected = sort == selectedSort,
-                        onClick = { onSortSelected(sort) },
-                        modifier = Modifier.widthIn(min = 88.dp),
-                    )
+                    DropdownMenuItem(text = { Text(appCatalogText(sort)) },
+                        trailingIcon = { if (sort == selectedSort) Icon(Icons.Filled.Check, null) },
+                        onClick = { onSortSelected(sort); expanded = false })
                 }
             }
         }

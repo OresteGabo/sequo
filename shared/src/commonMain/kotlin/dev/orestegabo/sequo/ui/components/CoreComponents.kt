@@ -98,7 +98,7 @@ internal fun SequoCard(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = SequoDesign.CardShape,
     color: Color = MaterialTheme.colorScheme.surface,
-    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
     content: @Composable () -> Unit,
 ) {
     Surface(
@@ -144,16 +144,9 @@ internal fun SequoSecondaryButton(
 
 @Composable
 internal fun SequoTinyButton(label: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(13.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.SemiBold)
+    Button(onClick = onClick, modifier = Modifier.heightIn(min = 44.dp),
+        shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
+        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
     }
 }
 

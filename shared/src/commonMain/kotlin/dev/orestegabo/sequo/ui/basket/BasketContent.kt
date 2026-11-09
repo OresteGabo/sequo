@@ -2,6 +2,16 @@ package dev.orestegabo.sequo.ui.basket
 
 import dev.orestegabo.sequo.ui.components.SequoEmptyState
 import dev.orestegabo.sequo.ui.components.EmptyStateVisual
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.ui.text.font.FontWeight
+import dev.orestegabo.sequo.ui.components.SequoCard
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -89,11 +99,17 @@ internal fun BasketContent(
     TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
 
     for (line in cart.items) {
-        SequoPanel {
+        SequoCard {
             Column(Modifier.padding(SequoDesign.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(line.product.name, style = MaterialTheme.typography.titleMedium)
-                val price = line.lineTotalCfa
-                Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top) {
+                    Text(line.product.name, style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    val price = line.lineTotalCfa
+                    Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable),
+                        style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
+                        color = if (line.available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                }
                 line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
                 line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
                 if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
@@ -102,15 +118,26 @@ internal fun BasketContent(
                     group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.name }
                 }
                 if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { onQuantity(line, line.quantity - 1) }, enabled = editingEnabled && line.available && line.quantity > 1) {
-                        Text("−")
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { onQuantity(line, line.quantity - 1) },
+                                enabled = editingEnabled && line.available && line.quantity > 1) {
+                                Icon(Icons.Filled.Remove, appText(Res.string.polish_decrease_quantity))
+                            }
+                            Text(line.quantity.toString(), modifier = Modifier.padding(horizontal = 6.dp), fontWeight = FontWeight.SemiBold)
+                            IconButton(onClick = { onQuantity(line, line.quantity + 1) },
+                                enabled = editingEnabled && line.available && line.quantity < 99) {
+                                Icon(Icons.Filled.Add, appText(Res.string.polish_increase_quantity))
+                            }
+                        }
                     }
-                    Text(line.quantity.toString())
-                    TextButton(onClick = { onQuantity(line, line.quantity + 1) }, enabled = editingEnabled && line.available && line.quantity < 99) {
-                        Text("+")
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = { onQuantity(line, 0) }, enabled = editingEnabled,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                        Text(appText(Res.string.cart_remove))
                     }
-                    TextButton(onClick = { onQuantity(line, 0) }, enabled = editingEnabled) { Text(appText(Res.string.cart_remove)) }
                 }
             }
             }
@@ -225,6 +252,8 @@ internal fun BasketContent(
         quoteFailed -> Text(appText(Res.string.cart_quote_failed), color = MaterialTheme.colorScheme.error)
         addressId != null && quote == null -> Text(appText(Res.string.cart_loading))
         !busy -> quote?.let {
+            SequoCard {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             CartAmount(appText(Res.string.basket_payment_items), it.productTotalCfa)
             CartAmount(appText(Res.string.cart_options), it.optionTotalCfa)
             CartAmount(appText(Res.string.cart_service_fee), it.serviceFeeCfa)
@@ -236,24 +265,36 @@ internal fun BasketContent(
                 if (it.referralCreditAppliedCfa > 0) CartAmount(appText(Res.string.benefits_referral_credit), -it.referralCreditAppliedCfa)
             }
             CartAmount(appText(if (hasDeliveryBenefits) Res.string.benefits_delivery_final else Res.string.basket_delivery), it.deliveryFeeCfa)
-            CartAmount(appText(Res.string.basket_payment_total), it.totalCfa)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f))
+            CartAmount(appText(Res.string.basket_payment_total), it.totalCfa, strong = true)
+            }
+            }
             val reviewedQuote = it
             var provider by remember { mutableStateOf("yas_togo") }
             for ((id, label) in listOf("yas_togo" to "Mixx by Yas", "moov_africa" to "Flooz")) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = provider == id, onClick = { provider = id }, enabled = editingEnabled)
-                    Text(label)
-                }
                 val configuration = providers?.firstOrNull { it.providerId == id }
-                Text(appText(when {
-                    providersFailed -> Res.string.checkout_provider_status_failed
-                    providers == null -> Res.string.cart_loading
-                    configuration?.paymentAvailable == true -> Res.string.checkout_provider_ready
-                    configuration?.apiConfigured == true -> Res.string.checkout_provider_prepared
-                    else -> Res.string.basket_payment_not_configured_detail
-                }), style = MaterialTheme.typography.bodySmall)
+                Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, if (provider == id) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
+                    Row(Modifier.fillMaxWidth().selectable(selected = provider == id, enabled = editingEnabled,
+                        role = Role.RadioButton, onClick = { provider = id }).padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        RadioButton(selected = provider == id, onClick = null, enabled = editingEnabled)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(label, style = MaterialTheme.typography.titleSmall)
+                            Text(appText(when {
+                                providersFailed -> Res.string.checkout_provider_status_failed
+                                providers == null -> Res.string.cart_loading
+                                configuration?.paymentAvailable == true -> Res.string.checkout_provider_ready
+                                configuration?.apiConfigured == true -> Res.string.checkout_provider_prepared
+                                else -> Res.string.basket_payment_not_configured_detail
+                            }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
             }
             Button(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
                 enabled = editingEnabled,
                 onClick = {
                     submitting = true
@@ -302,10 +343,13 @@ internal fun BasketContent(
 private enum class CheckoutError { PriceChanged, Rejected, SubmitFailed }
 
 @Composable
-private fun CartAmount(label: String, amount: Int) {
+private fun CartAmount(label: String, amount: Int, strong: Boolean = false) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label)
-        Text(formatCfa(amount))
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(formatCfa(amount), style = if (strong) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyMedium,
+            color = if (strong) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (strong) FontWeight.Bold else FontWeight.Medium)
     }
 }
 

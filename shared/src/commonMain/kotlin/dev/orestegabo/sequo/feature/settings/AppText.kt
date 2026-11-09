@@ -29,6 +29,17 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.polish_more_items.key to "more products in this shop",
+    Res.string.polish_discount.key to "Discount",
+    Res.string.polish_view_photo.key to "View product photo",
+    Res.string.polish_more_options.key to "More to discover",
+    Res.string.polish_same_shop.key to "Same shop",
+    Res.string.polish_other_shops.key to "Other shops",
+    Res.string.polish_items.key to "products",
+    Res.string.polish_no_same_shop.key to "No other products from this shop yet.",
+    Res.string.polish_no_other_shops.key to "No similar products from other shops yet.",
+    Res.string.polish_decrease_quantity.key to "Decrease quantity",
+    Res.string.polish_increase_quantity.key to "Increase quantity",
     Res.string.settings_guest_hint.key to "Your preferences, your way.",
     Res.string.settings_view_profile.key to "View your profile",
     Res.string.settings_your_account.key to "Your account",
@@ -528,6 +539,17 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.polish_more_items.key to "autres produits dans ce commerce",
+    Res.string.polish_discount.key to "Réduction",
+    Res.string.polish_view_photo.key to "Voir la photo du produit",
+    Res.string.polish_more_options.key to "À découvrir aussi",
+    Res.string.polish_same_shop.key to "Même commerce",
+    Res.string.polish_other_shops.key to "Autres commerces",
+    Res.string.polish_items.key to "produits",
+    Res.string.polish_no_same_shop.key to "Ce commerce n’a pas encore d’autres produits.",
+    Res.string.polish_no_other_shops.key to "Aucun produit similaire dans les autres commerces pour le moment.",
+    Res.string.polish_decrease_quantity.key to "Diminuer la quantité",
+    Res.string.polish_increase_quantity.key to "Augmenter la quantité",
     Res.string.settings_guest_hint.key to "Vos préférences, à votre façon.",
     Res.string.settings_view_profile.key to "Voir votre profil",
     Res.string.settings_your_account.key to "Votre compte",
@@ -1027,6 +1049,11 @@ private val FrenchStrings = mapOf(
 )
 
 private val FrenchCatalogStrings = mapOf(
+    "ready now" to "Prêt maintenant",
+    "fresh & pantry" to "Produits frais et épicerie",
+    "clothes & shoes" to "Vêtements et chaussures",
+    "phones & tech" to "Téléphones et multimédia",
+    "care & health" to "Santé et soins",
     "home & baby" to "Maison & bébé",
     "all lome" to "Tout Lomé",
     "nearby" to "À proximité",

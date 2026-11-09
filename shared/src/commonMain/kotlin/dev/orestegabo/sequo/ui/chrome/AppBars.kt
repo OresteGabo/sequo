@@ -58,35 +58,32 @@ internal fun SequoTopAppBar(
     val productMode = productListing != null
     val backMode = productMode || showBackButton
     val searchAvailable = currentDestination != SequoSection.Notifications
-    SequoPageHeader(
-        modifier = modifier,
-        title = productListing?.product?.name ?: sectionTitle ?: currentDestination.appBarTitle(),
-        subtitle = productListing?.let { listOfNotNull(it.shop.name, it.shop.area).joinToString(" / ") }
-            ?: sectionSubtitle ?: currentDestination.appBarSubtitle(),
-        navigationIcon = {
-            IconButton(onClick = if (backMode) onBackClick else onMenuClick) {
-                Icon(if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
-                    contentDescription = if (backMode) appText(Res.string.cd_back) else appText(Res.string.cd_open_menu),
-                    modifier = Modifier.size(24.dp))
+    Row(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        IconButton(onClick = if (backMode) onBackClick else onMenuClick) {
+            Icon(if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
+                contentDescription = appText(if (backMode) Res.string.cd_back else Res.string.cd_open_menu),
+                modifier = Modifier.size(23.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(productListing?.product?.name ?: sectionTitle ?: currentDestination.appBarTitle(),
+                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(productListing?.shop?.name ?: sectionSubtitle ?: currentDestination.appBarSubtitle(),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        if (!productMode && currentDestination != SequoSection.Notifications) {
+            if (searchAvailable) IconButton(onClick = onSearchClick) {
+                Icon(Icons.Filled.Search, appText(Res.string.cd_search), modifier = Modifier.size(23.dp))
             }
-        },
-        actions = {
-            if (!productMode) {
-                if (searchAvailable) IconButton(onClick = onSearchClick) {
-                    Icon(Icons.Filled.Search, contentDescription = appText(Res.string.cd_search), modifier = Modifier.size(24.dp))
-                }
-                IconButton(onClick = onNotificationsClick) {
-                    BadgedBox(badge = {
-                        if (notificationUnreadCount > 0) Badge {
-                            Text(if (notificationUnreadCount > 99) "99+" else notificationUnreadCount.toString())
-                        }
-                    }) {
-                        Icon(Icons.Filled.Notifications, contentDescription = appText(Res.string.cd_notifications), modifier = Modifier.size(24.dp))
-                    }
-                }
+            IconButton(onClick = onNotificationsClick) {
+                BadgedBox(badge = { if (notificationUnreadCount > 0) Badge {
+                    Text(if (notificationUnreadCount > 99) "99+" else "$notificationUnreadCount")
+                } }) { Icon(Icons.Filled.NotificationsNone, appText(Res.string.cd_notifications), modifier = Modifier.size(23.dp)) }
             }
-        },
-    )
+        }
+    }
 }
 
 @Composable

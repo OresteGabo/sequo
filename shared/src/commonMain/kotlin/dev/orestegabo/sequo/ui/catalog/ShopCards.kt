@@ -64,22 +64,22 @@ internal fun SequoShopCard(
     val displayProducts = visibleProducts.take(6)
     val remainingProductCount = visibleProducts.size - displayProducts.size
     SequoCard {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-                SequoShoppingMark(Modifier.size(52.dp))
+                SequoShoppingMark(Modifier.size(42.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(shop.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(shop.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     listOfNotNull(shop.area, shop.kind?.let { appCatalogText(it) }).joinToString(" / ").takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.70f), maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     shop.openStatus?.let { Text(appCatalogText(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
                 }
                 RatingMark(shop.rating)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                shop.distanceKm?.let { MetaPill(formatDistance(it), SequoPrimary) }
-                shop.distanceKm?.let { MetaPill(formatCfa(baseDelivery(it)), SequoSecondary) }
-                MetaPill(shop.eta?.let { appCatalogText(it) }, SequoAccent)
-            }
-            RuleRow(shop.photoStatus?.let { appCatalogText(it) }, shop.consolidation?.let { appCatalogText(it) })
+            ShopFacts(shop)
+            listOfNotNull(shop.photoStatus, shop.consolidation).filter { it.isNotBlank() }
+                .takeIf { it.isNotEmpty() }?.let { facts ->
+                    Text(facts.map { appCatalogText(it) }.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             displayProducts.forEach { product ->
                 ProductLine(
                     product = product,
@@ -90,7 +90,7 @@ internal fun SequoShopCard(
             }
             if (remainingProductCount > 0) {
                 Text(
-                    "+$remainingProductCount more items in this shop",
+                    "+$remainingProductCount ${appText(Res.string.polish_more_items)}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -109,8 +109,8 @@ internal fun ShopSummaryRow(shop: SequoShop) {
             .padding(vertical = 2.dp),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 2.dp,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
     ) {
         Column(Modifier.fillMaxWidth().padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -144,11 +144,7 @@ internal fun ShopSummaryRow(shop: SequoShop) {
                 }
                 RatingMark(shop.rating)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                shop.distanceKm?.let { MetaPill(formatDistance(it), SequoPrimary) }
-                shop.distanceKm?.let { MetaPill(formatCompactCfa(baseDelivery(it)), SequoSecondary) }
-                MetaPill(shop.eta?.let { appCatalogText(it) }, SequoAccent)
-            }
+            ShopFacts(shop)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,47 +190,46 @@ internal fun ProductLine(
     onNegotiateClick: () -> Unit = {},
     onProductClick: () -> Unit = {},
 ) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                ProductImage(
-                    product = product,
-                    onClick = onProductClick,
-                    modifier = Modifier
-                        .size(58.dp),
-                )
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .clickable(onClick = onProductClick),
-                ) {
-                    Text(product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(appCatalogText(productSubcategory(product)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.66f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                MetaPill(appCatalogText(productSubcategory(product)), if (product.isNegotiable) SequoSecondary else SequoAccent)
-                Text(product.optionHint, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    NegotiablePrice(
-                        product = product,
-                        onNegotiateClick = onNegotiateClick,
-                    )
-                    ProductDiscountBadge(product = product)
-                }
-                SequoTinyButton(appText(Res.string.home_add), if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            ProductImage(product, onClick = onProductClick, modifier = Modifier.size(80.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(product.name, modifier = Modifier.clickable(onClick = onProductClick),
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(product.optionHint.takeIf { it.isNotBlank() } ?: appCatalogText(productSubcategory(product)),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                NegotiablePrice(product, onNegotiateClick = onNegotiateClick)
+                ProductDiscountBadge(product)
+            }
+            SequoTinyButton(appText(Res.string.home_add),
+                if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick)
+        }
+    }
+}
+
+@Composable
+internal fun ShopFacts(shop: SequoShop) {
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        shop.distanceKm?.let { ShopFact(Icons.Filled.NearMe, formatDistance(it)) }
+        shop.eta?.let { ShopFact(Icons.Filled.Schedule, appCatalogText(it)) }
+        shop.distanceKm?.let { ShopFact(Icons.Filled.LocalShipping, formatCfa(baseDelivery(it))) }
+    }
+}
+
+@Composable
+private fun ShopFact(icon: ImageVector, label: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -375,21 +370,13 @@ internal fun ProductDiscountBadge(
 ) {
     if (!product.hasDiscount) return
 
-    val badgeColor = if (onDark) Color.White else SequoSecondary
-    Surface(
-        modifier = modifier.size(if (compact) 22.dp else 26.dp),
-        shape = CircleShape,
-        color = badgeColor.copy(alpha = if (onDark) 0.18f else 0.12f),
-        border = BorderStroke(1.dp, badgeColor.copy(alpha = if (onDark) 0.24f else 0.20f)),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Filled.Percent,
-                contentDescription = "Discount",
-                tint = badgeColor,
-                modifier = Modifier.size(if (compact) 13.dp else 15.dp),
-            )
-        }
+    val original = product.originalPriceCfa?.takeIf { it > 0 } ?: return
+    val percent = ((original - product.priceCfa).toDouble() / original * 100).roundToInt()
+    Surface(modifier = modifier, shape = RoundedCornerShape(8.dp),
+        color = if (onDark) Color(0xFF0B6B46) else MaterialTheme.colorScheme.primaryContainer) {
+        Text("−$percent%", modifier = Modifier.padding(horizontal = if (compact) 5.dp else 7.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
+            color = if (onDark) Color.White else MaterialTheme.colorScheme.onPrimaryContainer)
     }
 }
 

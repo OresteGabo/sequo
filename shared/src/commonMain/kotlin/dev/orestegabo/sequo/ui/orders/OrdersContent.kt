@@ -115,13 +115,17 @@ internal fun OrdersContent(
     for (row in rows) {
         key(sessionKey, row.id) {
         var expanded by remember { mutableStateOf(false) }
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        SequoCard(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Text(appText(orderHistoryStatus(row.status)), style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
-                    Text(formatCfa(row.totalCfa), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                        Text(appText(orderHistoryStatus(row.status)), modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text(formatCfa(row.totalCfa), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 }
                 Text(row.displayReference, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)

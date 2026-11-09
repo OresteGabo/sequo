@@ -252,3 +252,11 @@ Prefer reusable components:
 - `ErrorState`.
 
 Domain logic should live outside composables. Composables should render backend-confirmed state and dispatch user events to view models.
+
+## Shopping Visual Hierarchy
+
+Use flat theme-aware surfaces, 20–24 dp corners, subtle dividers, and consistent 16 dp card padding. Reserve strong green for the selected destination, prices, and primary actions. Avoid decorative shadows, nested product cards, duplicate category labels, and controls without working actions.
+
+Home product cards give the photo, two-line name, location, price, and Add button separate space. Bargaining remains a distinct action. Categories retain stable ordering while browsing, with a small pin marker for pinned items. Markets uses anchored sort and filter menus so choices do not displace shop listings. Shop distance, estimated delivery fee, and time form a compact metadata row.
+
+Product details use one clear hero image, actual photo actions, readable pricing with wrapping for large text, and radio or checkbox rows for options. Cart quantities and payment options use comfortable touch targets; totals and order status have a clear visual hierarchy. Main navigation stays compact and uses a small selected indicator without glow or heavy elevation.

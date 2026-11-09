@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appText
+import dev.orestegabo.sequo.feature.settings.appCatalogText
 import dev.orestegabo.sequo.logic.*
 import dev.orestegabo.sequo.model.*
 import dev.orestegabo.sequo.theme.*
@@ -214,64 +215,14 @@ internal fun FlashSaleSection(
     onNegotiateClick: (SequoProduct) -> Unit = {},
     onProductSelected: (SequoShop, SequoProduct) -> Unit = { _, _ -> },
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        // Section Header Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f) // Prevents title text overflow bugs
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (badge != null) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text(
-                            text = badge,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                if (!badge.isNullOrBlank()) Text(appCatalogText(badge), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
-            Surface(
-                onClick = onSeeAll,
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Box(
-                    modifier = Modifier.size(34.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = appText(Res.string.home_see_all),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(21.dp),
-                    )
-                }
-            }
+            TextButton(onClick = onSeeAll) { Text(appText(Res.string.home_see_all)) }
         }
 
         // Product Grid Rows
@@ -307,134 +258,43 @@ internal fun FlashProductCard(
     onProductClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 3.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
-                onClick = onProductClick,
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
-            ) {
-                Box(Modifier.fillMaxSize()) {
-                    CatalogProductImage(
-                        product = product,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                    Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.32f)))))
-                    PhotoAuthenticityBadge(
-                        product = product,
-                        compact = true,
-                        onDark = true,
-                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-                    )
-
-                    Surface(
-                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(34.dp),
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.92f),
-                        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.08f)),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Filled.FavoriteBorder,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(19.dp),
-                            )
-                        }
-                    }
-
-                    if (product.isNegotiable || product.hasDiscount) {
-                        Row(
-                            modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (product.isNegotiable) {
-                                Surface(
-                                    onClick = onNegotiateClick,
-                                    modifier = Modifier.size(30.dp),
-                                    shape = CircleShape,
-                                    color = Color.White.copy(alpha = 0.90f),
-                                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.08f)),
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Filled.LocalOffer,
-                                            contentDescription = appText(Res.string.home_make_offer),
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                    }
-                                }
-                            }
-                            ProductDiscountBadge(product = product, compact = false, onDark = true)
-                        }
-                    }
+    Surface(modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(onClick = onProductClick, modifier = Modifier.fillMaxWidth().aspectRatio(1.05f),
+                shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Box {
+                    CatalogProductImage(product, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    PhotoAuthenticityBadge(product, compact = true, onDark = true,
+                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                    ProductDiscountBadge(product, compact = false, onDark = true,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
                 }
             }
-
-            Text(
-                product.name,
-                modifier = Modifier.clickable(onClick = onProductClick),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            shop.area?.let { area ->
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Text(
-                        area,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+            Text(product.name, modifier = Modifier.clickable(onClick = onProductClick),
+                style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(shop.area ?: shop.name, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(formatCfa(product.priceCfa), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                if (product.isNegotiable) IconButton(onClick = onNegotiateClick) {
+                    Icon(Icons.Filled.LocalOffer, appText(Res.string.home_make_offer), Modifier.size(19.dp),
+                        tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)),
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    NegotiablePrice(
-                        product = product,
-                        onNegotiateClick = onNegotiateClick,
-                        compact = true,
-                    )
-                    ProductDiscountBadge(product = product, compact = true)
-                }
-                SequoTinyButton(appText(Res.string.home_add), if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick)
+            Button(onClick = if (product.customizations.isEmpty()) ({ onAddProduct(product.id) }) else onProductClick,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp), shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)) {
+                Icon(Icons.Filled.Add, null, Modifier.size(17.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(appText(Res.string.home_add), style = MaterialTheme.typography.labelLarge)
             }
         }
     }
 }
+
 
 internal fun productVisualIcon(product: SequoProduct): ImageVector =
     when {

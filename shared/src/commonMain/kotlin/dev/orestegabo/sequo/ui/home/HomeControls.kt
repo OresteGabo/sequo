@@ -166,102 +166,30 @@ private fun ProductPromoCard(
     onNegotiateClick: () -> Unit,
     onProductClick: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().height(126.dp),
-        onClick = onProductClick,
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
-    ) {
-        Box(Modifier.fillMaxSize()) {
-            CatalogProductImage(
-                product = promo.product,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Black.copy(alpha = 0.72f),
-                                Color.Black.copy(alpha = 0.38f),
-                                Color.Transparent,
-                            ),
-                        ),
-                    ),
-            )
-            PhotoAuthenticityBadge(
-                product = promo.product,
-                compact = true,
-                onDark = true,
-                modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .widthIn(max = 210.dp)
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        promo.headline,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.White.copy(alpha = 0.82f),
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        promo.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            promo.product.name,
-                            modifier = Modifier.weight(1f, fill = false),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White.copy(alpha = 0.78f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        PromoPrice(
-                            product = promo.product,
-                            onNegotiateClick = onNegotiateClick,
-                        )
-                        ProductDiscountBadge(product = promo.product, compact = true, onDark = true)
-                    }
-                    Text(
-                        promo.subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.70f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+    Surface(modifier = Modifier.fillMaxWidth().height(184.dp), onClick = onProductClick,
+        shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Box {
+            CatalogProductImage(promo.product, Modifier.fillMaxSize(), ContentScale.Crop)
+            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
+                Color.Black.copy(alpha = .76f), Color.Black.copy(alpha = .48f), Color.Black.copy(alpha = .12f)))))
+            Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.widthIn(max = 260.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(appCatalogText(promo.headline), style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = .8f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(promo.title, style = MaterialTheme.typography.titleLarge, color = Color.White,
+                        fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SequoTinyButton(appText(Res.string.home_add), if (promo.product.customizations.isEmpty()) ({ onAddProduct(promo.product.id) }) else onProductClick)
-                    Surface(
-                        onClick = onSeeAll,
-                        shape = RoundedCornerShape(999.dp),
-                        color = Color.White.copy(alpha = 0.18f),
-                    ) {
-                        Text(
-                            appText(Res.string.home_view),
-                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    PromoPrice(promo.product, onNegotiateClick)
+                    ProductDiscountBadge(promo.product, compact = true, onDark = true)
+                    Spacer(Modifier.weight(1f))
+                    SequoTinyButton(appText(Res.string.home_add),
+                        if (promo.product.customizations.isEmpty()) ({ onAddProduct(promo.product.id) }) else onProductClick)
                 }
             }
+            PhotoAuthenticityBadge(promo.product, compact = true, onDark = true,
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp))
         }
     }
 }
@@ -366,124 +294,36 @@ internal fun MarketplaceCategoryBubble(
     onTogglePinned: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val containerColor = if (selected) {
-        type.accent
-    } else {
-        type.accent.copy(alpha = 0.14f)
-    }
-    val iconColor = if (selected) Color.White else type.accent
-    val hangerColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.46f)
-    val hangerShadowColor = Color.Black.copy(alpha = 0.12f)
-    val nailColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.84f)
-    val nailHighlightColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.76f)
-    var menuExpanded by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = modifier.widthIn(min = 64.dp)
-            .semantics(mergeDescendants = true) { this.selected = selected; role = Role.Tab }
-            .combinedClickable(onClick = onClick, onLongClick = { menuExpanded = true }),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(width = 54.dp, height = 64.dp),
-        ) {
-            if (pinned) {
-                Canvas(modifier = Modifier.matchParentSize()) {
-                    val centerX = size.width / 2f
-                    drawLine(
-                        color = hangerColor,
-                        start = Offset(centerX, 9.dp.toPx()),
-                        end = Offset(centerX, 18.dp.toPx()),
-                        strokeWidth = 1.5.dp.toPx(),
-                    )
-                    drawCircle(
-                        color = nailColor,
-                        radius = 3.2.dp.toPx(),
-                        center = Offset(centerX, 6.dp.toPx()),
-                    )
-                    drawCircle(
-                        color = nailHighlightColor,
-                        radius = 1.dp.toPx(),
-                        center = Offset(centerX - 1.dp.toPx(), 5.dp.toPx()),
-                    )
-                }
-            }
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .size(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = containerColor,
-                border = if (selected) null else BorderStroke(1.dp, type.accent.copy(alpha = 0.34f)),
-            ) {
+    var menuExpanded by remember(type.key) { mutableStateOf(false) }
+    Column(modifier.width(76.dp)
+        .semantics(mergeDescendants = true) { this.selected = selected; role = Role.Tab }
+        .combinedClickable(onClick = onClick, onLongClick = { menuExpanded = true }),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box {
+            Surface(modifier = Modifier.size(56.dp), shape = RoundedCornerShape(18.dp),
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = type.icon,
-                        contentDescription = null,
-                        tint = iconColor,
-                        modifier = Modifier.size(22.dp),
-                    )
+                    Icon(type.icon, null, Modifier.size(24.dp),
+                        tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (pinned) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .offset(y = 14.dp)
-                        .size(width = 16.dp, height = 4.dp),
-                    shape = CircleShape,
-                    color = hangerShadowColor,
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(width = 9.dp, height = 1.dp)
-                                .clip(CircleShape)
-                                .background(hangerColor.copy(alpha = 0.48f)),
-                        )
-                    }
-                }
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-                offset = DpOffset(x = 0.dp, y = (-104).dp),
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            when {
-                                pinned -> appText(Res.string.home_unpin_category)
-                                canTogglePinned -> appText(Res.string.home_pin_category)
-                                else -> appText(Res.string.home_pinned_max)
-                            },
-                        )
-                    },
-                    leadingIcon = {
-                        PushPinActionIcon(showAdd = !pinned, enabled = canTogglePinned)
-                    },
-                    enabled = canTogglePinned,
-                    onClick = {
-                        menuExpanded = false
-                        onTogglePinned()
-                    },
-                )
+            if (pinned) Icon(Icons.Filled.PushPin, null,
+                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp),
+                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)
+            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                DropdownMenuItem(text = { Text(appText(when {
+                    pinned -> Res.string.home_unpin_category
+                    canTogglePinned -> Res.string.home_pin_category
+                    else -> Res.string.home_pinned_max
+                })) }, leadingIcon = { PushPinActionIcon(showAdd = !pinned, enabled = canTogglePinned) },
+                    enabled = canTogglePinned, onClick = { menuExpanded = false; onTogglePinned() })
             }
         }
-        Text(
-            appCatalogText(type.title),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Text(appCatalogText(type.title), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -555,6 +395,7 @@ internal fun MarketplaceSectionHeader(
     ) {
         Text(
             title,
+            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,

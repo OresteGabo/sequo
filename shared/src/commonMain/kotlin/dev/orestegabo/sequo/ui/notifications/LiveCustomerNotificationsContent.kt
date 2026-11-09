@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,16 +68,14 @@ internal fun LiveCustomerNotificationsContent(
     }
     LaunchedEffect(client) { run() }
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = .64f), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-            Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Icons.Default.Notifications, null, tint = MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f)) {
-                    Text(text.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(text.saved, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (!loading && !failed) Text("${rows.count { it.readAt == null && it.archivedAt == null }} ${text.unread}", style = MaterialTheme.typography.labelMedium)
-                }
-                TextButton(enabled = !loading, onClick = { run() }) { Text(text.refresh) }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(text.saved, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!loading && !failed) Text("${rows.count { it.readAt == null && it.archivedAt == null }} ${text.unread}",
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             }
+            IconButton(enabled = !loading, onClick = { run() }) { Icon(Icons.Default.Refresh, text.refresh) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = !archived, onClick = { archived = false }, label = { Text(text.active) })
@@ -96,7 +95,7 @@ internal fun LiveCustomerNotificationsContent(
             )
         }
         rows.filter { (it.archivedAt != null) == archived }.forEach { message ->
-            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .3f))) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(message.title, style = MaterialTheme.typography.titleSmall, fontWeight = if (message.readAt == null) FontWeight.Bold else FontWeight.Medium)
                     Text(message.body, color = MaterialTheme.colorScheme.onSurfaceVariant)

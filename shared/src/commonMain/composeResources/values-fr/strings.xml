@@ -493,4 +493,15 @@
     <string name="settings_email">Adresse e-mail</string>
     <string name="settings_close">Fermer</string>
     <string name="settings_appearance">Apparence</string>
+    <string name="polish_more_items">autres produits dans ce commerce</string>
+    <string name="polish_discount">Réduction</string>
+    <string name="polish_view_photo">Voir la photo du produit</string>
+    <string name="polish_more_options">À découvrir aussi</string>
+    <string name="polish_same_shop">Même commerce</string>
+    <string name="polish_other_shops">Autres commerces</string>
+    <string name="polish_items">produits</string>
+    <string name="polish_no_same_shop">Ce commerce n’a pas encore d’autres produits.</string>
+    <string name="polish_no_other_shops">Aucun produit similaire dans les autres commerces pour le moment.</string>
+    <string name="polish_decrease_quantity">Diminuer la quantité</string>
+    <string name="polish_increase_quantity">Augmenter la quantité</string>
 </resources>
