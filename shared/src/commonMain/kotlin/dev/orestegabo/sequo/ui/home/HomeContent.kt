@@ -53,7 +53,9 @@ internal fun HomeContent(
     onToggleCategoryPinned: (String) -> Unit,
 ) {
     var selectedTypeKey by remember(catalog.defaultCategoryKey) { mutableStateOf(catalog.defaultCategoryKey) }
-    val orderedTypes = personalizedShopTypes(catalog.categories, categoryUsage, pinnedCategoryKeys)
+    // Record new usage for future visits without moving a category under the current tap.
+    val usageAtEntry = remember { categoryUsage.toMap() }
+    val orderedTypes = personalizedShopTypes(catalog.categories, usageAtEntry, pinnedCategoryKeys)
     val selectedType = catalog.categoryFor(selectedTypeKey)
     val selectedShops = catalog.shopsForCategory(selectedTypeKey)
     val featuredProducts = catalog.featuredProductsFor(selectedTypeKey)
@@ -75,7 +77,16 @@ internal fun HomeContent(
         },
         onTogglePinned = onToggleCategoryPinned,
     )
-    FlashSaleSection(
+    if (featuredProducts.isEmpty()) {
+        SequoEmptyState(
+            visual = EmptyStateVisual.Catalog,
+            title = appText(Res.string.empty_filter_title),
+            detail = appText(Res.string.empty_filter_detail),
+            actionLabel = appText(Res.string.empty_browse_all),
+            onAction = { onDestinationSelected(SequoSection.Markets) },
+            compact = true,
+        )
+    } else FlashSaleSection(
         title = appText(Res.string.home_popular_picks),
         badge = appCatalogText(selectedType.supportLabel),
         products = featuredProducts,
@@ -84,7 +95,7 @@ internal fun HomeContent(
         onProductSelected = { shop, product -> onProductSelected(SequoProductListing(shop, product)) },
         onNegotiateClick = { product -> featuredProducts.firstOrNull { it.second.id == product.id }?.let { onProductSelected(SequoProductListing(it.first, product)) } },
     )
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    if (selectedShops.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         MarketplaceSectionHeader(
             title = appText(Res.string.home_nearby_shops),
             action = appCatalogText(selectedType.supportLabel),

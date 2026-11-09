@@ -50,12 +50,15 @@ internal data class CatalogSnapshot(
 
     fun shopsForCategory(key: String): List<SequoShop> {
         if (key.isBlank()) return shops
-        val categoryProducts = products.filter { it.category == key }.map { it.product.name }.toSet()
-        return shops.filter { shop -> shop.products.any { it.name in categoryProducts } }
+        val categoryIds = products.filter { it.category == key }.map { it.product.id }.toSet()
+        return shops.mapNotNull { shop ->
+            val matchingProducts = shop.products.filter { it.id in categoryIds }
+            matchingProducts.takeIf { it.isNotEmpty() }?.let { shop.copy(products = it) }
+        }
     }
 
     fun featuredProductsFor(categoryKey: String): List<Pair<SequoShop, SequoProduct>> {
-        val sourceShops = shopsForCategory(categoryKey).ifEmpty { shops }
+        val sourceShops = shopsForCategory(categoryKey)
         return sourceShops
             .flatMap { shop -> shop.products.map { product -> shop to product } }
             .sortedWith(

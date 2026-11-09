@@ -31,6 +31,10 @@ import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.feature.settings.appCatalogText
@@ -334,15 +338,17 @@ internal fun MarketplaceCategorySection(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             types.forEach { type ->
-                val pinned = type.key in pinnedCategoryKeys
-                MarketplaceCategoryBubble(
-                    type = type,
-                    selected = type.key == selectedTypeKey,
-                    pinned = pinned,
-                    canTogglePinned = pinned || pinnedCategoryKeys.size < 3,
-                    onClick = { onTypeSelected(type.key) },
-                    onTogglePinned = { onTogglePinned(type.key) },
-                )
+                key(type.key) {
+                    val pinned = type.key in pinnedCategoryKeys
+                    MarketplaceCategoryBubble(
+                        type = type,
+                        selected = type.key == selectedTypeKey,
+                        pinned = pinned,
+                        canTogglePinned = pinned || pinnedCategoryKeys.size < 3,
+                        onClick = { onTypeSelected(type.key) },
+                        onTogglePinned = { onTogglePinned(type.key) },
+                    )
+                }
             }
             Spacer(Modifier.width(2.dp))
         }
@@ -373,17 +379,15 @@ internal fun MarketplaceCategoryBubble(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.widthIn(min = 64.dp),
+        modifier = modifier.widthIn(min = 64.dp)
+            .semantics(mergeDescendants = true) { this.selected = selected; role = Role.Tab }
+            .combinedClickable(onClick = onClick, onLongClick = { menuExpanded = true }),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(width = 54.dp, height = 64.dp)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = { menuExpanded = true },
-                ),
+                .size(width = 54.dp, height = 64.dp),
         ) {
             if (pinned) {
                 Canvas(modifier = Modifier.matchParentSize()) {

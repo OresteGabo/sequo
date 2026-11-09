@@ -33,6 +33,22 @@ class CatalogBrowsingTest {
         assertEquals(listOf("food"), snapshot.browseShops("food", CatalogBrowseMode.All).single().products.map { it.id })
     }
 
+    @Test fun homeCategorySelectionKeepsMixedShopProductsAndSameNamesSeparate() {
+        val food = product("food")
+        val goods = product("goods", discount = true)
+        val snapshot = catalog(listOf(shop("Mixed", 1.0, food, goods)),
+            mapOf("food" to "food", "goods" to "electronics"))
+        assertEquals(listOf("food"), snapshot.shopsForCategory("food").single().products.map { it.id })
+        assertEquals(listOf("food"), snapshot.featuredProductsFor("food").map { it.second.id })
+        assertEquals(listOf("goods"), snapshot.featuredProductsFor("electronics").map { it.second.id })
+    }
+
+    @Test fun emptyHomeCategoryDoesNotFallBackToUnrelatedProducts() {
+        val snapshot = catalog(listOf(shop("Food shop", 1.0, product("food"))), mapOf("food" to "food"))
+        assertTrue(snapshot.shopsForCategory("pharmacy").isEmpty())
+        assertTrue(snapshot.featuredProductsFor("pharmacy").isEmpty())
+    }
+
     @Test fun offersShowOnlyDiscountedProductsWithinTheSelectedCategory() {
         val food = product("food", discount = true)
         val goods = product("goods", discount = true)
