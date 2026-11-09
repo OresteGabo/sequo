@@ -483,4 +483,14 @@
     <string name="empty_browse_all">Browse all products</string>
     <string name="empty_filter_title">Let’s try another selection</string>
     <string name="empty_filter_detail">Nothing matches these filters right now. Reset them to discover more products and shops.</string>
+    <string name="settings_guest_hint">Your preferences, your way.</string>
+    <string name="settings_view_profile">View your profile</string>
+    <string name="settings_your_account">Your account</string>
+    <string name="settings_addresses_hint">Your delivery destinations</string>
+    <string name="settings_benefits_hint">Delivery benefits and available credit</string>
+    <string name="settings_profile">Your profile</string>
+    <string name="settings_name">Name</string>
+    <string name="settings_email">Email address</string>
+    <string name="settings_close">Close</string>
+    <string name="settings_appearance">Appearance</string>
 </resources>

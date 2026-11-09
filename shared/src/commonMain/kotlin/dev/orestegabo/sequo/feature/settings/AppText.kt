@@ -29,6 +29,16 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.settings_guest_hint.key to "Your preferences, your way.",
+    Res.string.settings_view_profile.key to "View your profile",
+    Res.string.settings_your_account.key to "Your account",
+    Res.string.settings_addresses_hint.key to "Your delivery destinations",
+    Res.string.settings_benefits_hint.key to "Delivery benefits and available credit",
+    Res.string.settings_profile.key to "Your profile",
+    Res.string.settings_name.key to "Name",
+    Res.string.settings_email.key to "Email address",
+    Res.string.settings_close.key to "Close",
+    Res.string.settings_appearance.key to "Appearance",
     Res.string.empty_cart_title.key to "Your cart is waiting",
     Res.string.empty_cart_detail.key to "It’s empty for now. Discover meals, groceries and everyday essentials, then add your favorites here.",
     Res.string.empty_orders_title.key to "Your first order starts here",
@@ -518,6 +528,16 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.settings_guest_hint.key to "Vos préférences, à votre façon.",
+    Res.string.settings_view_profile.key to "Voir votre profil",
+    Res.string.settings_your_account.key to "Votre compte",
+    Res.string.settings_addresses_hint.key to "Vos destinations de livraison",
+    Res.string.settings_benefits_hint.key to "Avantages livraison et crédit disponible",
+    Res.string.settings_profile.key to "Votre profil",
+    Res.string.settings_name.key to "Nom",
+    Res.string.settings_email.key to "Adresse e-mail",
+    Res.string.settings_close.key to "Fermer",
+    Res.string.settings_appearance.key to "Apparence",
     Res.string.empty_cart_title.key to "Votre panier vous attend",
     Res.string.empty_cart_detail.key to "Il est encore vide. Découvrez des repas, des courses et les essentiels du quotidien, puis ajoutez vos favoris ici.",
     Res.string.empty_orders_title.key to "Votre première commande commence ici",

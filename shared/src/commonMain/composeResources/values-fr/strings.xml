@@ -483,4 +483,14 @@
     <string name="empty_browse_all">Voir tous les produits</string>
     <string name="empty_filter_title">Essayons une autre sélection</string>
     <string name="empty_filter_detail">Aucun résultat ne correspond à ces filtres pour le moment. Réinitialisez-les pour découvrir d’autres produits et commerces.</string>
+    <string name="settings_guest_hint">Vos préférences, à votre façon.</string>
+    <string name="settings_view_profile">Voir votre profil</string>
+    <string name="settings_your_account">Votre compte</string>
+    <string name="settings_addresses_hint">Vos destinations de livraison</string>
+    <string name="settings_benefits_hint">Avantages livraison et crédit disponible</string>
+    <string name="settings_profile">Votre profil</string>
+    <string name="settings_name">Nom</string>
+    <string name="settings_email">Adresse e-mail</string>
+    <string name="settings_close">Fermer</string>
+    <string name="settings_appearance">Apparence</string>
 </resources>

@@ -1,26 +1,18 @@
 package dev.orestegabo.sequo.ui.account
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.ui.unit.dp
-import dev.orestegabo.sequo.feature.settings.AppLanguage
-import dev.orestegabo.sequo.feature.settings.AppThemePreference
-import dev.orestegabo.sequo.feature.settings.appText
-import dev.orestegabo.sequo.ui.components.SequoSectionCard
+import dev.orestegabo.sequo.feature.settings.*
 import sequo.shared.generated.resources.*
 
 @Composable
@@ -30,35 +22,41 @@ internal fun AppPreferencesCard(
     themePreference: AppThemePreference,
     onThemePreferenceChange: (AppThemePreference) -> Unit,
 ) {
-    SequoSectionCard(title = appText(Res.string.settings_preferences), action = "") {
-        PreferenceChoices(
-            Icons.Filled.Translate, appText(Res.string.drawer_language), language,
-            listOf(AppLanguage.English to appText(Res.string.settings_english), AppLanguage.French to appText(Res.string.settings_french)),
-            onLanguageChange,
-        )
-        PreferenceChoices(
-            Icons.Filled.DarkMode, appText(Res.string.drawer_theme), themePreference,
-            listOf(
-                AppThemePreference.System to appText(Res.string.drawer_theme_system),
-                AppThemePreference.Light to appText(Res.string.drawer_theme_light),
-                AppThemePreference.Dark to appText(Res.string.drawer_theme_dark),
-            ),
-            onThemePreferenceChange,
-        )
+    var languageOpen by remember { mutableStateOf(false) }
+    var themeOpen by remember { mutableStateOf(false) }
+    val languages = listOf(AppLanguage.English to appText(Res.string.settings_english),
+        AppLanguage.French to appText(Res.string.settings_french))
+    val themes = listOf(AppThemePreference.System to appText(Res.string.drawer_theme_system),
+        AppThemePreference.Light to appText(Res.string.drawer_theme_light),
+        AppThemePreference.Dark to appText(Res.string.drawer_theme_dark))
+    SettingsGroup(appText(Res.string.settings_preferences)) {
+        SettingsRow(Icons.Filled.Translate, appText(Res.string.drawer_language),
+            value = languages.first { it.first == language }.second, onClick = { languageOpen = true })
+        SettingsDivider()
+        SettingsRow(Icons.Filled.DarkMode, appText(Res.string.settings_appearance),
+            value = themes.first { it.first == themePreference }.second, onClick = { themeOpen = true })
     }
+    if (languageOpen) PreferenceDialog(appText(Res.string.drawer_language), language, languages,
+        onDismiss = { languageOpen = false }, onSelect = { onLanguageChange(it); languageOpen = false })
+    if (themeOpen) PreferenceDialog(appText(Res.string.settings_appearance), themePreference, themes,
+        onDismiss = { themeOpen = false }, onSelect = { onThemePreferenceChange(it); themeOpen = false })
 }
 
 @Composable
-private fun <T> PreferenceChoices(icon: ImageVector, title: String, selected: T, options: List<Pair<T, String>>, onSelect: (T) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-            Text(title, style = MaterialTheme.typography.titleSmall)
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            options.forEach { (value, label) ->
-                FilterChip(selected = value == selected, onClick = { onSelect(value) }, label = { Text(label) })
+private fun <T> PreferenceDialog(title: String, selected: T, options: List<Pair<T, String>>,
+    onDismiss: () -> Unit, onSelect: (T) -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(title) },
+        text = {
+            Column(Modifier.fillMaxWidth().selectableGroup()) {
+                options.forEach { (value, label) ->
+                    Row(Modifier.fillMaxWidth().selectable(selected = value == selected, role = Role.RadioButton,
+                        onClick = { onSelect(value) }).padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = value == selected, onClick = null)
+                        Text(label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
             }
-        }
-    }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(appText(Res.string.settings_close)) } })
 }
