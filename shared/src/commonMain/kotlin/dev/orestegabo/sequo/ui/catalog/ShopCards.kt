@@ -343,7 +343,7 @@ internal fun NegotiablePrice(
                     modifier = Modifier.size(if (compact) 13.dp else 15.dp),
                 )
                 Text(
-                    formatCompactCfa(product.priceCfa),
+                    formatProductPrice(product, compact = true),
                     style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
@@ -354,7 +354,7 @@ internal fun NegotiablePrice(
         }
     } else {
         Text(
-            formatCompactCfa(product.priceCfa),
+            formatProductPrice(product, compact = true),
             modifier = modifier,
             style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.labelLarge,
             color = if (compact) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f) else MaterialTheme.colorScheme.primary,

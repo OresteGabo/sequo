@@ -504,4 +504,9 @@
     <string name="polish_no_other_shops">No similar products from other shops yet.</string>
     <string name="polish_decrease_quantity">Decrease quantity</string>
     <string name="polish_increase_quantity">Increase quantity</string>
+    <string name="selling_choose_one">Choose one available option</string>
+    <string name="selling_portion_hint">Cart quantity counts portions of the selected amount.</string>
+    <string name="selling_required_choices">Choose the required options before adding this product.</string>
+    <string name="selling_price_error">Could not confirm this selection’s price. Try again.</string>
+    <string name="selling_selected_price">Price for your selection</string>
 </resources>

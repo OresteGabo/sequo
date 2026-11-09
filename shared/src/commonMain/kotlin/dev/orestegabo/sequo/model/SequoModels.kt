@@ -114,11 +114,13 @@ internal data class SequoPromo(
 @Serializable
 internal data class ProductOption(
     val id: String, val name: String, val priceDeltaCfa: Int, val active: Boolean,
+    val measureAmount: String? = null,
 )
 
 @Serializable
 internal data class ProductOptionGroup(
     val id: String, val name: String, val minChoices: Int, val maxChoices: Int, val options: List<ProductOption>,
+    val type: String = "PREPARATION", val unit: String? = null,
 )
 
 @Serializable

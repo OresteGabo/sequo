@@ -29,6 +29,11 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.selling_choose_one.key to "Choose one available option",
+    Res.string.selling_portion_hint.key to "Cart quantity counts portions of the selected amount.",
+    Res.string.selling_required_choices.key to "Choose the required options before adding this product.",
+    Res.string.selling_price_error.key to "Could not confirm this selection’s price. Try again.",
+    Res.string.selling_selected_price.key to "Price for your selection",
     Res.string.polish_more_items.key to "more products in this shop",
     Res.string.polish_discount.key to "Discount",
     Res.string.polish_view_photo.key to "View product photo",
@@ -539,6 +544,11 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.selling_choose_one.key to "Choisissez une option disponible",
+    Res.string.selling_portion_hint.key to "La quantité du panier compte les portions de la mesure choisie.",
+    Res.string.selling_required_choices.key to "Choisissez les options obligatoires avant d’ajouter ce produit.",
+    Res.string.selling_price_error.key to "Impossible de confirmer le prix de cette sélection. Réessayez.",
+    Res.string.selling_selected_price.key to "Prix de votre sélection",
     Res.string.polish_more_items.key to "autres produits dans ce commerce",
     Res.string.polish_discount.key to "Réduction",
     Res.string.polish_view_photo.key to "Voir la photo du produit",

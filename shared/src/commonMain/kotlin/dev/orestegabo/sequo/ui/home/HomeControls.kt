@@ -218,7 +218,7 @@ private fun PromoPrice(
                     modifier = Modifier.size(13.dp),
                 )
                 Text(
-                    formatCompactCfa(product.priceCfa),
+                    formatProductPrice(product, compact = true),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -229,7 +229,7 @@ private fun PromoPrice(
         }
     } else {
         Text(
-            formatCompactCfa(product.priceCfa),
+            formatProductPrice(product, compact = true),
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.78f),
             maxLines = 1,

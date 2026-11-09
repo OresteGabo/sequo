@@ -189,3 +189,7 @@ Snapshots protect customers and sellers when catalog data changes after ordering
 - Customer sees all delivery fees, discounts, and credits before paying.
 - Order snapshots preserve the exact purchase context.
 
+
+## Implemented size and measurement choices
+
+See [Product sizes and measured amounts](PRODUCT_VARIANTS_AND_UNITS.md) for seller configuration, unit pricing, rounding, required selection, and the current combination-stock scope.

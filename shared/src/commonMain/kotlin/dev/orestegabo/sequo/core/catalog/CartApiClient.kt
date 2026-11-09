@@ -176,7 +176,7 @@ internal data class CustomerOrder(
 )
 
 @Serializable
-internal data class OrderedProduct(val productName: String, val quantity: Int)
+internal data class OrderedProduct(val productName: String, val quantity: Int, val optionLabel: String? = null)
 
 
 @Serializable

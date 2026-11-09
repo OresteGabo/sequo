@@ -131,6 +131,9 @@ internal fun OrdersContent(
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 row.lines.take(if (expanded) row.lines.size else 2).forEach {
                     Text("${it.quantity} × ${it.productName}", style = MaterialTheme.typography.bodyMedium)
+                    it.optionLabel?.takeIf(String::isNotBlank)?.let { label ->
+                        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 TextButton(onClick = { expanded = !expanded }) {
                     Text(appText(if (expanded) Res.string.orders_hide_detail else Res.string.orders_detail_title))

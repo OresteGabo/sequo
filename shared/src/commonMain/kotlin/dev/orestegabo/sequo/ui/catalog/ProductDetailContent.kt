@@ -114,7 +114,7 @@ private fun ProductDetailInfoCard(
             Text(product.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(formatCfa(product.priceCfa), style = MaterialTheme.typography.headlineSmall,
+                Text(formatProductPrice(product), style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 product.originalPriceCfa?.takeIf { product.hasDiscount }?.let {
                     Text(formatCfa(it), style = MaterialTheme.typography.bodyMedium,
@@ -132,7 +132,7 @@ private fun ProductDetailInfoCard(
             if (product.customizations.isEmpty() && acceptedThreadId == null) {
                 SequoPrimaryButton(appText(Res.string.home_add), { onAddProduct(listing.product.id) }, Modifier.fillMaxWidth())
             } else {
-                ProductOptionsPanel(listing.product) { productId, selections ->
+                ProductOptionsPanel(listing.product, showPricePreview = acceptedThreadId == null) { productId, selections ->
                     val threadId = acceptedThreadId
                     if (threadId == null) onAddCustomized(productId, selections)
                     else onAddNegotiated(productId, selections, threadId)

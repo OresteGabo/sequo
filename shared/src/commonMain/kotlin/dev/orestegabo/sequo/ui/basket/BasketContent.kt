@@ -44,6 +44,7 @@ import dev.orestegabo.sequo.core.catalog.CheckoutProvider
 import dev.orestegabo.sequo.core.network.SequoApiException
 import dev.orestegabo.sequo.feature.settings.appText
 import dev.orestegabo.sequo.logic.formatCfa
+import dev.orestegabo.sequo.logic.displayLabel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import sequo.shared.generated.resources.*
@@ -115,9 +116,11 @@ internal fun BasketContent(
                 if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
                 val optionNames = line.selections.flatMap { selection ->
                     val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
-                    group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.name }
+                    group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.displayLabel(requireNotNull(group)) }
                 }
                 if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
+                if (line.product.customizations.any { it.type == "MEASURE" }) Text(appText(Res.string.selling_portion_hint),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {

@@ -277,7 +277,7 @@ internal fun FlashProductCard(
             Text(shop.area ?: shop.name, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(formatCfa(product.priceCfa), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
+                Text(formatProductPrice(product), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 if (product.isNegotiable) IconButton(onClick = onNegotiateClick) {
                     Icon(Icons.Filled.LocalOffer, appText(Res.string.home_make_offer), Modifier.size(19.dp),
