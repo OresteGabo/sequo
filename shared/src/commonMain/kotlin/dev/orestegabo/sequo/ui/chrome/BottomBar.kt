@@ -41,5 +41,5 @@ private fun SequoSection.bottomLabel(): String =
         SequoSection.Basket -> appText(Res.string.nav_basket_title)
         SequoSection.Orders -> appText(Res.string.bottom_orders)
         SequoSection.Notifications -> appText(Res.string.nav_notifications_title)
-        SequoSection.Account -> appText(Res.string.nav_account_title)
+        SequoSection.Settings -> appText(Res.string.drawer_settings)
     }

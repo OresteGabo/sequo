@@ -108,6 +108,7 @@ fun AuthScreen(
     onEmailLogin: (email: String, password: String) -> Unit,
     onEmailSignUp: (email: String, password: String, name: String) -> Unit,
     googleSignInInProgress: Boolean = false,
+    appleSignInInProgress: Boolean = false,
     onGoogleLogin: () -> Unit,
     onAppleLogin: () -> Unit,
     onFacebookLogin: () -> Unit = {},
@@ -140,9 +141,10 @@ fun AuthScreen(
             onLanguageChange = onLanguageChange,
             localFixtureAccounts = localFixtureAccounts,
             onLocalFixtureLogin = onLocalFixtureLogin,
-            localFixtureBusy = emailAuthInProgress || googleSignInInProgress,
+            localFixtureBusy = emailAuthInProgress || googleSignInInProgress || appleSignInInProgress,
             onAppleLogin = onAppleLogin,
             googleSignInInProgress = googleSignInInProgress,
+            appleSignInInProgress = appleSignInInProgress,
             rememberedUser = rememberedUser,
             onContinueRememberedUser = onContinueRememberedUser,
             onGoogleLogin = onGoogleLogin,
@@ -165,6 +167,7 @@ private fun SocialAuthPage(
     onLanguageChange: (AppLanguage) -> Unit,
     onAppleLogin: () -> Unit,
     googleSignInInProgress: Boolean,
+    appleSignInInProgress: Boolean,
     rememberedUser: CurrentUser?,
     onContinueRememberedUser: () -> Unit,
     onGoogleLogin: () -> Unit,
@@ -198,7 +201,7 @@ private fun SocialAuthPage(
                 rememberedUser?.let { user ->
                     RememberedAccountButton(
                         user = user,
-                        enabled = !googleSignInInProgress,
+                        enabled = !googleSignInInProgress && !appleSignInInProgress,
                         onClick = onContinueRememberedUser,
                     )
                 }
@@ -214,6 +217,7 @@ private fun SocialAuthPage(
 
                 ProviderIconRow(
                     googleSignInInProgress = googleSignInInProgress,
+                    appleSignInInProgress = appleSignInInProgress,
                     onGoogleLogin = onGoogleLogin,
                     onAppleLogin = onAppleLogin,
                     onFacebookLogin = onFacebookLogin,
@@ -907,6 +911,7 @@ private fun GuestBrowseLink(onClick: () -> Unit) {
 @Composable
 private fun ProviderIconRow(
     googleSignInInProgress: Boolean,
+    appleSignInInProgress: Boolean,
     onGoogleLogin: () -> Unit,
     onAppleLogin: () -> Unit,
     onFacebookLogin: () -> Unit,
@@ -936,7 +941,7 @@ private fun ProviderIconRow(
             SquareProviderButton(
                 label = AuthProviderShortcut.Google.label,
                 lastUsed = lastUsedProvider == AuthProviderShortcut.Google.name,
-                enabled = !googleSignInInProgress,
+                enabled = !googleSignInInProgress && !appleSignInInProgress,
                 onClick = providerClick(AuthProviderShortcut.Google, onGoogleLogin),
             ) {
                 if (googleSignInInProgress) {
@@ -955,10 +960,13 @@ private fun ProviderIconRow(
             }
             SquareProviderButton(
                 label = AuthProviderShortcut.Apple.label,
+                enabled = !appleSignInInProgress && !googleSignInInProgress,
                 lastUsed = lastUsedProvider == AuthProviderShortcut.Apple.name,
                 onClick = providerClick(AuthProviderShortcut.Apple, onAppleLogin),
             ) {
-                Icon(
+                if (appleSignInInProgress) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else Icon(
                     imageVector = AppleIcon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,

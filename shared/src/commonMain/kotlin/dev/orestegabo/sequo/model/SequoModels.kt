@@ -45,7 +45,7 @@ internal enum class SequoSection(val label: String, val icon: ImageVector) {
     Home("Sequo", Icons.Filled.Home),
     Orders("Orders", Icons.AutoMirrored.Filled.ReceiptLong),
     Notifications("Notifications", Icons.Filled.Notifications),
-    Account("Account", Icons.Filled.Person),
+    Settings("Settings", Icons.Filled.Settings),
 }
 
 internal val sequoPrimaryDestinations = listOf(
@@ -53,7 +53,7 @@ internal val sequoPrimaryDestinations = listOf(
     SequoSection.Basket,
     SequoSection.Home,
     SequoSection.Orders,
-    SequoSection.Account,
+    SequoSection.Settings,
 )
 
 internal data class SequoProduct(

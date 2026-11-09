@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.auth.CurrentUser
@@ -88,6 +89,7 @@ internal fun SequoShell(
     var cartFailed by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf("") }
+    var browseMode by remember { mutableStateOf(CatalogBrowseMode.All) }
     var selectedProductListing by remember { mutableStateOf<SequoProductListing?>(null) }
     var catalogState by remember { mutableStateOf<CatalogUiState>(CatalogUiState.Loading) }
     var notificationUnreadCount by remember { mutableStateOf(defaultNotificationUnreadCount()) }
@@ -159,7 +161,9 @@ internal fun SequoShell(
             catalogState = runCatching { catalogClient.home() }
                 .fold(
                     onSuccess = { snapshot ->
-                        if (selectedMarketTypeKey.isBlank()) selectedMarketTypeKey = snapshot.defaultCategoryKey
+                        if (selectedMarketTypeKey.isNotBlank() && snapshot.categories.none { it.key == selectedMarketTypeKey }) {
+                            selectedMarketTypeKey = ""
+                        }
                         CatalogUiState.Ready(snapshot)
                     },
                     onFailure = { CatalogUiState.Failed(catalogLoadError) },
@@ -216,35 +220,42 @@ internal fun SequoShell(
     // Child Material dialogs/drawers retain their own native Back handling.
     PlatformBackHandler(enabled = backAction != CustomerBackAction.None, onBack = ::handleBack)
 
+    fun openCatalog(categoryKey: String = "", mode: CatalogBrowseMode = CatalogBrowseMode.All) {
+        selectedMarketTypeKey = categoryKey
+        browseMode = mode
+        currentDestination = SequoSection.Markets
+        notificationBackDestination = null
+        searchVisible = false
+        selectedProductListing = null
+        scope.launch { drawerState.close() }
+    }
+
+    fun navigateTo(destination: SequoSection) {
+        if (destination == SequoSection.Markets) {
+            openCatalog()
+        } else {
+            currentDestination = destination
+            notificationBackDestination = null
+            searchVisible = false
+            selectedProductListing = null
+        }
+    }
+    val uriHandler = LocalUriHandler.current
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             SequoNavigationDrawer(
-                currentUser = currentUser,
-                loadSavedAddresses = loadSavedAddresses,
-                isGuest = isGuest,
-                language = language,
-                onLanguageChange = onLanguageChange,
-                themePreference = themePreference,
-                onThemePreferenceChange = onThemePreferenceChange,
-                selectedMarketTypeKey = selectedMarketTypeKey,
-                shopTypes = (catalogState as? CatalogUiState.Ready)?.snapshot?.categories.orEmpty(),
-                onDestinationSelected = { destination ->
-                    currentDestination = destination
-                    notificationBackDestination = null
-                    searchVisible = false
-                    selectedProductListing = null
-                    scope.launch { drawerState.close() }
-                },
+                catalogState = catalogState,
+                selectedMarketTypeKey = selectedMarketTypeKey.takeIf { currentDestination == SequoSection.Markets }.orEmpty(),
+                selectedBrowseMode = browseMode.takeIf { currentDestination == SequoSection.Markets },
                 onMarketTypeSelected = { typeKey ->
                     categoryUsage[typeKey] = (categoryUsage[typeKey] ?: 0) + 1
-                    selectedMarketTypeKey = typeKey
-                    currentDestination = SequoSection.Markets
-                    notificationBackDestination = null
-                    searchVisible = false
-                    selectedProductListing = null
-                    scope.launch { drawerState.close() }
+                    openCatalog(categoryKey = typeKey)
                 },
+                onShortcutSelected = { openCatalog(mode = it) },
+                onReloadCatalog = ::reloadCatalog,
+                onOpenHelp = { uriHandler.openUri("https://www.sequoservice.com/aide") },
             )
         },
     ) {
@@ -254,6 +265,8 @@ internal fun SequoShell(
             topBar = {
                 SequoTopAppBar(
                     currentDestination = currentDestination,
+                    sectionTitle = if (currentDestination == SequoSection.Markets && browseMode != CatalogBrowseMode.All) appText(browseMode.titleResource()) else null,
+                    sectionSubtitle = if (currentDestination == SequoSection.Markets && browseMode != CatalogBrowseMode.All) appText(browseMode.detailResource()) else null,
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onSearchClick = { searchVisible = !searchVisible },
                     onNotificationsClick = {
@@ -276,12 +289,7 @@ internal fun SequoShell(
             bottomBar = {
                 SequoBottomBar(
                     currentDestination = currentDestination,
-                    onDestinationSelected = {
-                        currentDestination = it
-                        notificationBackDestination = null
-                        searchVisible = false
-                        selectedProductListing = null
-                    },
+                    onDestinationSelected = ::navigateTo,
                     pendingBasketCount = basketCount,
                     notificationUnreadCount = notificationUnreadCount,
                     modifier = Modifier.navigationBarsPadding(),
@@ -292,10 +300,7 @@ internal fun SequoShell(
                 SequoAmbientBackground(modifier = Modifier.fillMaxSize())
                 SequoContentStage(
                     currentDestination = currentDestination,
-                    onDestinationSelected = {
-                        currentDestination = it
-                        notificationBackDestination = null
-                    },
+                    onDestinationSelected = ::navigateTo,
                     selectedProductListing = selectedProductListing,
                     onProductSelected = { listing ->
                         selectedProductListing = listing
@@ -355,6 +360,13 @@ internal fun SequoShell(
                     searchVisible = searchVisible,
                     onCloseSearch = { searchVisible = false },
                     selectedMarketTypeKey = selectedMarketTypeKey,
+                    browseMode = browseMode,
+                    onBrowseCategorySelected = { selectedMarketTypeKey = it },
+                    onResetBrowse = { openCatalog() },
+                    language = language,
+                    onLanguageChange = onLanguageChange,
+                    themePreference = themePreference,
+                    onThemePreferenceChange = onThemePreferenceChange,
                     categoryUsage = categoryUsage,
                     pinnedCategoryKeys = pinnedCategoryKeys,
                     onCategoryUsed = { typeKey ->
@@ -404,6 +416,13 @@ internal fun SequoContentStage(
     searchVisible: Boolean,
     onCloseSearch: () -> Unit,
     selectedMarketTypeKey: String,
+    browseMode: CatalogBrowseMode,
+    onBrowseCategorySelected: (String) -> Unit,
+    onResetBrowse: () -> Unit,
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    themePreference: AppThemePreference,
+    onThemePreferenceChange: (AppThemePreference) -> Unit,
     categoryUsage: Map<String, Int>,
     pinnedCategoryKeys: List<String>,
     onCategoryUsed: (String) -> Unit,
@@ -481,6 +500,9 @@ internal fun SequoContentStage(
                 SequoSection.Markets -> MarketsContent(
                     catalog = requireNotNull(catalog),
                     selectedTypeKey = selectedMarketTypeKey,
+                    browseMode = browseMode,
+                    onCategorySelected = onBrowseCategorySelected,
+                    onResetFilters = onResetBrowse,
                     onAddProduct = onAddProduct,
                     onProductSelected = onProductSelected,
                 )
@@ -505,8 +527,13 @@ internal fun SequoContentStage(
                     ordersContent()
                 }
                 SequoSection.Notifications -> notificationsContent()
-                SequoSection.Account -> AccountContent(
+                SequoSection.Settings -> AccountContent(
                     currentUser = currentUser,
+                    language = language,
+                    onLanguageChange = onLanguageChange,
+                    themePreference = themePreference,
+                    onThemePreferenceChange = onThemePreferenceChange,
+                    onOpenLegal = onOpenLegal,
                     loadSavedAddresses = loadSavedAddresses,
                     loadBenefits = loadBenefits,
                     isGuest = isGuest,
@@ -614,18 +641,14 @@ internal fun ProductDetailScreenColumn(
 }
 
 @Composable
-private fun SequoNavigationDrawer(
-    currentUser: CurrentUser?,
-    loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
-    isGuest: Boolean,
-    language: AppLanguage,
-    onLanguageChange: (AppLanguage) -> Unit,
-    themePreference: AppThemePreference,
-    onThemePreferenceChange: (AppThemePreference) -> Unit,
+internal fun SequoNavigationDrawer(
+    catalogState: CatalogUiState,
     selectedMarketTypeKey: String,
-    shopTypes: List<SequoShopType>,
-    onDestinationSelected: (SequoSection) -> Unit,
+    selectedBrowseMode: CatalogBrowseMode?,
     onMarketTypeSelected: (String) -> Unit,
+    onShortcutSelected: (CatalogBrowseMode) -> Unit,
+    onReloadCatalog: () -> Unit,
+    onOpenHelp: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.surface,
@@ -633,109 +656,82 @@ private fun SequoNavigationDrawer(
         modifier = Modifier.width(316.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState())
                 .padding(horizontal = 14.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SequoShoppingMark(Modifier.size(40.dp))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        currentUser?.displayName ?: appText(Res.string.drawer_customer),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        when {
-                            isGuest -> appText(Res.string.drawer_guest)
-                            currentUser?.email != null -> currentUser.email
-                            else -> appText(Res.string.drawer_signed_in)
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(appText(Res.string.drawer_explore), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(appText(Res.string.drawer_intro), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
-            Text(
-                appText(Res.string.drawer_quick_links),
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-            )
-            DrawerQuickLinkGrid(onDestinationSelected = onDestinationSelected)
-            Text(
-                appText(Res.string.drawer_settings),
-                modifier = Modifier.padding(start = 12.dp, top = 10.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-            )
-            DrawerSettingsPanel(
-                language = language,
-                onLanguageChange = onLanguageChange,
-                themePreference = themePreference,
-                onThemePreferenceChange = onThemePreferenceChange,
-            )
-            HorizontalDivider(
-                modifier = Modifier.padding(top = 6.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f),
-            )
-            Text(
-                appText(Res.string.drawer_shop_categories),
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-            )
-            if (shopTypes.isEmpty()) {
-                Text(
-                    appText(Res.string.drawer_catalog_loading),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            shopTypes.forEach { type ->
+            HorizontalDivider()
+            DrawerSectionLabel(appText(Res.string.drawer_shortcuts))
+            listOf(CatalogBrowseMode.Nearby, CatalogBrowseMode.Offers, CatalogBrowseMode.Negotiable).forEach { mode ->
                 NavigationDrawerItem(
                     label = {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(appCatalogText(type.title), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            when (type.key) {
-                                "food" -> Text(appText(Res.string.drawer_now), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                            }
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(appText(mode.titleResource()), style = MaterialTheme.typography.titleSmall)
+                            Text(appText(mode.detailResource()), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     },
-                    selected = selectedMarketTypeKey == type.key,
-                    onClick = { onMarketTypeSelected(type.key) },
-                    icon = { Icon(type.icon, contentDescription = null, tint = type.accent) },
-                    shape = RoundedCornerShape(14.dp),
+                    selected = selectedBrowseMode == mode,
+                    onClick = { onShortcutSelected(mode) },
+                    icon = { Icon(mode.icon(), contentDescription = null) },
+                    shape = RoundedCornerShape(16.dp),
                 )
             }
-            Text(
-                appText(Res.string.drawer_marketplace_tools),
-                modifier = Modifier.padding(start = 12.dp, top = 10.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-            )
-            DrawerToolRow(Icons.Filled.LocalOffer, appText(Res.string.drawer_promos), appText(Res.string.drawer_promos_detail))
-            DrawerToolRow(Icons.Filled.FavoriteBorder, appText(Res.string.drawer_saved_shops), appText(Res.string.drawer_saved_shops_detail))
-            DrawerToolRow(Icons.Filled.Place, appText(Res.string.drawer_delivery_areas), appText(Res.string.drawer_delivery_areas_detail))
-            DrawerToolRow(Icons.Filled.SupportAgent, appText(Res.string.drawer_support), appText(Res.string.drawer_support_detail))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+            DrawerSectionLabel(appText(Res.string.drawer_shop_categories))
+            when (catalogState) {
+                CatalogUiState.Loading -> Text(appText(Res.string.drawer_catalog_loading), modifier = Modifier.padding(12.dp))
+                is CatalogUiState.Failed -> {
+                    Text(appText(Res.string.home_catalog_load_error), modifier = Modifier.padding(horizontal = 12.dp), style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = onReloadCatalog) { Text(appText(Res.string.cart_refresh)) }
+                }
+                is CatalogUiState.Ready -> {
+                    if (catalogState.snapshot.categories.isEmpty()) {
+                        Text(appText(Res.string.browse_catalog_empty), modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
+                    }
+                    catalogState.snapshot.categories.forEach { type ->
+                        NavigationDrawerItem(
+                            label = { Text(appCatalogText(type.title), maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                            selected = selectedBrowseMode == CatalogBrowseMode.All && selectedMarketTypeKey == type.key,
+                            onClick = { onMarketTypeSelected(type.key) },
+                            icon = { Icon(type.icon, contentDescription = null, tint = type.accent) },
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+            Surface(onClick = onOpenHelp, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Row(modifier = Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.SupportAgent, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(appText(Res.string.drawer_help), style = MaterialTheme.typography.titleSmall)
+                        Text(appText(Res.string.drawer_help_detail), style = MaterialTheme.typography.bodySmall)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun DrawerSectionLabel(text: String) {
+    Text(text, modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+        style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 internal sealed interface CatalogUiState {
@@ -917,160 +913,4 @@ private fun ShimmerBlock(
             .clip(shape)
             .background(shimmer),
     )
-}
-
-@Composable
-private fun DrawerToolRow(
-    icon: ImageVector,
-    title: String,
-    detail: String,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.56f))
-            .padding(horizontal = 14.dp, vertical = 11.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(21.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-private fun DrawerQuickLinkGrid(
-    onDestinationSelected: (SequoSection) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            DrawerQuickLink(
-                icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                label = appText(Res.string.drawer_orders),
-                modifier = Modifier.weight(1f),
-                onClick = { onDestinationSelected(SequoSection.Orders) },
-            )
-            DrawerQuickLink(
-                icon = Icons.Filled.ShoppingBasket,
-                label = appText(Res.string.drawer_cart),
-                modifier = Modifier.weight(1f),
-                onClick = { onDestinationSelected(SequoSection.Basket) },
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            DrawerQuickLink(
-                icon = Icons.Filled.Notifications,
-                label = appText(Res.string.drawer_alerts),
-                modifier = Modifier.weight(1f),
-                onClick = { onDestinationSelected(SequoSection.Notifications) },
-            )
-            DrawerQuickLink(
-                icon = Icons.Filled.Person,
-                label = appText(Res.string.drawer_profile),
-                modifier = Modifier.weight(1f),
-                onClick = { onDestinationSelected(SequoSection.Account) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun DrawerQuickLink(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Surface(
-        modifier = modifier.height(48.dp),
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.56f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-private fun DrawerSettingsPanel(
-    language: AppLanguage,
-    onLanguageChange: (AppLanguage) -> Unit,
-    themePreference: AppThemePreference,
-    onThemePreferenceChange: (AppThemePreference) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.56f))
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        DrawerSegmentedSetting(
-            icon = Icons.Filled.Translate,
-            title = appText(Res.string.drawer_language),
-            options = listOf(
-                AppLanguage.English to appText(Res.string.drawer_language_en),
-                AppLanguage.French to appText(Res.string.drawer_language_fr),
-            ),
-            selected = language,
-            onSelected = onLanguageChange,
-        )
-        DrawerSegmentedSetting(
-            icon = Icons.Filled.DarkMode,
-            title = appText(Res.string.drawer_theme),
-            options = listOf(
-                AppThemePreference.System to appText(Res.string.drawer_theme_system),
-                AppThemePreference.Light to appText(Res.string.drawer_theme_light),
-                AppThemePreference.Dark to appText(Res.string.drawer_theme_dark),
-            ),
-            selected = themePreference,
-            onSelected = onThemePreferenceChange,
-        )
-    }
-}
-
-@Composable
-private fun <T> DrawerSegmentedSetting(
-    icon: ImageVector,
-    title: String,
-    options: List<Pair<T, String>>,
-    selected: T,
-    onSelected: (T) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-            options.forEach { (value, label) ->
-                val isSelected = value == selected
-                Surface(
-                    modifier = Modifier.weight(1f).height(34.dp),
-                    onClick = { onSelected(value) },
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
-                    contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)),
-                ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
-                        Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-            }
-        }
-    }
 }

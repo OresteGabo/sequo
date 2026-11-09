@@ -18,6 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import dev.orestegabo.sequo.core.auth.AppleSignInResult
 import dev.orestegabo.sequo.core.auth.AuthApiClient
 import dev.orestegabo.sequo.core.auth.AuthApiException
 import dev.orestegabo.sequo.core.auth.AuthUserMessage
@@ -55,6 +56,7 @@ fun App(
     onGoogleSignIn: suspend () -> GoogleSignInResult = {
         GoogleSignInResult.Failure(GoogleSignInFailureReason.NotConfigured)
     },
+    onAppleSignIn: suspend (nonce: String) -> AppleSignInResult = { AppleSignInResult.Unavailable },
     onGoogleSignOut: suspend () -> Unit = {},
     onHomeEntered: (AppLanguage) -> Unit = {},
     openNotificationsRequest: Int = 0,
@@ -88,6 +90,7 @@ fun App(
                 appScope.launch { appPreferencesStore.saveThemePreference(selectedTheme) }
             },
             onGoogleSignIn = onGoogleSignIn,
+            onAppleSignIn = onAppleSignIn,
             onGoogleSignOut = onGoogleSignOut,
             onHomeEntered = onHomeEntered,
             openNotificationsRequest = openNotificationsRequest,
@@ -102,6 +105,7 @@ private fun SequoApp(
     themePreference: AppThemePreference,
     onThemePreferenceChange: (AppThemePreference) -> Unit,
     onGoogleSignIn: suspend () -> GoogleSignInResult,
+    onAppleSignIn: suspend (nonce: String) -> AppleSignInResult,
     onGoogleSignOut: suspend () -> Unit,
     onHomeEntered: (AppLanguage) -> Unit,
     openNotificationsRequest: Int,
@@ -112,6 +116,7 @@ private fun SequoApp(
     var legalScreenTab by rememberSaveable { mutableStateOf<LegalInitialTab?>(null) }
     var authErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var googleSignInInProgress by remember { mutableStateOf(false) }
+    var appleSignInInProgress by remember { mutableStateOf(false) }
     var emailAuthInProgress by remember { mutableStateOf(false) }
     var sessionRestoreChecked by remember { mutableStateOf(false) }
     var currentUser by remember { mutableStateOf<CurrentUser?>(null) }
@@ -267,7 +272,7 @@ private fun SequoApp(
                 emailAuthInProgress = emailAuthInProgress,
                 localFixtureAccounts = localFixtureAccounts,
                 onLocalFixtureLogin = { account ->
-                    if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
+                    if (emailAuthInProgress || googleSignInInProgress || appleSignInInProgress) return@AuthScreen
                     scope.launch {
                         emailAuthInProgress = true
                         authErrorMessage = null
@@ -289,7 +294,7 @@ private fun SequoApp(
                 },
                 rememberedUser = rememberedUser,
                 onContinueRememberedUser = {
-                    if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
+                    if (emailAuthInProgress || googleSignInInProgress || appleSignInInProgress) return@AuthScreen
                     scope.launch {
                         emailAuthInProgress = true
                         authErrorMessage = null
@@ -369,8 +374,9 @@ private fun SequoApp(
                     }
                 },
                 googleSignInInProgress = googleSignInInProgress,
+                appleSignInInProgress = appleSignInInProgress,
                 onGoogleLogin = {
-                    if (googleSignInInProgress) return@AuthScreen
+                    if (googleSignInInProgress || appleSignInInProgress || emailAuthInProgress) return@AuthScreen
                     scope.launch {
                         googleSignInInProgress = true
                         authErrorMessage = null
@@ -413,9 +419,35 @@ private fun SequoApp(
                     }
                 },
                 onAppleLogin = {
+                    if (appleSignInInProgress || googleSignInInProgress || emailAuthInProgress) return@AuthScreen
                     scope.launch {
-                        clearSuggestedAccountSession()
-                        authErrorMessage = appleNotReady
+                        appleSignInInProgress = true
+                        authErrorMessage = null
+                        try {
+                            clearSuggestedAccountSession()
+                            val challenge = authRepository.appleSignInChallenge()
+                            when (val result = onAppleSignIn(challenge.nonce)) {
+                                is AppleSignInResult.Success -> {
+                                    authRepository.loginWithApple(result.idToken, challenge.challengeId)
+                                    val user = authRepository.currentUser()
+                                    currentUser = user
+                                    user?.let {
+                                        rememberedUser = it
+                                        authRepository.rememberUser(it)
+                                    }
+                                    isAuthenticated = user != null
+                                    guestMode = false
+                                }
+                                AppleSignInResult.Cancelled -> Unit
+                                AppleSignInResult.Unavailable -> authErrorMessage = appleNotReady
+                                AppleSignInResult.Failed -> authErrorMessage = appText(Res.string.auth_error_social_failed, language)
+                            }
+                        } catch (error: Exception) {
+                            if (error is CancellationException) throw error
+                            authErrorMessage = userFacingAuthError(error, appText(Res.string.auth_error_social_unavailable, language), language)
+                        } finally {
+                            appleSignInInProgress = false
+                        }
                     }
                 },
                 onFacebookLogin = {
@@ -443,7 +475,7 @@ private fun SequoApp(
                     }
                 },
                 onSkipAuth = {
-                    if (emailAuthInProgress || googleSignInInProgress) return@AuthScreen
+                    if (emailAuthInProgress || googleSignInInProgress || appleSignInInProgress) return@AuthScreen
                     scope.launch {
                         clearSuggestedAccountSession()
                         currentUser = null

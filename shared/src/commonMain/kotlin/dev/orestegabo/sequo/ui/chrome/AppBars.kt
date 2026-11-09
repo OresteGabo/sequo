@@ -44,6 +44,8 @@ import sequo.shared.generated.resources.*
 @Composable
 internal fun SequoTopAppBar(
     currentDestination: SequoSection,
+    sectionTitle: String? = null,
+    sectionSubtitle: String? = null,
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationsClick: () -> Unit,
@@ -58,9 +60,9 @@ internal fun SequoTopAppBar(
     val searchAvailable = currentDestination != SequoSection.Notifications
     SequoPageHeader(
         modifier = modifier,
-        title = productListing?.product?.name ?: currentDestination.appBarTitle(),
+        title = productListing?.product?.name ?: sectionTitle ?: currentDestination.appBarTitle(),
         subtitle = productListing?.let { listOfNotNull(it.shop.name, it.shop.area).joinToString(" / ") }
-            ?: currentDestination.appBarSubtitle(),
+            ?: sectionSubtitle ?: currentDestination.appBarSubtitle(),
         navigationIcon = {
             IconButton(onClick = if (backMode) onBackClick else onMenuClick) {
                 Icon(if (backMode) Icons.AutoMirrored.Filled.ArrowBack else Icons.Filled.Menu,
@@ -95,7 +97,7 @@ private fun SequoSection.appBarTitle(): String =
         SequoSection.Basket -> appText(Res.string.nav_basket_title)
         SequoSection.Orders -> appText(Res.string.nav_orders_title)
         SequoSection.Notifications -> appText(Res.string.nav_notifications_title)
-        SequoSection.Account -> appText(Res.string.nav_account_title)
+        SequoSection.Settings -> appText(Res.string.drawer_settings)
     }
 
 @Composable
@@ -106,7 +108,7 @@ private fun SequoSection.appBarSubtitle(): String =
         SequoSection.Basket -> appText(Res.string.nav_basket_subtitle)
         SequoSection.Orders -> appText(Res.string.nav_orders_subtitle)
         SequoSection.Notifications -> appText(Res.string.nav_notifications_subtitle)
-        SequoSection.Account -> appText(Res.string.nav_account_subtitle)
+        SequoSection.Settings -> appText(Res.string.settings_subtitle)
     }
 
 @Composable

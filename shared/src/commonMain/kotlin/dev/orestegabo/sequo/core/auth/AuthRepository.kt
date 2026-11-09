@@ -29,6 +29,13 @@ class AuthRepository(
         response.session
     }
 
+    suspend fun appleSignInChallenge(): AppleSignInChallenge = authApiClient.appleSignInChallenge()
+
+    suspend fun loginWithApple(idToken: String, challengeId: String): AuthSession = sessionMutation.withLock {
+        require(idToken.isNotBlank() && challengeId.isNotBlank())
+        authApiClient.loginWithApple(idToken, challengeId).session.also { saveSession(it) }
+    }
+
     suspend fun loginWithFacebook(accessToken: String): AuthSession = sessionMutation.withLock {
         if (accessToken.isBlank()) {
             throw FacebookAccessTokenMissingException()

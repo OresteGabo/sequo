@@ -36,6 +36,8 @@ import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
+import dev.orestegabo.sequo.feature.settings.appText
+import dev.orestegabo.sequo.feature.settings.appCatalogText
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
@@ -43,6 +45,9 @@ import sequo.shared.generated.resources.*
 internal fun MarketsContent(
     catalog: CatalogSnapshot,
     selectedTypeKey: String,
+    browseMode: CatalogBrowseMode,
+    onCategorySelected: (String) -> Unit,
+    onResetFilters: () -> Unit,
     onAddProduct: (String) -> Unit,
     onProductSelected: (SequoProductListing) -> Unit,
 ) {
@@ -52,7 +57,7 @@ internal fun MarketsContent(
     var areaFiltersExpanded by remember { mutableStateOf(false) }
     var subcategoryFiltersExpanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(selectedTypeKey) {
+    LaunchedEffect(selectedTypeKey, browseMode) {
         selectedSubcategory = "All"
         selectedArea = "All Lome"
         selectedSort = "Nearby"
@@ -61,7 +66,7 @@ internal fun MarketsContent(
     }
 
     val selectedType = catalog.categoryFor(selectedTypeKey)
-    val shopsByType = catalog.shopsForCategory(selectedTypeKey)
+    val shopsByType = catalog.browseShops(selectedTypeKey, browseMode)
     val subcategories = listOf("All") + productSubcategoriesFor(shopsByType)
     val areaShops = if (selectedArea == "All Lome") {
         shopsByType
@@ -82,13 +87,22 @@ internal fun MarketsContent(
         else -> filteredShops.sortedBy { it.distanceKm ?: Double.POSITIVE_INFINITY }
     }
 
+    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(selected = selectedTypeKey.isBlank(), onClick = { onCategorySelected("") }, label = { Text(appText(Res.string.browse_all_categories)) })
+        catalog.categories.forEach { category ->
+            FilterChip(selected = selectedTypeKey == category.key, onClick = { onCategorySelected(category.key) },
+                label = { Text(appCatalogText(category.title)) })
+        }
+    }
     MarketSortBar(
         selectedType = selectedType,
+        categoryTitle = if (selectedTypeKey.isBlank()) appText(Res.string.browse_all_categories) else appCatalogText(selectedType.title),
         visibleCount = visibleShops.size,
         selectedSort = selectedSort,
         onSortSelected = { selectedSort = it },
     )
     CategoryRail(
+        title = appText(Res.string.browse_product_type),
         categories = subcategories,
         selectedCategory = selectedSubcategory,
         onCategorySelected = { selectedSubcategory = it },
@@ -96,6 +110,7 @@ internal fun MarketsContent(
         onExpandedChange = { subcategoryFiltersExpanded = it },
     )
     CategoryRail(
+        title = appText(Res.string.browse_shop_area),
         categories = listOf(
             "All Lome",
             "Tokoin",
@@ -117,6 +132,21 @@ internal fun MarketsContent(
         expanded = areaFiltersExpanded,
         onExpandedChange = { areaFiltersExpanded = it },
     )
+    if (visibleShops.isEmpty()) {
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Column(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Filled.SearchOff, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(appText(Res.string.browse_empty_title), style = MaterialTheme.typography.titleMedium)
+                Text(appText(Res.string.browse_empty_detail), style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = {
+                    selectedArea = "All Lome"
+                    selectedSubcategory = "All"
+                    selectedSort = "Nearby"
+                    onResetFilters()
+                }) { Text(appText(Res.string.browse_reset)) }
+            }
+        }
+    }
     visibleShops.forEach { shop ->
         SequoShopCard(
             shop = shop,
@@ -131,6 +161,7 @@ internal fun MarketsContent(
 @Composable
 private fun MarketSortBar(
     selectedType: SequoShopType,
+    categoryTitle: String,
     visibleCount: Int,
     selectedSort: String,
     onSortSelected: (String) -> Unit,
@@ -156,7 +187,7 @@ private fun MarketSortBar(
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
-                    "${selectedType.title} / $visibleCount shops",
+                    "$categoryTitle · $visibleCount ${appText(if (visibleCount == 1) Res.string.browse_shop_one else Res.string.browse_shops_count)}",
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -171,7 +202,7 @@ private fun MarketSortBar(
             ) {
                 listOf("Nearby", "Fastest", "Rating", "Delivery").forEach { sort ->
                     SequoFilterChip(
-                        label = sort,
+                        label = appCatalogText(sort),
                         selected = sort == selectedSort,
                         onClick = { onSortSelected(sort) },
                         modifier = Modifier.widthIn(min = 88.dp),

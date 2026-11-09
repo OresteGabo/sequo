@@ -27,6 +27,9 @@ import dev.orestegabo.sequo.core.auth.CurrentUser
 import dev.orestegabo.sequo.core.auth.SavedDeliveryAddress
 import kotlinx.coroutines.CancellationException
 import dev.orestegabo.sequo.feature.settings.appText
+import dev.orestegabo.sequo.feature.settings.AppLanguage
+import dev.orestegabo.sequo.feature.settings.AppThemePreference
+import dev.orestegabo.sequo.feature.legal.LegalInitialTab
 import dev.orestegabo.sequo.data.*
 import dev.orestegabo.sequo.domain.*
 import dev.orestegabo.sequo.logic.*
@@ -51,6 +54,11 @@ internal fun AccountContent(
     loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     loadBenefits: suspend () -> CustomerBenefits,
     isGuest: Boolean,
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    themePreference: AppThemePreference,
+    onThemePreferenceChange: (AppThemePreference) -> Unit,
+    onOpenLegal: (LegalInitialTab) -> Unit,
     onSignInRequested: () -> Unit,
     onLogout: () -> Unit,
     pendingAdminLoginRequestCount: Int = 0,
@@ -58,18 +66,19 @@ internal fun AccountContent(
 ) {
     if (isGuest) {
         GuestAccountCard(onSignInRequested = onSignInRequested)
-        return
+    } else {
+        AccountProfileCard(currentUser = currentUser, onLogout = onLogout)
     }
-
-    AccountProfileCard(currentUser = currentUser, onLogout = onLogout)
+    AppPreferencesCard(language, onLanguageChange, themePreference, onThemePreferenceChange)
+    SequoSectionCard(title = appText(Res.string.settings_legal), action = "") {
+        TextButton(onClick = { onOpenLegal(LegalInitialTab.Privacy) }) { Text(appText(Res.string.settings_privacy)) }
+        TextButton(onClick = { onOpenLegal(LegalInitialTab.Terms) }) { Text(appText(Res.string.settings_terms)) }
+    }
+    if (isGuest) return
     DeliveryBenefitsCard(currentUser?.id, loadBenefits)
     SavedAddressesCard(currentUser?.id, loadSavedAddresses)
-    SequoSectionCard(title = appText(Res.string.account_supported_payments), action = appText(Res.string.account_no_cash)) {
-        SupportedPaymentRow("Yas Togo", appText(Res.string.account_primary))
-        SupportedPaymentRow("Moov Africa", appText(Res.string.account_backup))
-    }
-    SequoSectionCard(title = appText(Res.string.account_tools), action = appText(Res.string.account_secure)) {
-        if (pendingAdminLoginRequestCount > 0) {
+    if (pendingAdminLoginRequestCount > 0) {
+        SequoSectionCard(title = appText(Res.string.admin_login_title), action = "") {
             SettingRow(appText(Res.string.admin_login_title), "$pendingAdminLoginRequestCount")
             Button(
                 onClick = onAdminLoginRequestsClick,
@@ -79,8 +88,6 @@ internal fun AccountContent(
                 Text(appText(Res.string.admin_login_refresh))
             }
         }
-        SettingRow(appText(Res.string.account_payments), "Yas / Moov")
-        SettingRow(appText(Res.string.account_returns), appText(Res.string.account_return_eligibility))
     }
     if (NetworkConfig.Environment != "PRODUCTION") {
         Text("${NetworkConfig.Environment} · ${NetworkConfig.ReleaseId}",

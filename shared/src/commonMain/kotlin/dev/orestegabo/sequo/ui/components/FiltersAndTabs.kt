@@ -35,11 +35,14 @@ import dev.orestegabo.sequo.ui.home.*
 import dev.orestegabo.sequo.ui.markets.*
 import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
+import dev.orestegabo.sequo.feature.settings.appCatalogText
+import dev.orestegabo.sequo.feature.settings.appText
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
 @Composable
 internal fun CategoryRail(
+    title: String,
     categories: List<String>,
     selectedCategory: String,
     onCategorySelected: (String) -> Unit,
@@ -69,14 +72,14 @@ internal fun CategoryRail(
                 )
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text(
-                        text = "Lome areas",
+                        text = title,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = selectedCategory,
+                        text = appCatalogText(selectedCategory),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
@@ -86,7 +89,7 @@ internal fun CategoryRail(
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Collapse area filters" else "Expand area filters",
+                    contentDescription = appText(if (expanded) Res.string.browse_collapse_filters else Res.string.browse_expand_filters),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp),
                 )
@@ -98,7 +101,7 @@ internal fun CategoryRail(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     rowItems.forEach { category ->
                         SequoFilterChip(
-                            label = category,
+                            label = appCatalogText(category),
                             selected = category == selectedCategory,
                             onClick = { onCategorySelected(category) },
                             modifier = Modifier.weight(1f),

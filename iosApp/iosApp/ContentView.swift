@@ -3,6 +3,7 @@ import SwiftUI
 import Shared
 import UserNotifications
 import GoogleSignIn
+import AuthenticationServices
 
 private let googleIosClientId = "92804430098-q92ufo08vjdsu285cek8993os6tgv2gl.apps.googleusercontent.com"
 
@@ -76,6 +77,11 @@ struct ComposeView: UIViewControllerRepresentable {
                     _ = complete(result)
                 }
             },
+            onAppleSignIn: { nonce, complete in
+                AppleSignInPresenter.shared.signIn(nonce: nonce) { result in
+                    _ = complete(result)
+                }
+            },
             onGoogleSignOut: {
                 GoogleSignInPresenter.signOut()
             },
@@ -88,6 +94,68 @@ struct ComposeView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Self.Context) {
         SequoNotificationPresenter.shared.onOpenNotifications = onOpenNotifications
+    }
+}
+
+private final class AppleSignInPresenter: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    static let shared = AppleSignInPresenter()
+    private var completion: ((any AppleSignInResult) -> Void)?
+    private var controller: ASAuthorizationController?
+    private var anchor: UIWindow?
+    private var expectedState: String?
+
+    func signIn(nonce: String, complete: @escaping (any AppleSignInResult) -> Void) {
+        guard completion == nil,
+              let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .filter({ $0.activationState == .foregroundActive })
+                .flatMap({ $0.windows }).first(where: { $0.isKeyWindow }) else {
+            complete(AppleSignInResultUnavailable.shared)
+            return
+        }
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.email]
+        request.nonce = nonce
+        let state = UUID().uuidString
+        request.state = state
+        expectedState = state
+        completion = complete
+        anchor = window
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        self.controller = controller
+        controller.performRequests()
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        // Retained for the lifetime of the authorization request.
+        return anchor!
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              credential.state == expectedState,
+              let data = credential.identityToken,
+              let token = String(data: data, encoding: .utf8), !token.isEmpty else {
+            finish(AppleSignInResultFailed.shared)
+            return
+        }
+        finish(AppleSignInResultSuccess(idToken: token))
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        let cancelled = (error as? ASAuthorizationError)?.code == .canceled
+        finish(cancelled ? AppleSignInResultCancelled.shared : AppleSignInResultFailed.shared)
+    }
+
+    private func finish(_ result: any AppleSignInResult) {
+        let callback = completion
+        completion = nil
+        controller = nil
+        anchor = nil
+        expectedState = nil
+        callback?(result)
     }
 }
 

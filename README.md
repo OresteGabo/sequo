@@ -133,6 +133,36 @@ iOS simulator tests:
 ./gradlew :shared:iosSimulatorArm64Test
 ```
 
+To run on an iPhone, open `iosApp/iosApp.xcodeproj` in Xcode, select the
+`iosApp` scheme and your connected iPhone, and run the Debug configuration.
+Under Signing & Capabilities, select your development team and enable automatic
+signing. The project uses the paid Sequo development team (`V2BJSBRM66`) and
+the registered bundle identifier `dev.orestegabo.sequo.Sequo` for both Debug
+and Release. Sign in with Apple requires this App ID's capability and a
+provisioning profile containing the Apple sign-in entitlement.
+
+From Android Studio, select the iOS run configuration and your iPhone; it uses
+the same Xcode project and signing settings.
+
+### Native Sign in with Apple (iOS)
+
+The Apple button opens `AuthenticationServices` on iPhone. The KMP app first
+requests a five-minute, device-bound challenge from `POST /api/auth/apple/challenge`,
+passes its nonce to Apple, then submits the identity token and challenge ID to
+`POST /api/auth/social/APPLE`. The backend verifies Apple's signature, issuer,
+bundle ID audience, expiry and nonce before issuing the normal Sequo session.
+Challenges can be consumed only once. Existing accounts with the same email
+require an explicit account-linking flow rather than automatic linking.
+
+The matching `sequo-api` implementation and migration
+`V67__apple_sign_in_challenges.sql` must be deployed before testing login against
+the hosted API. Set its `APPLE_CLIENT_ID=dev.orestegabo.sequo.Sequo`; this value
+is the native app's bundle ID. Add the paid membership's Apple Account to
+**Xcode → Settings → Accounts** to download the signing profile. A Safari login
+alone does not authenticate Xcode. This native iOS flow does not need a website
+redirect URL or a Services ID. Android Apple login remains unavailable until a
+separate browser-based OAuth flow is implemented.
+
 ## Implementation Priorities
 
 1. Model money, distance, delivery fee, subscription discount, and referral credit in shared domain code.

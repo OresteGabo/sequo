@@ -212,6 +212,16 @@ Required states:
 
 Every error state should give a next action: retry, edit address, choose another provider, contact support, or continue browsing.
 
+## Navigation Ownership
+
+- Bottom navigation owns the main destinations: Markets, Cart, Home, Orders, and Settings.
+- The header bell opens notifications. Do not repeat Cart, Orders, alerts, or Profile in the side menu.
+- Settings contains the profile, sign-in/sign-out, language, appearance, saved addresses, delivery benefits, and legal policies. Language and appearance remain available to guests.
+- The side menu helps customers choose a shopping intent: nearby shops with distance information, discounted products, negotiable products, and the live catalog categories. Help opens the official support page.
+- Category and shopping-intent filters apply to individual products, including shops selling several categories. Empty results offer a reset action.
+- Keep different product types in the same main navigation. Adapt their product details and ordering options rather than adding a bottom tab for every category.
+- Useful future shortcuts are Buy again (a reorder flow from completed orders) and Saved shops (persisted favorites). Add these only when their data and actions are implemented.
+
 ## Accessibility
 
 - Minimum touch targets should be comfortable on low and mid-range Android devices.

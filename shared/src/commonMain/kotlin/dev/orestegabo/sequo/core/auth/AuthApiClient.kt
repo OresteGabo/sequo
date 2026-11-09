@@ -49,13 +49,23 @@ class AuthApiClient(
         return loginWithSocialToken(SocialLoginProvider.Facebook, accessToken)
     }
 
-    private suspend fun loginWithSocialToken(provider: SocialLoginProvider, token: String): AuthApiResponse {
+    suspend fun appleSignInChallenge(): AppleSignInChallenge =
+        httpClient.post("${baseUrl.trimEnd('/')}/api/auth/apple/challenge") {
+            headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+            setBody(DeviceRequest(deviceIdProvider(), AppSource.SequoApp))
+        }.body()
+
+    suspend fun loginWithApple(idToken: String, challengeId: String): AuthApiResponse =
+        loginWithSocialToken(SocialLoginProvider.Apple, idToken, challengeId)
+
+    private suspend fun loginWithSocialToken(provider: SocialLoginProvider, token: String, challengeId: String? = null): AuthApiResponse {
         val response = try {
             httpClient.post("${baseUrl.trimEnd('/')}/api/auth/social/${provider.wireName}") {
                 headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(
                     SocialLoginRequest(
                         token = token,
+                        challengeId = challengeId,
                         device = DeviceRequest(
                             deviceId = deviceIdProvider(),
                             appSource = AppSource.SequoApp,
@@ -289,6 +299,7 @@ data class AuthSession(
 private data class SocialLoginRequest(
     val token: String,
     val device: DeviceRequest,
+    val challengeId: String? = null,
 )
 
 @Serializable
@@ -342,18 +353,23 @@ private enum class SocialLoginProvider {
     Google,
 
     @SerialName("FACEBOOK")
-    Facebook;
+    Facebook,
+
+    @SerialName("APPLE")
+    Apple;
 
     val wireName: String
         get() = when (this) {
             Google -> "GOOGLE"
             Facebook -> "FACEBOOK"
+            Apple -> "APPLE"
         }
 
     val displayName: String
         get() = when (this) {
             Google -> "Google"
             Facebook -> "Facebook"
+            Apple -> "Apple"
         }
 }
 
