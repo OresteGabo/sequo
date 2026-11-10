@@ -52,6 +52,8 @@ import dev.orestegabo.sequo.ui.orders.*
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import dev.orestegabo.sequo.core.bargaining.BargainingRepository
 import dev.orestegabo.sequo.core.bargaining.NetworkBargainingRepository
 import dev.orestegabo.sequo.core.catalog.CartApiClient
@@ -84,8 +86,12 @@ internal fun SequoShell(
         if (isGuest || currentUser == null) null else NetworkBargainingRepository(cartAccessToken)
     }
     DisposableEffect(bargainingRepository) { onDispose { bargainingRepository?.close() } }
+    val cartOwner = currentUser?.id?.takeUnless { isGuest }
+    val latestCartOwner by rememberUpdatedState(cartOwner)
     var cart by remember(currentUser?.id, isGuest) { mutableStateOf<CartSnapshot?>(null) }
-    var cartBusy by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
+    var cartOperations by remember(currentUser?.id, isGuest) { mutableStateOf(0) }
+    val cartBusy = cartOperations > 0
+    val cartMutations = remember(currentUser?.id, isGuest) { Mutex() }
     var cartFailed by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
     var searchVisible by remember { mutableStateOf(false) }
     var selectedMarketTypeKey by remember { mutableStateOf("") }
@@ -103,14 +109,22 @@ internal fun SequoShell(
     val tapFeedback = dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.tapFeedback
     val catalogLoadError = appText(Res.string.home_catalog_load_error)
 
-    suspend fun changeCart(change: suspend (String) -> CartSnapshot): CartSnapshot? {
-        if (cartBusy) return null
-        cartBusy = true
-        cartFailed = false
+    suspend fun changeCart(change: suspend (String) -> CartSnapshot): CartSnapshot {
+        cartOperations++
         try {
-            return change(checkNotNull(cartAccessToken())).also { cart = it }
+            return cartMutations.withLock {
+                if (cartOwner == null || latestCartOwner != cartOwner) throw CancellationException("Cart session changed.")
+                cartFailed = false
+                val token = checkNotNull(cartAccessToken())
+                if (latestCartOwner != cartOwner) throw CancellationException("Cart session changed.")
+                change(token).also {
+                    if (latestCartOwner != cartOwner) throw CancellationException("Cart session changed.")
+                    cart = it
+                    cartFailed = false
+                }
+            }
         } finally {
-            cartBusy = false
+            cartOperations--
         }
     }
 
@@ -318,12 +332,14 @@ internal fun SequoShell(
                             busy = cartBusy,
                             failed = cartFailed,
                             onRefresh = { updateCart(cartClient::cart) },
-                            onQuantity = { line, quantity ->
+                            onQuantity = { lineId, delta ->
                                 updateCart { token ->
-                                    if (quantity == 0) cartClient.remove(token, line.id)
-                                    else cartClient.put(token, line.product.id, quantity, line.selections, line.bargainingThreadId)
+                                    val quantity = cart?.quantityAfter(lineId, delta)
+                                    if (quantity == null) cartClient.cart(token)
+                                    else cartClient.setQuantity(token, lineId, quantity)
                                 }
                             },
+                            onRemove = { lineId -> updateCart { token -> cartClient.remove(token, lineId) } },
                             loadAddresses = loadSavedAddresses,
                             loadQuote = { addressId, relayPointId, mode -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId, mode) },
                             loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },

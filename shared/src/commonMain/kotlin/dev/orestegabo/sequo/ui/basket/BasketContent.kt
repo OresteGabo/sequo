@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +56,8 @@ internal fun BasketContent(
     busy: Boolean,
     failed: Boolean,
     onRefresh: () -> Unit,
-    onQuantity: (CartLine, Int) -> Unit,
+    onQuantity: (String, Int) -> Unit,
+    onRemove: (String) -> Unit,
     loadAddresses: suspend () -> List<SavedDeliveryAddress>,
     loadQuote: suspend (String, String?, String?) -> CartQuote,
     loadRelayPoints: suspend () -> List<dev.orestegabo.sequo.core.catalog.RelayDestination>,
@@ -83,7 +85,7 @@ internal fun BasketContent(
     var checkoutError by remember { mutableStateOf<CheckoutError?>(null) }
     val scope = rememberCoroutineScope()
     val editingEnabled = !busy && !submitting
-    if (busy) Text(appText(Res.string.cart_loading))
+    if (busy && cart?.items.isNullOrEmpty()) Text(appText(Res.string.cart_loading))
     if (failed) Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
     if (cart == null || ((busy || failed) && cart.items.isEmpty())) {
         TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
@@ -97,53 +99,59 @@ internal fun BasketContent(
         )
         return
     }
-    TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onRefresh, enabled = editingEnabled) { Text(appText(Res.string.cart_refresh)) }
+        Spacer(Modifier.weight(1f))
+        if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+    }
 
     for (line in cart.items) {
-        SequoCard {
-            Column(Modifier.padding(SequoDesign.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Top) {
-                    Text(line.product.name, style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                    val price = line.lineTotalCfa
-                    Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable),
-                        style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
-                        color = if (line.available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
-                }
-                line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
-                line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
-                if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
-                val optionNames = line.selections.flatMap { selection ->
-                    val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
-                    group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.displayLabel(requireNotNull(group)) }
-                }
-                if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
-                if (line.product.customizations.any { it.type == "MEASURE" }) Text(appText(Res.string.selling_portion_hint),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { onQuantity(line, line.quantity - 1) },
-                                enabled = editingEnabled && line.available && line.quantity > 1) {
-                                Icon(Icons.Filled.Remove, appText(Res.string.polish_decrease_quantity))
-                            }
-                            Text(line.quantity.toString(), modifier = Modifier.padding(horizontal = 6.dp), fontWeight = FontWeight.SemiBold)
-                            IconButton(onClick = { onQuantity(line, line.quantity + 1) },
-                                enabled = editingEnabled && line.available && line.quantity < 99) {
-                                Icon(Icons.Filled.Add, appText(Res.string.polish_increase_quantity))
+        key(line.id) {
+            SequoCard {
+                Column(Modifier.padding(SequoDesign.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top) {
+                        Text(line.product.name, style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        val price = line.lineTotalCfa
+                        Text(if (line.available && price != null) formatCfa(price) else appText(Res.string.cart_item_unavailable),
+                            style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
+                            color = if (line.available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                    }
+                    line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
+                    line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
+                    if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
+                    val optionNames = line.selections.flatMap { selection ->
+                        val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
+                        group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.displayLabel(requireNotNull(group)) }
+                    }
+                    if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
+                    if (line.product.customizations.any { it.type == "MEASURE" }) Text(appText(Res.string.selling_portion_hint),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { onQuantity(line.id, -1) },
+                                    enabled = editingEnabled && line.available && line.quantity > 1) {
+                                    Icon(Icons.Filled.Remove, appText(Res.string.polish_decrease_quantity) + " · " + line.product.name)
+                                }
+                                Text(line.quantity.toString(), modifier = Modifier.padding(horizontal = 6.dp), fontWeight = FontWeight.SemiBold)
+                                IconButton(onClick = { onQuantity(line.id, 1) },
+                                    enabled = editingEnabled && line.available && line.quantity < 99) {
+                                    Icon(Icons.Filled.Add, appText(Res.string.polish_increase_quantity) + " · " + line.product.name)
+                                }
                             }
                         }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { onQuantity(line, 0) }, enabled = editingEnabled,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                        Text(appText(Res.string.cart_remove))
+                        Spacer(Modifier.weight(1f))
+                        TextButton(onClick = { onRemove(line.id) }, enabled = editingEnabled,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                            Text(appText(Res.string.cart_remove))
+                        }
                     }
                 }
             }
-            }
+        }
     }
 
     CartAmount(appText(Res.string.basket_payment_items), cart.subtotalCfa)

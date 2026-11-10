@@ -8,8 +8,14 @@ import sequo.shared.generated.resources.*
 val LocalAppLanguage = compositionLocalOf { AppLanguage.English }
 
 @Composable
-fun appText(resource: StringResource): String =
-    appText(resource, LocalAppLanguage.current)
+fun appText(resource: StringResource): String {
+    val translated = when (LocalAppLanguage.current) {
+        AppLanguage.English -> EnglishStrings[resource.key]
+        AppLanguage.French -> FrenchStrings[resource.key]
+    }
+    // A missing manual lookup must not crash a screen; use the packaged resource as fallback.
+    return translated ?: org.jetbrains.compose.resources.stringResource(resource)
+}
 
 fun appText(resource: StringResource, language: AppLanguage): String {
     val key = resource.key

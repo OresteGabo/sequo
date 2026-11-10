@@ -23,6 +23,12 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
             setBody(CartItemRequest(productId, quantity, selections, bargainingThreadId))
         }.body()
 
+    suspend fun setQuantity(token: String, lineId: String, quantity: Int): CartSnapshot =
+        client.put("/api/cart/items/$lineId/quantity") {
+            bearerAuth(token)
+            setBody(CartQuantityRequest(quantity))
+        }.body()
+
     suspend fun remove(token: String, lineId: String): CartSnapshot =
         client.delete("/api/cart/items/$lineId") { bearerAuth(token) }.body()
 
@@ -95,10 +101,18 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
 }
 
 @Serializable
+private data class CartQuantityRequest(val quantity: Int)
+
+@Serializable
 private data class CartItemRequest(val productId: String, val quantity: Int, val selections: List<ProductOptionSelection>, val bargainingThreadId: String? = null)
 
 @Serializable
 internal data class CartSnapshot(val items: List<CartLine>, val totalItems: Int, val subtotalCfa: Int) {
+    fun quantityAfter(lineId: String, delta: Int): Int? {
+        require(delta == -1 || delta == 1)
+        return items.singleOrNull { it.id == lineId }?.let { (it.quantity + delta).coerceIn(1, 99) }
+    }
+
     fun findLine(productId: String, selections: List<ProductOptionSelection>, bargainingThreadId: String? = null): CartLine? {
         val choices = selections.associate { it.groupId to it.optionIds }
         return items.firstOrNull { line ->
