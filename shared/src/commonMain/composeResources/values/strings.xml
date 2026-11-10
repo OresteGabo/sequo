@@ -519,4 +519,10 @@
     <string name="settings_phone_notifications">Notification settings</string>
     <string name="settings_phone_notifications_hint">Manage permission, alerts and sounds in your phone settings.</string>
     <string name="settings_phone_notifications_failed">Open your phone’s Settings, choose Sequo, then Notifications.</string>
+    <string name="cart_proceed">Proceed to checkout</string>
+    <string name="cart_test_proceed">Place test order · no charge</string>
+    <string name="cart_your_address">Your address</string>
+    <string name="cart_choose_address">Choose your delivery address to continue.</string>
+    <string name="cart_choose_relay">Choose a relay point to collect your order.</string>
+    <string name="cart_review_unavailable">Remove unavailable items or refresh your cart to continue.</string>
 </resources>

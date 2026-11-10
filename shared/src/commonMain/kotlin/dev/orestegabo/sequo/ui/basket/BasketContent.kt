@@ -147,23 +147,32 @@ internal fun BasketContent(
     }
 
     CartAmount(appText(Res.string.basket_payment_items), cart.subtotalCfa)
-    if (cart.items.any { !it.available } || failed) return
+    if (cart.items.any { !it.available } || failed) {
+        Text(appText(Res.string.cart_review_unavailable), color = MaterialTheme.colorScheme.error)
+        Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)) {
+            Text(appText(Res.string.cart_proceed))
+        }
+        return
+    }
 
     var addresses by remember { mutableStateOf<List<SavedDeliveryAddress>?>(null) }
     var addressesFailed by remember { mutableStateOf(false) }
     var addressId by remember { mutableStateOf<String?>(null) }
+    var relayPickup by remember { mutableStateOf(false) }
+    var provider by remember { mutableStateOf("yas_togo") }
     var relayPointId by remember { mutableStateOf<String?>(null) }
     var relayPoints by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.RelayDestination>?>(null) }
     var relaysFailed by remember { mutableStateOf(false) }
     var deliveryMode by remember { mutableStateOf<String?>(null) }
     var modes by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.DeliveryModeOffer>>(emptyList()) }
-    var quote by remember(cart, addressId, relayPointId, deliveryMode) { mutableStateOf<CartQuote?>(null) }
-    var quoteFailed by remember(cart, addressId, relayPointId, deliveryMode) { mutableStateOf(false) }
+    var quote by remember(cart, addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf<CartQuote?>(null) }
+    var quoteFailed by remember(cart, addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf(false) }
     LaunchedEffect(cart) {
         try {
             addresses = loadAddresses().filter { it.id.isNotBlank() }
             addressesFailed = false
             addressId = addressId?.takeIf { id -> addresses.orEmpty().any { it.id == id } }
+                ?: addresses.orEmpty().firstOrNull()?.id
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
@@ -181,10 +190,11 @@ internal fun BasketContent(
         catch (_: Exception) { relayPoints = null; relaysFailed = true }
     }
     var quoteRefresh by remember { mutableStateOf(0) }
-    LaunchedEffect(cart, addressId, relayPointId, deliveryMode, relayPoints, relaysFailed, busy, quoteRefresh) {
+    LaunchedEffect(cart, addressId, relayPointId, relayPickup, deliveryMode, relayPoints, relaysFailed, busy, quoteRefresh) {
         quote = null
         quoteFailed = false
-        if (busy) return@LaunchedEffect
+        modes = emptyList()
+        if (busy || (relayPickup && relayPointId == null)) return@LaunchedEffect
         val selected = addressId ?: return@LaunchedEffect
         if (relayPointId != null && (relaysFailed || relayPoints.orEmpty().none { it.id == relayPointId })) {
             quoteFailed = true
@@ -200,40 +210,56 @@ internal fun BasketContent(
         }
     }
     Text(appText(Res.string.cart_relay_title), style = MaterialTheme.typography.titleMedium)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        RadioButton(selected = relayPointId == null, enabled = editingEnabled,
-            onClick = { relayPointId = null; checkoutError = null })
-        Text(appText(Res.string.basket_delivery_home))
+    PrimaryTabRow(selectedTabIndex = if (relayPickup) 1 else 0) {
+        Tab(selected = !relayPickup, enabled = editingEnabled,
+            text = { Text(appText(Res.string.cart_your_address)) },
+            icon = { Icon(Icons.Filled.Home, contentDescription = null) },
+            onClick = { relayPickup = false; relayPointId = null; deliveryMode = null; checkoutError = null })
+        Tab(selected = relayPickup, enabled = editingEnabled,
+            text = { Text(appText(Res.string.basket_delivery_relay)) },
+            icon = { Icon(Icons.Filled.Storefront, contentDescription = null) },
+            onClick = { relayPickup = true; deliveryMode = null; checkoutError = null })
     }
-    if (relaysFailed) Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
-    else if (relayPoints == null) Text(appText(Res.string.cart_loading))
-    else if (relayPoints.orEmpty().isEmpty()) Text(appText(Res.string.cart_relay_unavailable))
-    for (relay in relayPoints.orEmpty()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(selected = relayPointId == relay.id, enabled = editingEnabled,
-                onClick = { relayPointId = relay.id; checkoutError = null })
-            Column { Text(relay.name); Text(listOfNotNull(relay.neighborhood, relay.city, relay.landmark).joinToString(", ")) }
+    if (relayPickup) {
+        Text(appText(Res.string.cart_choose_relay), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (relaysFailed) Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
+        else if (relayPoints == null) Text(appText(Res.string.cart_loading))
+        else if (relayPoints.orEmpty().isEmpty()) Text(appText(Res.string.cart_relay_unavailable))
+        for (relay in relayPoints.orEmpty()) {
+            OutlinedCard(onClick = { relayPointId = relay.id; deliveryMode = null; checkoutError = null },
+                enabled = editingEnabled, modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, if (relayPointId == relay.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RadioButton(selected = relayPointId == relay.id, onClick = null)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(relay.name, style = MaterialTheme.typography.titleSmall)
+                        Text(listOfNotNull(relay.neighborhood, relay.city, relay.landmark).joinToString(", "),
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
     }
-    Text(appText(if (relayPointId == null) Res.string.basket_delivery_home else Res.string.cart_relay_contact), style = MaterialTheme.typography.titleMedium)
+    Text(appText(if (!relayPickup) Res.string.cart_your_address else Res.string.cart_relay_contact), style = MaterialTheme.typography.titleMedium)
     when {
         addressesFailed -> Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
         addresses == null -> Text(appText(Res.string.cart_loading))
         addresses.orEmpty().isEmpty() -> Text(appText(Res.string.cart_no_addresses))
     }
     for (address in addresses.orEmpty()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(
-                selected = address.id == addressId,
-                onClick = {
-                    addressId = address.id
-                    checkoutError = null
-                },
-                enabled = editingEnabled,
-            )
-            Column {
-                Text(address.label)
-                Text(listOfNotNull(address.area, address.city).joinToString(", "))
+        OutlinedCard(onClick = { addressId = address.id; deliveryMode = null; checkoutError = null },
+            enabled = editingEnabled, modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, if (addressId == address.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RadioButton(selected = address.id == addressId, onClick = null)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(address.label, style = MaterialTheme.typography.titleSmall)
+                    Text(listOfNotNull(address.streetHint, address.area, address.city).filter { it.isNotBlank() }.joinToString(", "),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
@@ -251,34 +277,30 @@ internal fun BasketContent(
     if (quoteFailed && deliveryMode != null) TextButton(onClick = { deliveryMode = null; quoteRefresh++ }, enabled = editingEnabled) {
         Text(appText(Res.string.cart_refresh))
     }
-    when {
-        quoteFailed -> Text(appText(Res.string.cart_quote_failed), color = MaterialTheme.colorScheme.error)
-        addressId != null && quote == null -> Text(appText(Res.string.cart_loading))
-        !busy -> quote?.let {
-            SequoCard {
+    if (!busy) quote?.let {
+        SequoCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            CartAmount(appText(Res.string.basket_payment_items), it.productTotalCfa)
-            CartAmount(appText(Res.string.cart_options), it.optionTotalCfa)
-            CartAmount(appText(Res.string.cart_service_fee), it.serviceFeeCfa)
-            val hasDeliveryBenefits = it.subscriptionDiscountCfa > 0 || it.loyaltyDiscountCfa > 0 || it.referralCreditAppliedCfa > 0
-            if (hasDeliveryBenefits) {
-                CartAmount(appText(Res.string.benefits_delivery_base), it.deliveryBaseFeeCfa ?: it.deliveryFeeCfa)
-                if (it.subscriptionDiscountCfa > 0) CartAmount(appText(Res.string.benefits_subscription_discount), -it.subscriptionDiscountCfa)
-                if (it.loyaltyDiscountCfa > 0) CartAmount(appText(Res.string.benefits_loyalty_discount), -it.loyaltyDiscountCfa)
-                if (it.referralCreditAppliedCfa > 0) CartAmount(appText(Res.string.benefits_referral_credit), -it.referralCreditAppliedCfa)
+                CartAmount(appText(Res.string.basket_payment_items), it.productTotalCfa)
+                CartAmount(appText(Res.string.cart_options), it.optionTotalCfa)
+                CartAmount(appText(Res.string.cart_service_fee), it.serviceFeeCfa)
+                val hasDeliveryBenefits = it.subscriptionDiscountCfa > 0 || it.loyaltyDiscountCfa > 0 || it.referralCreditAppliedCfa > 0
+                if (hasDeliveryBenefits) {
+                    CartAmount(appText(Res.string.benefits_delivery_base), it.deliveryBaseFeeCfa ?: it.deliveryFeeCfa)
+                    if (it.subscriptionDiscountCfa > 0) CartAmount(appText(Res.string.benefits_subscription_discount), -it.subscriptionDiscountCfa)
+                    if (it.loyaltyDiscountCfa > 0) CartAmount(appText(Res.string.benefits_loyalty_discount), -it.loyaltyDiscountCfa)
+                    if (it.referralCreditAppliedCfa > 0) CartAmount(appText(Res.string.benefits_referral_credit), -it.referralCreditAppliedCfa)
+                }
+                CartAmount(appText(if (hasDeliveryBenefits) Res.string.benefits_delivery_final else Res.string.basket_delivery), it.deliveryFeeCfa)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f))
+                CartAmount(appText(Res.string.basket_payment_total), it.totalCfa, strong = true)
             }
-            CartAmount(appText(if (hasDeliveryBenefits) Res.string.benefits_delivery_final else Res.string.basket_delivery), it.deliveryFeeCfa)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f))
-            CartAmount(appText(Res.string.basket_payment_total), it.totalCfa, strong = true)
-            }
-            }
-            val reviewedQuote = it
-            if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
-                Text("DEMO · No charge. After submitting, open Orders to simulate payment and delivery.", color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.bodyMedium)
-            }
-            var provider by remember { mutableStateOf("yas_togo") }
-            if (reviewedQuote.testOrderAvailable) Text("TEST · No charge or wallet request. Confirm the test payment from Orders after submitting.", color=MaterialTheme.colorScheme.primary)
-            if (!reviewedQuote.testOrderAvailable) {
+        }
+        val reviewedQuote = it
+        if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
+            Text("DEMO · No charge. After submitting, open Orders to simulate payment and delivery.", color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.bodyMedium)
+        }
+        if (reviewedQuote.testOrderAvailable) Text("TEST · No charge or wallet request. Confirm the test payment from Orders after submitting.", color=MaterialTheme.colorScheme.primary)
+        if (!reviewedQuote.testOrderAvailable) {
             for ((id, label) in listOf("yas_togo" to "Mixx by Yas", "moov_africa" to "Flooz")) {
                 val configuration = providers?.firstOrNull { it.providerId == id }
                 Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface,
@@ -301,41 +323,57 @@ internal fun BasketContent(
                     }
                 }
             }
-            }
-            Button(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
-                enabled = editingEnabled,
-                onClick = {
-                    submitting = true
-                    checkoutError = null
-                    scope.launch {
-                        try {
-                            submitCheckout(reviewedQuote, provider)
-                            onOpenOrders()
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (error: SequoApiException) {
-                            when (error.statusCode) {
-                                409 -> {
-                                    checkoutError = CheckoutError.PriceChanged
-                                    quote = null
-                                    quoteRefresh++
-                                    onRefresh()
-                                }
-                                422 -> checkoutError = CheckoutError.Rejected
-                                else -> checkoutError = CheckoutError.SubmitFailed
-                            }
-                        } catch (_: Exception) {
-                            checkoutError = CheckoutError.SubmitFailed
-                        } finally {
-                            submitting = false
-                        }
-                    }
-                },
-            ) {
-                Text(if(reviewedQuote.testOrderAvailable && !submitting) "Place test order · no charge" else appText(if (submitting) Res.string.checkout_submitting else Res.string.checkout_submit))
-            }
         }
+    }
+    val nextStep = when {
+        addressesFailed -> Res.string.cart_load_failed
+        addresses == null -> Res.string.cart_loading
+        addresses.orEmpty().isEmpty() -> Res.string.cart_no_addresses
+        addressId == null -> Res.string.cart_choose_address
+        relayPickup && relaysFailed -> Res.string.cart_load_failed
+        relayPickup && relayPointId == null -> Res.string.cart_choose_relay
+        quoteFailed -> Res.string.cart_quote_failed
+        quote == null -> Res.string.cart_loading
+        else -> null
+    }
+    nextStep?.let { Text(appText(it), style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    if (quoteFailed || addressesFailed || relaysFailed) TextButton(onClick = onRefresh, enabled = editingEnabled) {
+        Text(appText(Res.string.cart_refresh))
+    }
+    Button(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
+        enabled = editingEnabled && quote != null && nextStep == null,
+        onClick = {
+            val reviewedQuote = quote ?: return@Button
+            submitting = true
+            checkoutError = null
+            scope.launch {
+                try {
+                    submitCheckout(reviewedQuote, provider)
+                    onOpenOrders()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: SequoApiException) {
+                    when (error.statusCode) {
+                        409 -> {
+                            checkoutError = CheckoutError.PriceChanged
+                            quote = null
+                            quoteRefresh++
+                            onRefresh()
+                        }
+                        422 -> checkoutError = CheckoutError.Rejected
+                        else -> checkoutError = CheckoutError.SubmitFailed
+                    }
+                } catch (_: Exception) {
+                    checkoutError = CheckoutError.SubmitFailed
+                } finally {
+                    submitting = false
+                }
+            }
+        },
+    ) {
+        Text(appText(if (submitting) Res.string.checkout_submitting else if (quote?.testOrderAvailable == true) Res.string.cart_test_proceed else Res.string.cart_proceed))
     }
     checkoutError?.let { error ->
         Text(appText(when (error) {
