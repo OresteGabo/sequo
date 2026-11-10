@@ -24,7 +24,7 @@ import dev.orestegabo.sequo.ui.components.*
 import kotlinx.coroutines.CancellationException
 import sequo.shared.generated.resources.*
 
-private enum class AccountDetail { Profile, Addresses, Benefits }
+private enum class AccountDetail { Profile, Addresses, Benefits, About, Data, Delete }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +40,8 @@ internal fun AccountContent(
     onOpenLegal: (LegalInitialTab) -> Unit,
     onSignInRequested: () -> Unit,
     onLogout: () -> Unit,
+    accountAccessToken: suspend () -> String?,
+    exportPreferences: Map<String, String>,
     pendingAdminLoginRequestCount: Int = 0,
     onAdminLoginRequestsClick: () -> Unit = {},
 ) {
@@ -88,7 +90,16 @@ internal fun AccountContent(
                 value = pendingAdminLoginRequestCount.toString(), onClick = onAdminLoginRequestsClick)
         }
     }
+    if (!isGuest) SettingsGroup(appText(Res.string.settings_data_privacy)) {
+        SettingsRow(Icons.Filled.Download, appText(Res.string.settings_download_data),
+            subtitle = appText(Res.string.settings_download_hint), onClick = { detail = AccountDetail.Data })
+        SettingsDivider()
+        SettingsRow(Icons.Filled.PersonRemove, appText(Res.string.settings_delete_account),
+            destructive = true, onClick = { detail = AccountDetail.Delete })
+    }
     SettingsGroup(appText(Res.string.settings_legal)) {
+        SettingsRow(Icons.Filled.Info, appText(Res.string.settings_about), onClick = { detail = AccountDetail.About })
+        SettingsDivider()
         SettingsRow(Icons.Filled.PrivacyTip, appText(Res.string.settings_privacy),
             onClick = { onOpenLegal(LegalInitialTab.Privacy) })
         SettingsDivider()
@@ -117,6 +128,9 @@ internal fun AccountContent(
                         AccountDetail.Profile -> Res.string.settings_profile
                         AccountDetail.Addresses -> Res.string.account_saved_places
                         AccountDetail.Benefits -> Res.string.benefits_title
+                        AccountDetail.About -> Res.string.settings_about
+                        AccountDetail.Data -> Res.string.settings_download_data
+                        AccountDetail.Delete -> Res.string.settings_delete_account
                     }), modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     IconButton(onClick = { detail = null }) { Icon(Icons.Filled.Close, appText(Res.string.settings_close)) }
                 }
@@ -129,6 +143,10 @@ internal fun AccountContent(
                     }
                     AccountDetail.Addresses -> SavedAddressesCard(currentUser?.id, loadSavedAddresses)
                     AccountDetail.Benefits -> DeliveryBenefitsCard(currentUser?.id, loadBenefits)
+                    AccountDetail.About -> AboutSequoContent(onOpenLegal)
+                    AccountDetail.Data, AccountDetail.Delete -> key(currentUser?.id, page) {
+                        AccountDataContent(accountAccessToken, exportPreferences, deletion = page == AccountDetail.Delete)
+                    }
                 }
             }
         }

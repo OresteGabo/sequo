@@ -401,6 +401,7 @@ internal fun SequoShell(
                     catalogState = catalogState,
                     onReloadCatalog = ::reloadCatalog,
                     currentUser = currentUser,
+                    accountAccessToken = cartAccessToken,
                     loadSavedAddresses = loadSavedAddresses,
                     loadBenefits = { cartClient.benefits(checkNotNull(cartAccessToken())) },
                     isGuest = isGuest,
@@ -446,6 +447,7 @@ internal fun SequoContentStage(
     catalogState: CatalogUiState,
     onReloadCatalog: () -> Unit,
     currentUser: CurrentUser?,
+    accountAccessToken: suspend () -> String?,
     loadSavedAddresses: suspend () -> List<SavedDeliveryAddress>,
     loadBenefits: suspend () -> CustomerBenefits,
     isGuest: Boolean,
@@ -555,6 +557,15 @@ internal fun SequoContentStage(
                 SequoSection.Notifications -> notificationsContent()
                 SequoSection.Settings -> AccountContent(
                     currentUser = currentUser,
+                    accountAccessToken = accountAccessToken,
+                    exportPreferences = mapOf(
+                        "language" to language.name,
+                        "theme" to themePreference.name,
+                        "largerText" to dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.largerText.toString(),
+                        "tapFeedback" to dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.tapFeedback.toString(),
+                        "pinnedCategories" to pinnedCategoryKeys.joinToString(","),
+                        "categoryUsage" to categoryUsage.toString(),
+                    ),
                     language = language,
                     onLanguageChange = onLanguageChange,
                     themePreference = themePreference,
