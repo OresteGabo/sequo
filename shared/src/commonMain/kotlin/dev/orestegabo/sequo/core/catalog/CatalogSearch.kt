@@ -20,7 +20,7 @@ internal fun CatalogSnapshot.searchProducts(query: String): List<SequoProductLis
     }.distinctBy { it.product.id }
 }
 
-private fun String.searchText(): String = buildString {
+internal fun String.searchText(): String = buildString {
     this@searchText.lowercase().forEach { character ->
         when (character) {
             'à', 'â', 'ä', 'á', 'ã', 'å' -> append('a')

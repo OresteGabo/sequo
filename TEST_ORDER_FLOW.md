@@ -131,3 +131,10 @@ The test found and fixed missing cart address controls, navigation screens retai
 In **SequoVendor → Catalog → Add product/Edit**, start typing the product name (at least two characters). Select a shared suggestion such as **Lait**. A **Linked product** label confirms the association; **Unlink** removes it. Keep the brand, pack size, description and options accurate for your own offer. Prices, stock and photographs remain specific to your shop.
 
 Without a suggestion, saving reuses a complete matching name or creates a reusable reference for that complete name. Suggestions recognize common French/English names and accents. Sequo customer search includes those shared names/aliases and groups linked offers from different shops while retaining each shop's listing and price. A common family such as Lait does not mean that different brands or package sizes are identical goods.
+
+
+## Search filters and sorting
+
+Sequo search now puts **All / Deals / Negotiable** directly below the search field. Use **Relevance**, **Price: low to high**, **Price: high to low**, or **Nearest** from the sort menu. Nearest appears when the catalog provides valid shop distances. Prices follow the unit/pack shown on each listing; shop offers remain separate.
+
+If a filter leaves no results, **Show all offers** resets it while keeping your search text. For a quick check, search `riz` and compare the two price orders; search `lait` and choose Deals to see the current milk promotion. The redundant search headings have been removed. The update was installed and checked through the actual iPhone UI without changing the cart or placing orders.

@@ -73,6 +73,7 @@ internal data class SequoProduct(
     val imageUrl: String? = null,
     val customizations: List<ProductOptionGroup> = emptyList(),
     val productReference: SharedProductReference? = null,
+    val hasKnownPrice: Boolean = true,
 ) {
     val hasDiscount: Boolean
         get() = originalPriceCfa != null && originalPriceCfa > priceCfa

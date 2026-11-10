@@ -35,6 +35,19 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.search_result_count_one.key to "1 result",
+    Res.string.search_filter_all.key to "All",
+    Res.string.search_filter_deals.key to "Deals",
+    Res.string.search_filter_negotiable.key to "Negotiable",
+    Res.string.search_sort_relevance.key to "Relevance",
+    Res.string.search_sort_price_low.key to "Price: low to high",
+    Res.string.search_sort_price_high.key to "Price: high to low",
+    Res.string.search_sort_nearest.key to "Nearest",
+    Res.string.search_result_count.key to "{count} results",
+    Res.string.search_filtered_empty_title.key to "No offers with this filter",
+    Res.string.search_filtered_empty_detail.key to "Try all offers to see more results for your search.",
+    Res.string.search_reset_filters.key to "Show all offers",
+
     Res.string.settings_comfort_alerts.key to "Comfort & alerts",
     Res.string.settings_text_size.key to "Text size",
     Res.string.settings_text_size_hint.key to "Make text easier to read. Your phone’s text size is always respected.",
@@ -624,6 +637,19 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.search_result_count_one.key to "1 résultat",
+    Res.string.search_filter_all.key to "Tous",
+    Res.string.search_filter_deals.key to "Promos",
+    Res.string.search_filter_negotiable.key to "Négociable",
+    Res.string.search_sort_relevance.key to "Pertinence",
+    Res.string.search_sort_price_low.key to "Prix croissant",
+    Res.string.search_sort_price_high.key to "Prix décroissant",
+    Res.string.search_sort_nearest.key to "À proximité",
+    Res.string.search_result_count.key to "{count} résultats",
+    Res.string.search_filtered_empty_title.key to "Aucune offre avec ce filtre",
+    Res.string.search_filtered_empty_detail.key to "Affichez toutes les offres pour retrouver les résultats de votre recherche.",
+    Res.string.search_reset_filters.key to "Afficher toutes les offres",
+
     Res.string.settings_comfort_alerts.key to "Confort et alertes",
     Res.string.settings_text_size.key to "Taille du texte",
     Res.string.settings_text_size_hint.key to "Facilitez la lecture. La taille du texte de votre téléphone reste prise en compte.",

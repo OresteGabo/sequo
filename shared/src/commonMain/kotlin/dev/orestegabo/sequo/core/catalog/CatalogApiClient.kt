@@ -204,6 +204,7 @@ private fun CatalogProductResponse.toProduct(): SequoProduct =
         name = name,
         detail = detail.orEmpty(),
         priceCfa = priceCfa ?: 0,
+        hasKnownPrice = priceCfa != null,
         label = subcategory ?: category ?: "Catalog",
         optionHint = optionHint.orEmpty(),
         bargainNote = if (bargainingEnabled) "Negotiable" else null,

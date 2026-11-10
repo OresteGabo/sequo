@@ -583,4 +583,16 @@
     <string name="cart_address_saving">Enregistrement de l’adresse…</string>
     <string name="cart_address_cancel">Annuler</string>
     <string name="cart_address_clear_pin">Effacer le repère de livraison</string>
+    <string name="search_filter_all">Tous</string>
+    <string name="search_filter_deals">Promos</string>
+    <string name="search_filter_negotiable">Négociable</string>
+    <string name="search_sort_relevance">Pertinence</string>
+    <string name="search_sort_price_low">Prix croissant</string>
+    <string name="search_sort_price_high">Prix décroissant</string>
+    <string name="search_sort_nearest">À proximité</string>
+    <string name="search_result_count">{count} résultats</string>
+    <string name="search_filtered_empty_title">Aucune offre avec ce filtre</string>
+    <string name="search_filtered_empty_detail">Affichez toutes les offres pour retrouver les résultats de votre recherche.</string>
+    <string name="search_reset_filters">Afficher toutes les offres</string>
+    <string name="search_result_count_one">1 résultat</string>
 </resources>

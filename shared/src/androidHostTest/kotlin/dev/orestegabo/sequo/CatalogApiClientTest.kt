@@ -27,6 +27,19 @@ class CatalogApiClientTest {
         return try { test(CatalogApiClient(http)) } finally { http.close() }
     }
 
+    @Test fun missingPriceIsDistinguishedFromAnExplicitZeroForSearchSorting() = runBlocking {
+        val missing = product.replace("2200", "null")
+        withCatalog(response(merchantProducts = missing, globalProducts = missing)) { client ->
+            assertFalse(client.home().products.single().product.hasKnownPrice)
+        }
+        val free = product.replace("2200", "0")
+        withCatalog(response(merchantProducts = free, globalProducts = free)) { client ->
+            val actual = client.home().products.single().product
+            assertTrue(actual.hasKnownPrice)
+            assertEquals(0, actual.priceCfa)
+        }
+    }
+
     @Test fun merchantWithoutOptionalStorefrontRemainsVisibleWithoutInventedPublicClaims() = runBlocking {
         withCatalog(response()) { client ->
             val actual = client.home()
