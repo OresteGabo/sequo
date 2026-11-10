@@ -498,6 +498,18 @@ internal fun SequoContentStage(
                 onAddNegotiated = onAddNegotiated,
             )
         }
+    } else if (currentDestination == SequoSection.Home && catalog != null && catalog.products.isNotEmpty()) {
+        HomeContent(
+            catalog = requireNotNull(catalog),
+            modifier = modifier,
+            onDestinationSelected = onDestinationSelected,
+            onAddProduct = onAddProduct,
+            onProductSelected = onProductSelected,
+            categoryUsage = categoryUsage,
+            pinnedCategoryKeys = pinnedCategoryKeys,
+            onCategoryUsed = onCategoryUsed,
+            onToggleCategoryPinned = onToggleCategoryPinned,
+        )
     } else {
         SequoScreenColumn(modifier = modifier) {
             when (currentDestination) {
@@ -507,16 +519,7 @@ internal fun SequoContentStage(
                         title = appText(Res.string.empty_catalog_title), detail = appText(Res.string.empty_catalog_detail),
                         actionLabel = appText(Res.string.cart_refresh), onAction = onReloadCatalog,
                     )
-                } else HomeContent(
-                    catalog = requireNotNull(catalog),
-                    onDestinationSelected = onDestinationSelected,
-                    onAddProduct = onAddProduct,
-                    onProductSelected = onProductSelected,
-                    categoryUsage = categoryUsage,
-                    pinnedCategoryKeys = pinnedCategoryKeys,
-                    onCategoryUsed = onCategoryUsed,
-                    onToggleCategoryPinned = onToggleCategoryPinned,
-                )
+                }
                 SequoSection.Markets -> MarketsContent(
                     catalog = requireNotNull(catalog),
                     selectedTypeKey = selectedMarketTypeKey,

@@ -3,6 +3,8 @@ package dev.orestegabo.sequo.ui.home
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import dev.orestegabo.sequo.design.SequoDesign
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -41,6 +43,7 @@ import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.painterResource
 import sequo.shared.generated.resources.*
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun HomeContent(
     catalog: CatalogSnapshot,
@@ -51,6 +54,7 @@ internal fun HomeContent(
     pinnedCategoryKeys: List<String>,
     onCategoryUsed: (String) -> Unit,
     onToggleCategoryPinned: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var selectedTypeKey by remember(catalog.defaultCategoryKey) { mutableStateOf(catalog.defaultCategoryKey) }
     // Record new usage for future visits without moving a category under the current tap.
@@ -60,49 +64,74 @@ internal fun HomeContent(
     val selectedShops = catalog.shopsForCategory(selectedTypeKey)
     val featuredProducts = catalog.featuredProductsFor(selectedTypeKey)
 
-    ProductPromoCarousel(
-        promos = catalog.promotions,
-        onAddProduct = onAddProduct,
-        onSeeAll = { onDestinationSelected(SequoSection.Markets) },
-        onProductSelected = onProductSelected,
-        onNegotiateClick = { product -> catalog.products.firstOrNull { it.product.id == product.id }?.shop?.let { onProductSelected(SequoProductListing(it, product)) } },
-    )
-    MarketplaceCategorySection(
-        types = orderedTypes,
-        selectedTypeKey = selectedTypeKey,
-        pinnedCategoryKeys = pinnedCategoryKeys,
-        onTypeSelected = {
-            selectedTypeKey = it
-            onCategoryUsed(it)
-        },
-        onTogglePinned = onToggleCategoryPinned,
-    )
-    if (featuredProducts.isEmpty()) {
-        SequoEmptyState(
-            visual = EmptyStateVisual.Catalog,
-            title = appText(Res.string.empty_filter_title),
-            detail = appText(Res.string.empty_filter_detail),
-            actionLabel = appText(Res.string.empty_browse_all),
-            onAction = { onDestinationSelected(SequoSection.Markets) },
-            compact = true,
-        )
-    } else FlashSaleSection(
-        title = appText(Res.string.home_popular_picks),
-        badge = appCatalogText(selectedType.supportLabel),
-        products = featuredProducts,
-        onAddProduct = onAddProduct,
-        onSeeAll = { onDestinationSelected(SequoSection.Markets) },
-        onProductSelected = { shop, product -> onProductSelected(SequoProductListing(shop, product)) },
-        onNegotiateClick = { product -> featuredProducts.firstOrNull { it.second.id == product.id }?.let { onProductSelected(SequoProductListing(it.first, product)) } },
-    )
-    if (selectedShops.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        MarketplaceSectionHeader(
-            title = appText(Res.string.home_nearby_shops),
-            action = appCatalogText(selectedType.supportLabel),
-            onAction = { onDestinationSelected(SequoSection.Markets) },
-        )
-        selectedShops.take(2).forEach { shop ->
-            ShopSummaryRow(shop = shop)
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(vertical = SequoDesign.SectionGap),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item(key = "promotions") {
+            Box(Modifier.padding(horizontal = SequoDesign.ScreenGutter)) {
+                ProductPromoCarousel(
+                    promos = catalog.promotions,
+                    onAddProduct = onAddProduct,
+                    onSeeAll = { onDestinationSelected(SequoSection.Markets) },
+                    onProductSelected = onProductSelected,
+                    onNegotiateClick = { product -> catalog.products.firstOrNull { it.product.id == product.id }?.shop?.let { onProductSelected(SequoProductListing(it, product)) } },
+                )
+            }
+        }
+        stickyHeader(key = "categories") {
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Box(Modifier.fillMaxWidth().padding(horizontal = SequoDesign.ScreenGutter, vertical = 8.dp)) {
+                    MarketplaceCategorySection(
+                        types = orderedTypes,
+                        selectedTypeKey = selectedTypeKey,
+                        pinnedCategoryKeys = pinnedCategoryKeys,
+                        onTypeSelected = {
+                            selectedTypeKey = it
+                            onCategoryUsed(it)
+                        },
+                        onTogglePinned = onToggleCategoryPinned,
+                    )
+                }
+            }
+        }
+        item(key = "featured-products") {
+            Column(Modifier.padding(horizontal = SequoDesign.ScreenGutter)) {
+                if (featuredProducts.isEmpty()) {
+                    SequoEmptyState(
+                        visual = EmptyStateVisual.Catalog,
+                        title = appText(Res.string.empty_filter_title),
+                        detail = appText(Res.string.empty_filter_detail),
+                        actionLabel = appText(Res.string.empty_browse_all),
+                        onAction = { onDestinationSelected(SequoSection.Markets) },
+                        compact = true,
+                    )
+                } else FlashSaleSection(
+                    title = appText(Res.string.home_popular_picks),
+                    badge = appCatalogText(selectedType.supportLabel),
+                    products = featuredProducts,
+                    onAddProduct = onAddProduct,
+                    onSeeAll = { onDestinationSelected(SequoSection.Markets) },
+                    onProductSelected = { shop, product -> onProductSelected(SequoProductListing(shop, product)) },
+                    onNegotiateClick = { product -> featuredProducts.firstOrNull { it.second.id == product.id }?.let { onProductSelected(SequoProductListing(it.first, product)) } },
+                )
+            }
+        }
+        if (selectedShops.isNotEmpty()) item(key = "nearby-shops") {
+            Column(
+                modifier = Modifier.padding(horizontal = SequoDesign.ScreenGutter),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                MarketplaceSectionHeader(
+                    title = appText(Res.string.home_nearby_shops),
+                    action = appCatalogText(selectedType.supportLabel),
+                    onAction = { onDestinationSelected(SequoSection.Markets) },
+                )
+                selectedShops.take(2).forEach { shop ->
+                    ShopSummaryRow(shop = shop)
+                }
+            }
         }
     }
 }
