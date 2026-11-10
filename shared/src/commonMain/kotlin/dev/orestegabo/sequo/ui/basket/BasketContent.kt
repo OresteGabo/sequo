@@ -54,6 +54,8 @@ import sequo.shared.generated.resources.*
 internal fun BasketContent(
     cart: CartSnapshot?,
     busy: Boolean,
+    pendingLineIds: Set<String>,
+    failedLineIds: Set<String>,
     failed: Boolean,
     onRefresh: () -> Unit,
     onQuantity: (String, Int) -> Unit,
@@ -107,6 +109,7 @@ internal fun BasketContent(
 
     for (line in cart.items) {
         key(line.id) {
+            val rowEnabled = editingEnabled && line.id !in pendingLineIds
             SequoCard {
                 Column(Modifier.padding(SequoDesign.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -118,6 +121,8 @@ internal fun BasketContent(
                             style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
                             color = if (line.available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
                     }
+                    if (line.id in failedLineIds) Text(appText(Res.string.cart_item_update_failed),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     line.negotiatedUnitPriceCfa?.let { Text(appText(Res.string.bargain_locked_price) + " · " + formatCfa(it)) }
                     line.negotiatedPriceExpiresAt?.let { Text(appText(Res.string.bargain_expires) + " " + it) }
                     if (!line.available && line.bargainingThreadId != null) Text(appText(Res.string.bargain_review_cart), color = MaterialTheme.colorScheme.error)
@@ -133,18 +138,21 @@ internal fun BasketContent(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { onQuantity(line.id, -1) },
-                                    enabled = editingEnabled && line.available && line.quantity > 1) {
+                                    enabled = rowEnabled && line.available && line.quantity > 1) {
                                     Icon(Icons.Filled.Remove, appText(Res.string.polish_decrease_quantity) + " · " + line.product.name)
                                 }
-                                Text(line.quantity.toString(), modifier = Modifier.padding(horizontal = 6.dp), fontWeight = FontWeight.SemiBold)
+                                Box(Modifier.width(36.dp).height(48.dp), contentAlignment = Alignment.Center) {
+                                if (line.id in pendingLineIds) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                else Text(line.quantity.toString(), fontWeight = FontWeight.SemiBold)
+                            }
                                 IconButton(onClick = { onQuantity(line.id, 1) },
-                                    enabled = editingEnabled && line.available && line.quantity < 99) {
+                                    enabled = rowEnabled && line.available && line.quantity < 99) {
                                     Icon(Icons.Filled.Add, appText(Res.string.polish_increase_quantity) + " · " + line.product.name)
                                 }
                             }
                         }
                         Spacer(Modifier.weight(1f))
-                        TextButton(onClick = { onRemove(line.id) }, enabled = editingEnabled,
+                        TextButton(onClick = { onRemove(line.id) }, enabled = rowEnabled,
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                             Text(appText(Res.string.cart_remove))
                         }
@@ -173,9 +181,10 @@ internal fun BasketContent(
     var relaysFailed by remember { mutableStateOf(false) }
     var deliveryMode by remember { mutableStateOf<String?>(null) }
     var modes by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.DeliveryModeOffer>>(emptyList()) }
-    var quote by remember(cart, addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf<CartQuote?>(null) }
-    var quoteFailed by remember(cart, addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf(false) }
-    LaunchedEffect(cart) {
+    var quote by remember(addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf<CartQuote?>(null) }
+    var quoteFailed by remember(addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf(false) }
+    LaunchedEffect(busy) {
+        if (busy) return@LaunchedEffect
         try {
             addresses = loadAddresses().filter { it.id.isNotBlank() }
             addressesFailed = false
@@ -188,7 +197,7 @@ internal fun BasketContent(
             addressesFailed = true
         }
     }
-    LaunchedEffect(cart, busy) {
+    LaunchedEffect(busy) {
         if (busy) return@LaunchedEffect
         relaysFailed = false
         try {
@@ -198,23 +207,30 @@ internal fun BasketContent(
         catch (_: Exception) { relayPoints = null; relaysFailed = true }
     }
     var quoteRefresh by remember { mutableStateOf(0) }
-    LaunchedEffect(cart, addressId, relayPointId, relayPickup, deliveryMode, relayPoints, relaysFailed, busy, quoteRefresh) {
-        quote = null
-        quoteFailed = false
-        modes = emptyList()
-        if (busy || (relayPickup && relayPointId == null)) return@LaunchedEffect
+    var quotedCart by remember(addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf<CartSnapshot?>(null) }
+    var quoteLoading by remember { mutableStateOf(false) }
+    val updating = busy || pendingLineIds.isNotEmpty()
+    val quoteCurrent = quote != null && quotedCart == cart && !updating && !quoteLoading && !quoteFailed
+    LaunchedEffect(cart, addressId, relayPointId, relayPickup, deliveryMode, relayPoints, relaysFailed, updating, quoteRefresh) {
+        if (updating || (relayPickup && relayPointId == null)) return@LaunchedEffect
         val selected = addressId ?: return@LaunchedEffect
         if (relayPointId != null && (relaysFailed || relayPoints.orEmpty().none { it.id == relayPointId })) {
             quoteFailed = true
             return@LaunchedEffect
         }
+        quoteLoading = true
+        quoteFailed = false
         try {
-            quote = loadQuote(selected, relayPointId, deliveryMode)
-            modes = quote?.availableDeliveryModes.orEmpty()
+            val refreshed = loadQuote(selected, relayPointId, deliveryMode)
+            quote = refreshed
+            quotedCart = cart
+            modes = refreshed.availableDeliveryModes
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
             quoteFailed = true
+        } finally {
+            quoteLoading = false
         }
     }
     Text(appText(Res.string.cart_relay_title), style = MaterialTheme.typography.titleMedium)
@@ -285,7 +301,7 @@ internal fun BasketContent(
     if (quoteFailed && deliveryMode != null) TextButton(onClick = { deliveryMode = null; quoteRefresh++ }, enabled = editingEnabled) {
         Text(appText(Res.string.cart_refresh))
     }
-    if (!busy) quote?.let {
+    quote?.let {
         SequoCard {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 CartAmount(appText(Res.string.basket_payment_items), it.productTotalCfa)
@@ -341,7 +357,7 @@ internal fun BasketContent(
         relayPickup && relaysFailed -> Res.string.cart_load_failed
         relayPickup && relayPointId == null -> Res.string.cart_choose_relay
         quoteFailed -> Res.string.cart_quote_failed
-        quote == null -> Res.string.cart_loading
+        !quoteCurrent -> Res.string.cart_updating_totals
         else -> null
     }
     nextStep?.let { Text(appText(it), style = MaterialTheme.typography.bodyMedium,
@@ -351,7 +367,7 @@ internal fun BasketContent(
     }
     Button(
         modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
-        enabled = editingEnabled && quote != null && nextStep == null,
+        enabled = editingEnabled && quoteCurrent && nextStep == null,
         onClick = {
             val reviewedQuote = quote ?: return@Button
             submitting = true

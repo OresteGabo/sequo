@@ -560,4 +560,6 @@
     <string name="settings_delete_complete">Deletion completed</string>
     <string name="settings_delete_rejected">Request needs follow-up</string>
     <string name="settings_delete_cancelled">Deletion request cancelled</string>
+    <string name="cart_item_update_failed">Could not update this item. Try again.</string>
+    <string name="cart_updating_totals">Updating totals…</string>
 </resources>

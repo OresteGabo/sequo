@@ -560,4 +560,6 @@
     <string name="settings_delete_complete">Suppression terminée</string>
     <string name="settings_delete_rejected">La demande nécessite un suivi</string>
     <string name="settings_delete_cancelled">Demande de suppression annulée</string>
+    <string name="cart_item_update_failed">Impossible de modifier cet article. Réessayez.</string>
+    <string name="cart_updating_totals">Mise à jour du total…</string>
 </resources>

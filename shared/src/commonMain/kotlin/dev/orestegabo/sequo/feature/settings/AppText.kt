@@ -598,6 +598,8 @@ private val EnglishStrings = mapOf(
     Res.string.settings_export_too_large.key to "Your account needs an assisted export because it exceeds the download limit. No partial archive was saved.",
     Res.string.settings_request_deletion.key to "Request account deletion",
     Res.string.settings_version.key to "Version",
+    Res.string.cart_item_update_failed.key to "Could not update this item. Try again.",
+    Res.string.cart_updating_totals.key to "Updating totals…",
 )
 
 private val FrenchStrings = mapOf(
@@ -1164,6 +1166,8 @@ private val FrenchStrings = mapOf(
     Res.string.settings_export_too_large.key to "Votre compte nécessite un export accompagné car il dépasse la limite de téléchargement. Aucune archive partielle n’a été enregistrée.",
     Res.string.settings_request_deletion.key to "Demander la suppression du compte",
     Res.string.settings_version.key to "Version",
+    Res.string.cart_item_update_failed.key to "Impossible de modifier cet article. Réessayez.",
+    Res.string.cart_updating_totals.key to "Mise à jour du total…",
 )
 
 private val FrenchCatalogStrings = mapOf(

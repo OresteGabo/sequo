@@ -91,6 +91,8 @@ internal fun SequoShell(
     var cart by remember(currentUser?.id, isGuest) { mutableStateOf<CartSnapshot?>(null) }
     var cartOperations by remember(currentUser?.id, isGuest) { mutableStateOf(0) }
     val cartBusy = cartOperations > 0
+    val cartLineOperations = remember(currentUser?.id, isGuest) { mutableStateMapOf<String, Int>() }
+    val cartLineErrors = remember(currentUser?.id, isGuest) { mutableStateMapOf<String, Boolean>() }
     val cartMutations = remember(currentUser?.id, isGuest) { Mutex() }
     var cartFailed by remember(currentUser?.id, isGuest) { mutableStateOf(false) }
     var searchVisible by remember { mutableStateOf(false) }
@@ -109,8 +111,11 @@ internal fun SequoShell(
     val tapFeedback = dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.tapFeedback
     val catalogLoadError = appText(Res.string.home_catalog_load_error)
 
-    suspend fun changeCart(change: suspend (String) -> CartSnapshot): CartSnapshot {
-        cartOperations++
+    suspend fun changeCart(lineId: String? = null, change: suspend (String) -> CartSnapshot): CartSnapshot {
+        if (lineId == null) cartOperations++ else {
+            cartLineOperations[lineId] = (cartLineOperations[lineId] ?: 0) + 1
+            cartLineErrors.remove(lineId)
+        }
         try {
             return cartMutations.withLock {
                 if (cartOwner == null || latestCartOwner != cartOwner) throw CancellationException("Cart session changed.")
@@ -124,20 +129,25 @@ internal fun SequoShell(
                 }
             }
         } finally {
-            cartOperations--
+            if (lineId == null) cartOperations-- else {
+                val remaining = (cartLineOperations[lineId] ?: 1) - 1
+                if (remaining == 0) cartLineOperations.remove(lineId) else cartLineOperations[lineId] = remaining
+            }
         }
     }
 
-    fun updateCart(change: suspend (String) -> CartSnapshot) {
+    fun updateCart(lineId: String? = null, change: suspend (String) -> CartSnapshot) {
         scope.launch {
             try {
-                changeCart(change)
+                changeCart(lineId, change)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                cartFailed = true
-                selectedProductListing = null
-                currentDestination = SequoSection.Basket
+                if (lineId != null) cartLineErrors[lineId] = true else {
+                    cartFailed = true
+                    selectedProductListing = null
+                    currentDestination = SequoSection.Basket
+                }
             }
         }
     }
@@ -169,7 +179,7 @@ internal fun SequoShell(
 
     LaunchedEffect(currentUser?.id, isGuest, currentDestination) {
         if (!isGuest && currentUser != null && (cart == null || currentDestination == SequoSection.Basket)) {
-            updateCart(cartClient::cart)
+            updateCart(change = cartClient::cart)
         }
     }
 
@@ -330,16 +340,18 @@ internal fun SequoShell(
                             onBrowse = { openCatalog() },
                             cart = cart,
                             busy = cartBusy,
+                            pendingLineIds = cartLineOperations.keys.toSet(),
+                            failedLineIds = cartLineErrors.keys.toSet(),
                             failed = cartFailed,
-                            onRefresh = { updateCart(cartClient::cart) },
+                            onRefresh = { updateCart(change = cartClient::cart) },
                             onQuantity = { lineId, delta ->
-                                updateCart { token ->
+                                updateCart(lineId = lineId, change = { token ->
                                     val quantity = cart?.quantityAfter(lineId, delta)
                                     if (quantity == null) cartClient.cart(token)
                                     else cartClient.setQuantity(token, lineId, quantity)
-                                }
+                                })
                             },
-                            onRemove = { lineId -> updateCart { token -> cartClient.remove(token, lineId) } },
+                            onRemove = { lineId -> updateCart(lineId = lineId, change = { token -> cartClient.remove(token, lineId) }) },
                             loadAddresses = loadSavedAddresses,
                             loadQuote = { addressId, relayPointId, mode -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId, mode) },
                             loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },
