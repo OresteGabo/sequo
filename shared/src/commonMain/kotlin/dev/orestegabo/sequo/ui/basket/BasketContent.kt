@@ -197,7 +197,8 @@ internal fun BasketContent(
             addressesFailed = true
         }
     }
-    LaunchedEffect(busy) {
+    val relayCartProducts = cart.items.map { it.product.id }.toSet()
+    LaunchedEffect(busy, relayCartProducts) {
         if (busy) return@LaunchedEffect
         relaysFailed = false
         try {
