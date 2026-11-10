@@ -72,6 +72,7 @@ internal data class SequoProduct(
     val capturedAtLabel: String? = null,
     val imageUrl: String? = null,
     val customizations: List<ProductOptionGroup> = emptyList(),
+    val productReference: SharedProductReference? = null,
 ) {
     val hasDiscount: Boolean
         get() = originalPriceCfa != null && originalPriceCfa > priceCfa
@@ -188,3 +189,7 @@ internal data class AppBarAction(
     val emphasized: Boolean = false,
     val badge: String? = null,
 )
+
+@kotlinx.serialization.Serializable
+internal data class SharedProductReference(val id: String, val name: String, val category: String,
+    val aliases: List<String> = emptyList())

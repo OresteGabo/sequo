@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.orestegabo.sequo.core.catalog.CatalogSnapshot
+import dev.orestegabo.sequo.core.catalog.sharedProductGroups
 import dev.orestegabo.sequo.core.catalog.searchProducts
 import dev.orestegabo.sequo.feature.settings.AppLanguage
 import dev.orestegabo.sequo.feature.settings.appText
@@ -68,20 +69,27 @@ internal fun CatalogSearchContent(
         )
         else -> {
             Text(if (french) matches.size.toString() + " produit(s)" else matches.size.toString() + " product(s)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            matches.chunked(2).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { listing ->
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            Text(listing.shop.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            FlashProductCard(
-                                shop = listing.shop, product = listing.product,
-                                onAddProduct = onAddProduct,
-                                onNegotiateClick = { onProductSelected(listing) },
-                                onProductClick = { onProductSelected(listing) },
-                            )
+            matches.sharedProductGroups().forEach { group ->
+                val shops = group.map { it.product.merchantId ?: it.shop.name }.distinct().size
+                if (shops > 1 && group.first().product.productReference != null && group.all { it.product.productReference?.id == group.first().product.productReference?.id }) {
+                    Text(group.first().product.productReference!!.name + " · " + shops + if (french) " boutiques" else " shops",
+                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                }
+                group.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        row.forEach { listing ->
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                Text(listing.shop.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                FlashProductCard(
+                                    shop = listing.shop, product = listing.product,
+                                    onAddProduct = onAddProduct,
+                                    onNegotiateClick = { onProductSelected(listing) },
+                                    onProductClick = { onProductSelected(listing) },
+                                )
+                            }
                         }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }

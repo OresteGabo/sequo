@@ -48,6 +48,20 @@ class CatalogSearchTest {
         assertEquals(listOf("rice", "meal"), duplicate.searchProducts("riz").map { it.product.id })
     }
 
+    @Test fun sharedReferencesFindDifferentNamesAcrossShopsWithoutMergingOffersOrPrices() {
+        val reference = SharedProductReference("ref-milk", "Lait", "grocery", listOf("milk"))
+        val first = rice.copy(id = "milk-a", name = "Demi-écrémé 1 L", detail = "Brand A", productReference = reference)
+        val second = meal.copy(id = "milk-b", name = "Whole milk 500 mL", detail = "Brand B", productReference = reference)
+        val source = catalog.copy(products = listOf(riceRecord.copy(product = first), mealRecord.copy(product = second)))
+        for (query in listOf("lait", "MILK")) {
+            val matches = source.searchProducts(query)
+            assertEquals(listOf("milk-a", "milk-b"), matches.map { it.product.id })
+            assertEquals(listOf(1800, 2500), matches.map { it.product.priceCfa })
+            assertEquals(2, matches.sharedProductGroups().single().size)
+        }
+        assertEquals("milk-a", source.searchProducts("lait yawa").single().product.id)
+    }
+
     @Test fun unownedOrMissingIdentityCannotOpenFakeMerchantDetail() {
         val incomplete = catalog.copy(products = listOf(riceRecord.copy(shop = null), mealRecord.copy(product = meal.copy(id = ""))))
         assertTrue(incomplete.searchProducts("riz").isEmpty())

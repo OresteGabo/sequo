@@ -125,6 +125,7 @@ private data class CatalogProductResponse(
     val capturedAtLabel: String? = null,
     val imageUrl: String? = null,
     val customizations: List<ProductOptionGroup> = emptyList(),
+    val productReference: dev.orestegabo.sequo.model.SharedProductReference? = null,
 )
 
 @Serializable
@@ -212,6 +213,7 @@ private fun CatalogProductResponse.toProduct(): SequoProduct =
         capturedAtLabel = capturedAtLabel,
         imageUrl = imageUrl,
         customizations = customizations,
+        productReference = productReference,
     )
 
 private val fallbackCategory = SequoShopType(

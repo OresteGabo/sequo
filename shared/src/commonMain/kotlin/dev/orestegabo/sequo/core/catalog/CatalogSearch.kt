@@ -12,6 +12,7 @@ internal fun CatalogSnapshot.searchProducts(query: String): List<SequoProductLis
         val category = categories.firstOrNull { it.key == record.category }
         val searchable = listOfNotNull(
             record.product.name, record.product.detail, record.product.label,
+            record.product.productReference?.name, record.product.productReference?.aliases?.joinToString(" "),
             record.product.optionHint, record.subcategory, record.category,
             category?.title, shop.name, shop.area, shop.kind,
         ).joinToString(" ").searchText()
@@ -36,3 +37,10 @@ private fun String.searchText(): String = buildString {
         }
     }
 }
+
+/** Group related offers for browsing; preserve every shop's purchasable listing ID. */
+internal fun List<SequoProductListing>.sharedProductGroups(): List<List<SequoProductListing>> =
+    groupBy { it.product.productReference?.id }.let { groups ->
+        val shared = groups.filter { (id, offers) -> id != null && offers.map { it.product.merchantId ?: it.shop.name }.distinct().size > 1 }.keys
+        groupBy { it.product.productReference?.id?.takeIf(shared::contains) }.values.toList()
+    }
