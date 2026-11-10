@@ -110,3 +110,7 @@ The backend must log:
 
 All payment callbacks must be authenticated and idempotent.
 
+
+## KKiaPay transport
+
+Native checkout uses KKiaPay for Yas Togo / Mixx and Moov Africa Togo / Flooz only. The provider widget excludes cards and other countries/operators; server verification independently enforces the same scope. Checkout remains unavailable until configured. Orders can resume and check a pending payment. See `TEST_ORDER_FLOW.md` and the sibling backend's `docs/KKIAPAY_SETUP.md` for activation and sandbox checks.

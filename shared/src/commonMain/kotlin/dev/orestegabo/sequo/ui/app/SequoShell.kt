@@ -358,9 +358,18 @@ internal fun SequoShell(
                             loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },
                             loadPaymentProviders = cartClient::paymentProviders,
                             submitCheckout = { quote, provider ->
-                                cartClient.checkout(checkNotNull(cartAccessToken()), quote, provider).also {
-                                    cart = CartSnapshot(emptyList(), 0, 0)
+                                val token = checkNotNull(cartAccessToken())
+                                val checkout = cartClient.checkout(token, quote, provider)
+                                // Orders retains a resumable payment even if the browser or session request fails.
+                                if (checkout.paymentProvider == "kkiapay" && checkout.status == "AWAITING_WEBHOOK") {
+                                    try {
+                                        val link = cartClient.kkiapaySession(token, checkout.checkoutId)
+                                        uriHandler.openUri(link.url)
+                                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                                    catch (_: Exception) { /* Resume from Orders. */ }
                                 }
+                                cart = CartSnapshot(emptyList(), 0, 0)
+                                checkout
                             },
                             onOpenOrders = { currentDestination = SequoSection.Orders },
                         )
@@ -371,6 +380,8 @@ internal fun SequoShell(
                             loadCheckouts = { cartClient.checkouts(checkNotNull(cartAccessToken())) },
                             loadOrders = { cartClient.orders(checkNotNull(cartAccessToken())) },
                             sessionKey = currentUser?.id,
+                            startKkiapayPayment = { id -> cartClient.kkiapaySession(checkNotNull(cartAccessToken()), id) },
+                            refreshKkiapayPayment = { id -> cartClient.refreshKkiapay(checkNotNull(cartAccessToken()), id) },
                             confirmTestPayment = {id->cartClient.confirmTestPayment(checkNotNull(cartAccessToken()),id)},
                             loadTestDispatch = {id->cartClient.testDispatch(checkNotNull(cartAccessToken()),id)},
                             assignTestRider = {id,rider->cartClient.assignTestRider(checkNotNull(cartAccessToken()),id,rider)},

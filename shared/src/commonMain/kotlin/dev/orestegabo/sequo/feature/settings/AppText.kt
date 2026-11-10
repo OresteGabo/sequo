@@ -35,6 +35,16 @@ fun appCatalogText(text: String, language: AppLanguage): String {
 }
 
 private val EnglishStrings = mapOf(
+    Res.string.payment_togo_methods.key to "Yas Togo · Moov Africa",
+    Res.string.payment_kkiapay_detail.key to "Secure mobile-money payment with KKiaPay. Your order is confirmed after verification.",
+    Res.string.payment_sandbox_detail.key to "KKiaPay sandbox · Test products only. No real money is moved.",
+    Res.string.payment_unavailable.key to "Payments will be available once our payment account is activated.",
+    Res.string.payment_test_manual.key to "Simulate a test payment",
+    Res.string.payment_test_manual_detail.key to "No wallet request or charge. Confirm the simulation from Orders.",
+    Res.string.payment_continue.key to "Continue payment",
+    Res.string.payment_check.key to "Check payment",
+    Res.string.payment_still_pending.key to "Payment is not confirmed yet. If you authorized it, wait and check again before paying again.",
+    Res.string.payment_retry_failed.key to "Unable to check or start payment. Refresh Orders and try again.",
     Res.string.search_result_count_one.key to "1 result",
     Res.string.search_filter_all.key to "All",
     Res.string.search_filter_deals.key to "Deals",
@@ -637,6 +647,16 @@ private val EnglishStrings = mapOf(
 )
 
 private val FrenchStrings = mapOf(
+    Res.string.payment_togo_methods.key to "Yas Togo · Moov Africa",
+    Res.string.payment_kkiapay_detail.key to "Paiement mobile money sécurisé avec KKiaPay. Votre commande est confirmée après vérification.",
+    Res.string.payment_sandbox_detail.key to "Sandbox KKiaPay · Produits de test uniquement. Aucun argent réel transféré.",
+    Res.string.payment_unavailable.key to "Les paiements seront disponibles après activation de notre compte de paiement.",
+    Res.string.payment_test_manual.key to "Simuler un paiement de test",
+    Res.string.payment_test_manual_detail.key to "Aucune demande au portefeuille ni débit. Confirmez la simulation depuis Commandes.",
+    Res.string.payment_continue.key to "Poursuivre le paiement",
+    Res.string.payment_check.key to "Vérifier le paiement",
+    Res.string.payment_still_pending.key to "Le paiement reste en attente. Si vous l’avez autorisé, patientez et vérifiez à nouveau avant de repayer.",
+    Res.string.payment_retry_failed.key to "Impossible de vérifier ou lancer le paiement. Actualisez les commandes et réessayez.",
     Res.string.search_result_count_one.key to "1 résultat",
     Res.string.search_filter_all.key to "Tous",
     Res.string.search_filter_deals.key to "Promos",

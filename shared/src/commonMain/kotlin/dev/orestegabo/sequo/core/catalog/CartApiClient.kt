@@ -61,6 +61,12 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
             setBody(CartCheckoutRequest(quote.addressId, quote.revision, paymentProvider, quote.relayPointId, quote.deliveryOption?.id, quote.testOrderAvailable))
         }.body()
 
+    suspend fun kkiapaySession(token: String, checkoutId: String): KkiapayPaymentLink =
+        client.post("/api/orders/checkouts/$checkoutId/kkiapay-session") { bearerAuth(token) }.body()
+
+    suspend fun refreshKkiapay(token: String, checkoutId: String): KkiapayPaymentStatus =
+        client.post("/api/orders/checkouts/$checkoutId/kkiapay-refresh") { bearerAuth(token) }.body()
+
     suspend fun checkouts(token: String): List<CheckoutSummary> =
         client.get("/api/orders/checkouts") { bearerAuth(token) }.body()
 
@@ -173,6 +179,8 @@ private data class CartCheckoutRequest(val addressId: String, val quoteRevision:
 
 @Serializable
 internal data class CheckoutSummary(
+    val paymentProvider: String? = null,
+    val paymentSandbox: Boolean = false,
     val checkoutId: String,
     val orderId: String? = null,
     val status: String,
@@ -219,6 +227,7 @@ internal data class OrderedProduct(val productName: String, val quantity: Int, v
 
 @Serializable
 internal data class CheckoutProvider(
+    val sandbox: Boolean = false,
     val providerId: String,
     val apiConfigured: Boolean = false,
     val checkoutConnected: Boolean = false,
@@ -276,3 +285,8 @@ internal data class CustomerBenefits(val subscriptionActive: Boolean,
 internal data class DeliveryAddressInput(val label: String, val recipientName: String, val phoneNumber: String,
     val city: String, val area: String?, val streetHint: String?, val latitude: Double, val longitude: Double,
     val kind: String)
+
+@Serializable
+internal data class KkiapayPaymentLink(val url: String, val sandbox: Boolean, val expiresAt: String)
+@Serializable
+internal data class KkiapayPaymentStatus(val status: String, val message: String)

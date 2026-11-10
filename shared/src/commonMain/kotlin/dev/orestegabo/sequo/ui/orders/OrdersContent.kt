@@ -55,6 +55,8 @@ internal fun OrdersContent(
     loadCheckouts: suspend () -> List<CheckoutSummary>,
     loadOrders: suspend () -> List<CustomerOrderDetails>,
     sessionKey: String?,
+    startKkiapayPayment: suspend (String) -> dev.orestegabo.sequo.core.catalog.KkiapayPaymentLink,
+    refreshKkiapayPayment: suspend (String) -> dev.orestegabo.sequo.core.catalog.KkiapayPaymentStatus,
     confirmTestPayment: suspend (String) -> CheckoutSummary,
     loadTestDispatch: suspend (String) -> dev.orestegabo.sequo.core.catalog.TestDispatchState,
     assignTestRider: suspend (String,String) -> dev.orestegabo.sequo.core.catalog.TestDispatchState,
@@ -97,7 +99,7 @@ internal fun OrdersContent(
     val completedCheckoutIds = orders.map { it.order.checkoutId }.toSet()
     val pendingRows = checkouts.filter { it.checkoutId !in completedCheckoutIds }.map {
         OrderHistoryRow(it.checkoutId, it.status, it.totalCfa, it.destinationLabel, it.createdAt, it.lines,
-            displayReference = it.publicReference?.takeIf(String::isNotBlank) ?: it.checkoutId, testOrder = it.testOrder)
+            displayReference = it.publicReference?.takeIf(String::isNotBlank) ?: it.checkoutId, testOrder = it.testOrder, kkiapay = it.paymentProvider == "kkiapay", paymentSandbox = it.paymentSandbox)
     }
     val orderRows = orders.map { details ->
         val order = details.order
@@ -140,7 +142,10 @@ internal fun OrdersContent(
                         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                if(row.testOrder) {
+                if (row.kkiapay && !row.persistedOrder && row.status == "AWAITING_WEBHOOK") {
+                    KkiapayOrderControls(row.id, row.paymentSandbox, startKkiapayPayment, refreshKkiapayPayment, onChanged = { refresh++ })
+                }
+                if(row.testOrder && (!row.kkiapay || row.persistedOrder)) {
                     val checkoutId=orders.firstOrNull {it.order.id==row.id}?.order?.checkoutId ?: row.id
                     TestOrderControls(checkoutId,row.persistedOrder,row.status,refresh,confirmTestPayment,loadTestDispatch,assignTestRider,onChanged={refresh++})
                 }
@@ -247,6 +252,8 @@ private data class OrderHistoryRow(
     val persistedOrder: Boolean = false,
     val displayReference: String = id,
     val testOrder: Boolean = false,
+    val kkiapay: Boolean = false,
+    val paymentSandbox: Boolean = false,
 )
 
 private fun customerDeliveryStatus(status: String) = when (status) {
@@ -900,3 +907,42 @@ private fun ReturnReason.label(): String =
         ReturnReason.VariantIssue -> appText(Res.string.orders_return_variant_issue)
         ReturnReason.NotDescribed -> appText(Res.string.orders_return_not_described)
     }
+
+@Composable
+private fun KkiapayOrderControls(
+    checkoutId: String, sandbox: Boolean,
+    start: suspend (String) -> dev.orestegabo.sequo.core.catalog.KkiapayPaymentLink,
+    refreshPayment: suspend (String) -> dev.orestegabo.sequo.core.catalog.KkiapayPaymentStatus,
+    onChanged: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    var busy by remember(checkoutId) { mutableStateOf(false) }
+    var message by remember(checkoutId) { mutableStateOf<org.jetbrains.compose.resources.StringResource?>(null) }
+    Text(appText(if (sandbox) Res.string.payment_sandbox_detail else Res.string.payment_kkiapay_detail),
+        style = MaterialTheme.typography.bodySmall)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(modifier = Modifier.weight(1f), enabled = !busy, onClick = {
+            busy = true; message = null
+            scope.launch {
+                try {
+                    uriHandler.openUri(start(checkoutId).url)
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { message = Res.string.payment_retry_failed }
+                finally { busy = false }
+            }
+        }) { Text(appText(Res.string.payment_continue)) }
+        TextButton(modifier = Modifier.weight(1f), enabled = !busy, onClick = {
+            busy = true; message = null
+            scope.launch {
+                try {
+                    val result = refreshPayment(checkoutId)
+                    if (result.status == "VERIFIED") onChanged() else message = Res.string.payment_still_pending
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { message = Res.string.payment_retry_failed }
+                finally { busy = false }
+            }
+        }) { Text(appText(Res.string.payment_check)) }
+    }
+    message?.let { Text(appText(it), style = MaterialTheme.typography.bodySmall) }
+}

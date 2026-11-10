@@ -180,7 +180,7 @@ internal fun BasketContent(
     var addressEditor by remember { mutableStateOf(false) }
     var editingAddress by remember { mutableStateOf<SavedDeliveryAddress?>(null) }
     var relayPickup by remember { mutableStateOf(false) }
-    var provider by remember { mutableStateOf("yas_togo") }
+    var provider by remember { mutableStateOf("kkiapay") }
     var relayPointId by remember { mutableStateOf<String?>(null) }
     var relayPoints by remember { mutableStateOf<List<dev.orestegabo.sequo.core.catalog.RelayDestination>?>(null) }
     var relaysFailed by remember { mutableStateOf(false) }
@@ -345,27 +345,32 @@ internal fun BasketContent(
         if (dev.orestegabo.sequo.core.network.NetworkConfig.Environment == "DEMO") {
             Text("DEMO · No charge. After submitting, open Orders to simulate payment and delivery.", color=MaterialTheme.colorScheme.primary, style=MaterialTheme.typography.bodyMedium)
         }
-        if (reviewedQuote.testOrderAvailable) Text("TEST · No charge or wallet request. Confirm the test payment from Orders after submitting.", color=MaterialTheme.colorScheme.primary)
-        if (!reviewedQuote.testOrderAvailable) {
-            for ((id, label) in listOf("yas_togo" to "Mixx by Yas", "moov_africa" to "Flooz")) {
-                val configuration = providers?.firstOrNull { it.providerId == id }
-                Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, if (provider == id) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
-                    Row(Modifier.fillMaxWidth().selectable(selected = provider == id, enabled = editingEnabled,
-                        role = Role.RadioButton, onClick = { provider = id }).padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        RadioButton(selected = provider == id, onClick = null, enabled = editingEnabled)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(label, style = MaterialTheme.typography.titleSmall)
-                            Text(appText(when {
-                                providersFailed -> Res.string.checkout_provider_status_failed
-                                providers == null -> Res.string.cart_loading
-                                configuration?.paymentAvailable == true -> Res.string.checkout_provider_ready
-                                configuration?.apiConfigured == true -> Res.string.checkout_provider_prepared
-                                else -> Res.string.basket_payment_not_configured_detail
-                            }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+        val kkiapay = providers?.firstOrNull { it.providerId == "kkiapay" }
+        val paymentReady = kkiapay?.paymentAvailable == true && kkiapay.sandbox == reviewedQuote.testOrderAvailable
+        LaunchedEffect(reviewedQuote.testOrderAvailable) {
+            provider = if (reviewedQuote.testOrderAvailable) "yas_togo" else "kkiapay"
+        }
+        val choices = if (reviewedQuote.testOrderAvailable) listOf("yas_togo", "kkiapay") else listOf("kkiapay")
+        for (id in choices) {
+            val manualTest = id == "yas_togo"
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, if (provider == id) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = .35f))) {
+                Row(Modifier.fillMaxWidth().selectable(selected = provider == id, enabled = editingEnabled,
+                    role = Role.RadioButton, onClick = { provider = id }).padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    RadioButton(selected = provider == id, onClick = null, enabled = editingEnabled)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(appText(if (manualTest) Res.string.payment_test_manual else Res.string.payment_togo_methods),
+                            style = MaterialTheme.typography.titleSmall)
+                        Text(appText(when {
+                            manualTest -> Res.string.payment_test_manual_detail
+                            providersFailed -> Res.string.checkout_provider_status_failed
+                            providers == null -> Res.string.cart_loading
+                            paymentReady && reviewedQuote.testOrderAvailable -> Res.string.payment_sandbox_detail
+                            paymentReady -> Res.string.payment_kkiapay_detail
+                            else -> Res.string.payment_unavailable
+                        }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -389,7 +394,9 @@ internal fun BasketContent(
     }
     Button(
         modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
-        enabled = editingEnabled && quoteCurrent && nextStep == null,
+        enabled = editingEnabled && quoteCurrent && nextStep == null && (
+            (quote?.testOrderAvailable == true && provider == "yas_togo") ||
+            providers?.any { it.providerId == "kkiapay" && it.paymentAvailable && it.sandbox == quote?.testOrderAvailable } == true),
         onClick = {
             val reviewedQuote = quote ?: return@Button
             submitting = true

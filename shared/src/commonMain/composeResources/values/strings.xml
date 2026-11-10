@@ -595,4 +595,14 @@
     <string name="search_filtered_empty_detail">Try all offers to see more results for your search.</string>
     <string name="search_reset_filters">Show all offers</string>
     <string name="search_result_count_one">1 result</string>
+    <string name="payment_togo_methods">Yas Togo · Moov Africa</string>
+    <string name="payment_kkiapay_detail">Secure mobile-money payment with KKiaPay. Your order is confirmed after verification.</string>
+    <string name="payment_sandbox_detail">KKiaPay sandbox · Test products only. No real money is moved.</string>
+    <string name="payment_unavailable">Payments will be available once our payment account is activated.</string>
+    <string name="payment_test_manual">Simulate a test payment</string>
+    <string name="payment_test_manual_detail">No wallet request or charge. Confirm the simulation from Orders.</string>
+    <string name="payment_continue">Continue payment</string>
+    <string name="payment_check">Check payment</string>
+    <string name="payment_still_pending">Payment is not confirmed yet. If you authorized it, wait and check again before paying again.</string>
+    <string name="payment_retry_failed">Unable to check or start payment. Refresh Orders and try again.</string>
 </resources>

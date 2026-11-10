@@ -72,6 +72,38 @@ class PaymentProviderClientTest {
         } finally { client.close(); server.stop(0) }
     }
 
+    @Test
+    fun sandboxReadinessStaysSeparateFromLiveAndResumeUsesAuthenticatedCheckoutRoutes() = runBlocking<Unit> {
+        fixture("""[{"providerId":"kkiapay","apiConfigured":true,"checkoutConnected":true,"sandbox":true}]""") { client ->
+            val provider = client.paymentProviders().single()
+            assertTrue(provider.paymentAvailable)
+            assertTrue(provider.sandbox)
+        }
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        val called = mutableListOf<String>()
+        server.createContext("/api/orders/checkouts/checkout-fixture/") { exchange ->
+            assertEquals("POST", exchange.requestMethod)
+            assertEquals("Bearer fixture-token", exchange.requestHeaders.getFirst("Authorization"))
+            val action = exchange.requestURI.path.substringAfterLast('/')
+            called += action
+            val body = when (action) {
+                "kkiapay-session" -> """{"url":"https://api.sequoservice.com/payments/kkiapay?token=fixture","sandbox":true,"expiresAt":"2026-11-10T00:20:00Z"}"""
+                "kkiapay-refresh" -> """{"status":"PENDING","message":"Awaiting provider confirmation."}"""
+                else -> error("Unexpected payment route")
+            }.toByteArray()
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.start()
+        val client = CartApiClient(createSequoHttpClient("http://127.0.0.1:${server.address.port}"))
+        try {
+            assertTrue(client.kkiapaySession("fixture-token", "checkout-fixture").sandbox)
+            assertEquals("PENDING", client.refreshKkiapay("fixture-token", "checkout-fixture").status)
+            assertEquals(listOf("kkiapay-session", "kkiapay-refresh"), called)
+        } finally { client.close(); server.stop(0) }
+    }
+
     private suspend fun fixture(body: String, block: suspend (CartApiClient) -> Unit) {
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.createContext("/api/payments/providers") { exchange ->

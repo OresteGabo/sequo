@@ -148,3 +148,11 @@ The starter list contains 74 shared families. A shop offer points to the shared 
 
 
 Existing grocery listings have also been linked to the reviewed essential families. Names such as milk/`lait`, beans/`haricots`, and rice/`riz` can now find the linked listings through shared aliases. Seller prices and pack/unit details remain visible and sortable. There is currently one milk listing; additional shops must list milk before the app can show cross-shop milk prices. Prepared meals, juices, mixed baskets and litre-sold ginger drink retain their separate identities.
+
+## KKiaPay sandbox (awaiting merchant keys)
+
+The updated checkout also supports KKiaPay for Yas Togo (Mixx) and Moov Africa Togo (Flooz). Payments remain disabled until the company's account and keys are ready. Manual no-money simulation still works for the seeded test products.
+
+When sandbox is configured, select the KKiaPay option for a `[TEST]` basket. Complete the provider's synthetic Togo wallet flow, then return to Orders and use **Check payment**. **Continue payment** reopens an unfinished payment. Wait and check before authorizing another attempt if a payment is pending. A KKiaPay sandbox checkout cannot use the manual confirmation button. Continue the vendor/hub/rider journey after provider verification.
+
+The backend setup and activation guide is `sequo-api/docs/KKIAPAY_SETUP.md` in the sibling backend repository. No real KKiaPay transaction has been verified yet; keys and merchant activation are pending.
