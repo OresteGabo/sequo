@@ -42,4 +42,3 @@ private fun SequoProductListing.searchRelevance(query: String): Int {
     val reference = product.productReference
     return score(product.name) * 2 + ((listOfNotNull(reference?.name) + reference?.aliases.orEmpty()).maxOfOrNull(::score) ?: 0)
 }
-

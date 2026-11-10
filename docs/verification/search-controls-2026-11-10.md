@@ -1,0 +1,7 @@
+# Search controls — 10 November 2026
+
+Removed the redundant “Search products” / “Products in the current catalog” headings. Search results now have a single-choice All/Deals/Negotiable strip, result count and sort menu. Relevance prioritizes product names/shared aliases; price sorting keeps unknown prices last; Nearest appears only when valid catalog distances exist. Explicit price/distance sorting preserves global offer order instead of regrouping by product family. An empty-filter action restores All without clearing the query. English/French strings and strict text coverage are included; failed catalog loading retains a retry action.
+
+Focused search/filter/sort/catalog/translation checks passed, including missing versus genuine-zero API prices, unknown/invalid distances, relevance and seller identity. Android and iOS compilation and the signed Xcode build passed. The updated normal Sequo app was installed on the iPhone.
+
+Actual iPhone checks passed: removed headings absent, rice search with six results, empty Deals filter/reset, ascending prices starting 950/1,100 CFA per kg and descending prices starting 3,300/2,550 CFA, Nearest selection, a real discounted milk result, Negotiable empty/reset and query preservation. Private physical cases `search38` and `search40` passed; the Nearest action was also captured in the intervening run. The phone was left on `lait` with Deals selected. No cart changes or checkout were performed. Temporary test apps were removed afterward; raw screenshots/results stay private. No backend deployment was needed.
