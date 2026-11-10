@@ -4,7 +4,7 @@ These steps use the normal deployed apps and database at **https://api.sequoserv
 
 ## Installation status
 
-The updated normal Sequo, SequoHub and SequoRider iPhone builds are installed. SequoVendor's signed update is prepared, but the old installed Vendor copy uses a different Apple signing team and cannot be upgraded in place. Its local data has been backed up; removing/reinstalling that copy needs the owner's pending approval. The new **Sign in to a test account** entry will appear in Vendor after that update is installed. Existing server shop/order data is unaffected by reinstalling the client.
+The updated normal Sequo, SequoVendor, SequoHub and SequoRider iPhone builds are installed. On 10 November, the old Vendor app data was backed up privately and its installation was replaced with the paid-team signed build after owner approval. Server shops/orders were preserved. Vendor may require signing in again; use its normal **Sign in to a test account** entry for the fictional accounts below.
 
 ## Private sign-in details
 
@@ -124,3 +124,10 @@ In **Cart → Home delivery**, use **Add address** or the edit icon beside a sav
 Two fictional orders were created and test-confirmed on the phone: home delivery, 13,900 CFA (two L/Sable shirts and one S/Indigo shirt), and Tokoin relay pickup, 6,900 CFA (one size-43 shoe item). No money moved; merchant/rider settlements, payout accruals, financial ledger entries and provider webhooks were zero for these orders. The home order later reached the normal merchant-response cancellation deadline; fulfillment was not part of this cart exercise. Create a fresh order and accept promptly when continuing the vendor/rider/hub journey.
 
 The test found and fixed missing cart address controls, navigation screens retaining another screen's scroll position, and an old quote remaining after editing the currently selected address. Native builds and five focused client regression tests passed. Detailed physical-phone evidence and the reusable harness are recorded in the backend repository under `docs/verification/cart-phone-2026-11-10.md` and `scripts/cart-iphone-tests/`. Raw phone screenshots, logs, credentials and device identifiers remain private.
+
+
+## Reuse a product across shops
+
+In **SequoVendor → Catalog → Add product/Edit**, start typing the product name (at least two characters). Select a shared suggestion such as **Lait**. A **Linked product** label confirms the association; **Unlink** removes it. Keep the brand, pack size, description and options accurate for your own offer. Prices, stock and photographs remain specific to your shop.
+
+Without a suggestion, saving reuses a complete matching name or creates a reusable reference for that complete name. Suggestions recognize common French/English names and accents. Sequo customer search includes those shared names/aliases and groups linked offers from different shops while retaining each shop's listing and price. A common family such as Lait does not mean that different brands or package sizes are identical goods.
