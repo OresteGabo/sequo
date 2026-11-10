@@ -562,4 +562,25 @@
     <string name="settings_delete_cancelled">Demande de suppression annulée</string>
     <string name="cart_item_update_failed">Impossible de modifier cet article. Réessayez.</string>
     <string name="cart_updating_totals">Mise à jour du total…</string>
+    <string name="cart_add_address">Ajouter une adresse</string>
+    <string name="cart_edit_address">Modifier l’adresse</string>
+    <string name="cart_address_detail">Enregistrez le destinataire et le lieu de livraison. Pour le retrait en point relais, ces coordonnées identifient la personne qui récupère le colis.</string>
+    <string name="cart_address_label">Nom de l’adresse</string>
+    <string name="cart_address_recipient">Nom du destinataire</string>
+    <string name="cart_address_phone">Numéro de téléphone</string>
+    <string name="cart_address_city">Ville</string>
+    <string name="cart_address_area">Quartier (facultatif)</string>
+    <string name="cart_address_street">Rue ou repère (facultatif)</string>
+    <string name="cart_address_current_location">Utiliser ma position actuelle</string>
+    <string name="cart_address_locating">Recherche de votre position…</string>
+    <string name="cart_address_location_failed">Position indisponible. Autorisez la localisation dans les réglages du téléphone ou collez un lien de repère ci-dessous.</string>
+    <string name="cart_address_pin">Lien du repère de livraison</string>
+    <string name="cart_address_pin_hint">Utilisez votre position actuelle ou collez un lien complet de repère Apple Maps, Google Maps ou OpenStreetMap avec ses coordonnées. Les liens raccourcis ne sont pas pris en charge.</string>
+    <string name="cart_address_pin_ready">Le lieu de livraison est défini.</string>
+    <string name="cart_address_required">Renseignez le nom de l’adresse, le destinataire, le téléphone, la ville et le repère pour enregistrer.</string>
+    <string name="cart_address_save_failed">Impossible d’enregistrer l’adresse. Vérifiez les informations et votre connexion, puis réessayez.</string>
+    <string name="cart_address_save">Enregistrer l’adresse</string>
+    <string name="cart_address_saving">Enregistrement de l’adresse…</string>
+    <string name="cart_address_cancel">Annuler</string>
+    <string name="cart_address_clear_pin">Effacer le repère de livraison</string>
 </resources>

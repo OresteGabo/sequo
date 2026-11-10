@@ -256,6 +256,11 @@ internal data class SavedDeliveryAddress(
     val city: String,
     val area: String? = null,
     val streetHint: String? = null,
+    val recipientName: String = "",
+    val phoneNumber: String = "",
+    val kind: String = "HOME",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )
 
 @Serializable

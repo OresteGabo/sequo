@@ -353,6 +353,7 @@ internal fun SequoShell(
                             },
                             onRemove = { lineId -> updateCart(lineId = lineId, change = { token -> cartClient.remove(token, lineId) }) },
                             loadAddresses = loadSavedAddresses,
+                            saveAddress = { id, address -> cartClient.saveAddress(checkNotNull(cartAccessToken()), id, address) },
                             loadQuote = { addressId, relayPointId, mode -> cartClient.quote(checkNotNull(cartAccessToken()), addressId, relayPointId, mode) },
                             loadRelayPoints = { cartClient.relayPoints(checkNotNull(cartAccessToken())) },
                             loadPaymentProviders = cartClient::paymentProviders,
@@ -541,70 +542,72 @@ internal fun SequoContentStage(
             onToggleCategoryPinned = onToggleCategoryPinned,
         )
     } else {
-        SequoScreenColumn(modifier = modifier) {
-            when (currentDestination) {
-                SequoSection.Home -> if (catalog?.products?.isEmpty() == true) {
-                    SequoEmptyState(
-                        visual = EmptyStateVisual.Catalog,
-                        title = appText(Res.string.empty_catalog_title), detail = appText(Res.string.empty_catalog_detail),
-                        actionLabel = appText(Res.string.cart_refresh), onAction = onReloadCatalog,
+        key(currentDestination) {
+            SequoScreenColumn(modifier = modifier) {
+                when (currentDestination) {
+                    SequoSection.Home -> if (catalog?.products?.isEmpty() == true) {
+                        SequoEmptyState(
+                            visual = EmptyStateVisual.Catalog,
+                            title = appText(Res.string.empty_catalog_title), detail = appText(Res.string.empty_catalog_detail),
+                            actionLabel = appText(Res.string.cart_refresh), onAction = onReloadCatalog,
+                        )
+                    }
+                    SequoSection.Markets -> MarketsContent(
+                        catalog = requireNotNull(catalog),
+                        selectedTypeKey = selectedMarketTypeKey,
+                        browseMode = browseMode,
+                        onCategorySelected = onBrowseCategorySelected,
+                        onResetFilters = onResetBrowse,
+                        onRefreshCatalog = onReloadCatalog,
+                        onAddProduct = onAddProduct,
+                        onProductSelected = onProductSelected,
+                    )
+                    SequoSection.Basket -> if (isGuest) {
+                        GuestSignInPanel(
+                            visual = EmptyStateVisual.Cart,
+                            title = appText(Res.string.guest_basket_title),
+                            detail = appText(Res.string.guest_basket_detail),
+                            onSignIn = onSignInRequested,
+                            onBrowse = { onDestinationSelected(SequoSection.Markets) },
+                        )
+                    } else {
+                        cartContent()
+                    }
+                    SequoSection.Orders -> if (isGuest) {
+                        GuestSignInPanel(
+                            visual = EmptyStateVisual.Orders,
+                            title = appText(Res.string.guest_orders_title),
+                            detail = appText(Res.string.guest_orders_detail),
+                            onSignIn = onSignInRequested,
+                            onBrowse = { onDestinationSelected(SequoSection.Markets) },
+                        )
+                    } else {
+                        ordersContent()
+                    }
+                    SequoSection.Notifications -> notificationsContent()
+                    SequoSection.Settings -> AccountContent(
+                        currentUser = currentUser,
+                        accountAccessToken = accountAccessToken,
+                        exportPreferences = mapOf(
+                            "language" to language.name,
+                            "theme" to themePreference.name,
+                            "largerText" to dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.largerText.toString(),
+                            "tapFeedback" to dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.tapFeedback.toString(),
+                            "pinnedCategories" to pinnedCategoryKeys.joinToString(","),
+                            "categoryUsage" to categoryUsage.toString(),
+                        ),
+                        language = language,
+                        onLanguageChange = onLanguageChange,
+                        themePreference = themePreference,
+                        onThemePreferenceChange = onThemePreferenceChange,
+                        onOpenLegal = onOpenLegal,
+                        loadSavedAddresses = loadSavedAddresses,
+                        loadBenefits = loadBenefits,
+                        isGuest = isGuest,
+                        onSignInRequested = onSignInRequested,
+                        onLogout = onLogout,
                     )
                 }
-                SequoSection.Markets -> MarketsContent(
-                    catalog = requireNotNull(catalog),
-                    selectedTypeKey = selectedMarketTypeKey,
-                    browseMode = browseMode,
-                    onCategorySelected = onBrowseCategorySelected,
-                    onResetFilters = onResetBrowse,
-                    onRefreshCatalog = onReloadCatalog,
-                    onAddProduct = onAddProduct,
-                    onProductSelected = onProductSelected,
-                )
-                SequoSection.Basket -> if (isGuest) {
-                    GuestSignInPanel(
-                        visual = EmptyStateVisual.Cart,
-                        title = appText(Res.string.guest_basket_title),
-                        detail = appText(Res.string.guest_basket_detail),
-                        onSignIn = onSignInRequested,
-                        onBrowse = { onDestinationSelected(SequoSection.Markets) },
-                    )
-                } else {
-                    cartContent()
-                }
-                SequoSection.Orders -> if (isGuest) {
-                    GuestSignInPanel(
-                        visual = EmptyStateVisual.Orders,
-                        title = appText(Res.string.guest_orders_title),
-                        detail = appText(Res.string.guest_orders_detail),
-                        onSignIn = onSignInRequested,
-                        onBrowse = { onDestinationSelected(SequoSection.Markets) },
-                    )
-                } else {
-                    ordersContent()
-                }
-                SequoSection.Notifications -> notificationsContent()
-                SequoSection.Settings -> AccountContent(
-                    currentUser = currentUser,
-                    accountAccessToken = accountAccessToken,
-                    exportPreferences = mapOf(
-                        "language" to language.name,
-                        "theme" to themePreference.name,
-                        "largerText" to dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.largerText.toString(),
-                        "tapFeedback" to dev.orestegabo.sequo.feature.settings.LocalShoppingPreferences.current.value.tapFeedback.toString(),
-                        "pinnedCategories" to pinnedCategoryKeys.joinToString(","),
-                        "categoryUsage" to categoryUsage.toString(),
-                    ),
-                    language = language,
-                    onLanguageChange = onLanguageChange,
-                    themePreference = themePreference,
-                    onThemePreferenceChange = onThemePreferenceChange,
-                    onOpenLegal = onOpenLegal,
-                    loadSavedAddresses = loadSavedAddresses,
-                    loadBenefits = loadBenefits,
-                    isGuest = isGuest,
-                    onSignInRequested = onSignInRequested,
-                    onLogout = onLogout,
-                )
             }
         }
     }

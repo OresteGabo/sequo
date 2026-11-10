@@ -61,6 +61,7 @@ internal fun BasketContent(
     onQuantity: (String, Int) -> Unit,
     onRemove: (String) -> Unit,
     loadAddresses: suspend () -> List<SavedDeliveryAddress>,
+    saveAddress: suspend (String?, dev.orestegabo.sequo.core.catalog.DeliveryAddressInput) -> SavedDeliveryAddress,
     loadQuote: suspend (String, String?, String?) -> CartQuote,
     loadRelayPoints: suspend () -> List<dev.orestegabo.sequo.core.catalog.RelayDestination>,
     loadPaymentProviders: suspend () -> List<CheckoutProvider>,
@@ -130,6 +131,7 @@ internal fun BasketContent(
                         val group = line.product.customizations.firstOrNull { it.id == selection.groupId }
                         group?.options.orEmpty().filter { it.id in selection.optionIds }.map { it.displayLabel(requireNotNull(group)) }
                     }
+                    val itemDescription = listOf(line.product.name, optionNames.joinToString()).filter { it.isNotBlank() }.joinToString(" · ")
                     if (optionNames.isNotEmpty()) Text(optionNames.joinToString())
                     if (line.product.customizations.any { it.type == "MEASURE" }) Text(appText(Res.string.selling_portion_hint),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -139,7 +141,7 @@ internal fun BasketContent(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { onQuantity(line.id, -1) },
                                     enabled = rowEnabled && line.available && line.quantity > 1) {
-                                    Icon(Icons.Filled.Remove, appText(Res.string.polish_decrease_quantity) + " · " + line.product.name)
+                                    Icon(Icons.Filled.Remove, appText(Res.string.polish_decrease_quantity) + " · " + itemDescription)
                                 }
                                 Box(Modifier.width(36.dp).height(48.dp), contentAlignment = Alignment.Center) {
                                 if (line.id in pendingLineIds) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -147,7 +149,7 @@ internal fun BasketContent(
                             }
                                 IconButton(onClick = { onQuantity(line.id, 1) },
                                     enabled = rowEnabled && line.available && line.quantity < 99) {
-                                    Icon(Icons.Filled.Add, appText(Res.string.polish_increase_quantity) + " · " + line.product.name)
+                                    Icon(Icons.Filled.Add, appText(Res.string.polish_increase_quantity) + " · " + itemDescription)
                                 }
                             }
                         }
@@ -174,6 +176,9 @@ internal fun BasketContent(
     var addresses by remember { mutableStateOf<List<SavedDeliveryAddress>?>(null) }
     var addressesFailed by remember { mutableStateOf(false) }
     var addressId by remember { mutableStateOf<String?>(null) }
+    var addressRevision by remember { mutableStateOf(0) }
+    var addressEditor by remember { mutableStateOf(false) }
+    var editingAddress by remember { mutableStateOf<SavedDeliveryAddress?>(null) }
     var relayPickup by remember { mutableStateOf(false) }
     var provider by remember { mutableStateOf("yas_togo") }
     var relayPointId by remember { mutableStateOf<String?>(null) }
@@ -208,11 +213,11 @@ internal fun BasketContent(
         catch (_: Exception) { relayPoints = null; relaysFailed = true }
     }
     var quoteRefresh by remember { mutableStateOf(0) }
-    var quotedCart by remember(addressId, relayPointId, relayPickup, deliveryMode) { mutableStateOf<CartSnapshot?>(null) }
+    var quotedCart by remember(addressId, addressRevision, relayPointId, relayPickup, deliveryMode) { mutableStateOf<CartSnapshot?>(null) }
     var quoteLoading by remember { mutableStateOf(false) }
     val updating = busy || pendingLineIds.isNotEmpty()
     val quoteCurrent = quote != null && quotedCart == cart && !updating && !quoteLoading && !quoteFailed
-    LaunchedEffect(cart, addressId, relayPointId, relayPickup, deliveryMode, relayPoints, relaysFailed, updating, quoteRefresh) {
+    LaunchedEffect(cart, addressId, addressRevision, relayPointId, relayPickup, deliveryMode, relayPoints, relaysFailed, updating, quoteRefresh) {
         if (updating || (relayPickup && relayPointId == null)) return@LaunchedEffect
         val selected = addressId ?: return@LaunchedEffect
         if (relayPointId != null && (relaysFailed || relayPoints.orEmpty().none { it.id == relayPointId })) {
@@ -271,7 +276,20 @@ internal fun BasketContent(
     when {
         addressesFailed -> Text(appText(Res.string.cart_load_failed), color = MaterialTheme.colorScheme.error)
         addresses == null -> Text(appText(Res.string.cart_loading))
-        addresses.orEmpty().isEmpty() -> Text(appText(Res.string.cart_no_addresses))
+    }
+    OutlinedButton(onClick = { editingAddress = null; addressEditor = true }, enabled = editingEnabled) {
+        Icon(Icons.Filled.AddLocationAlt, contentDescription = null); Spacer(Modifier.width(8.dp))
+        Text(appText(Res.string.cart_add_address))
+    }
+    if (addressEditor) DeliveryAddressEditor(editingAddress, onDismiss = { addressEditor = false }) { id, request ->
+        val saved = saveAddress(id, request)
+        addresses = addresses.orEmpty().filterNot { it.id == saved.id } + saved
+        addressesFailed = false
+        addressId = saved.id
+        addressRevision++
+        deliveryMode = null
+        checkoutError = null
+        addressEditor = false
     }
     for (address in addresses.orEmpty()) {
         OutlinedCard(onClick = { addressId = address.id; deliveryMode = null; checkoutError = null },
@@ -284,6 +302,9 @@ internal fun BasketContent(
                     Text(address.label, style = MaterialTheme.typography.titleSmall)
                     Text(listOfNotNull(address.streetHint, address.area, address.city).filter { it.isNotBlank() }.joinToString(", "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = { editingAddress = address; addressEditor = true }, enabled = editingEnabled) {
+                    Icon(Icons.Filled.Edit, appText(Res.string.cart_edit_address) + " · " + address.label)
                 }
             }
         }

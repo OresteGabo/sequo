@@ -1,6 +1,7 @@
 package dev.orestegabo.sequo.core.catalog
 
 import dev.orestegabo.sequo.core.network.createSequoHttpClient
+import dev.orestegabo.sequo.core.auth.SavedDeliveryAddress
 import dev.orestegabo.sequo.model.ProductOptionSelection
 import dev.orestegabo.sequo.model.ProductOptionGroup
 import io.ktor.client.HttpClient
@@ -22,6 +23,10 @@ internal class CartApiClient(private val client: HttpClient = createSequoHttpCli
             bearerAuth(token)
             setBody(CartItemRequest(productId, quantity, selections, bargainingThreadId))
         }.body()
+
+    suspend fun saveAddress(token: String, id: String?, address: DeliveryAddressInput): SavedDeliveryAddress =
+        (if (id == null) client.post("/api/customer/addresses") { bearerAuth(token); setBody(address) }
+        else client.put("/api/customer/addresses/$id") { bearerAuth(token); setBody(address) }).body()
 
     suspend fun setQuantity(token: String, lineId: String, quantity: Int): CartSnapshot =
         client.put("/api/cart/items/$lineId/quantity") {
@@ -266,3 +271,8 @@ internal data class CustomerBenefits(val subscriptionActive: Boolean,
 @Serializable internal data class TestDispatchRider(val id:String,val name:String)
 @Serializable internal data class TestDispatchState(val ready:Boolean,val assigned:Boolean,val message:String,val riders:List<TestDispatchRider> = emptyList())
 @Serializable private data class TestRiderAssignment(val riderId:String)
+
+@Serializable
+internal data class DeliveryAddressInput(val label: String, val recipientName: String, val phoneNumber: String,
+    val city: String, val area: String?, val streetHint: String?, val latitude: Double, val longitude: Double,
+    val kind: String)

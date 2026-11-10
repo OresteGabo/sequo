@@ -562,4 +562,25 @@
     <string name="settings_delete_cancelled">Deletion request cancelled</string>
     <string name="cart_item_update_failed">Could not update this item. Try again.</string>
     <string name="cart_updating_totals">Updating totals…</string>
+    <string name="cart_add_address">Add address</string>
+    <string name="cart_edit_address">Edit address</string>
+    <string name="cart_address_detail">Save the recipient and delivery location. For relay pickup, these details identify the person collecting the parcel.</string>
+    <string name="cart_address_label">Address name</string>
+    <string name="cart_address_recipient">Recipient name</string>
+    <string name="cart_address_phone">Phone number</string>
+    <string name="cart_address_city">City</string>
+    <string name="cart_address_area">Neighbourhood (optional)</string>
+    <string name="cart_address_street">Street or landmark (optional)</string>
+    <string name="cart_address_current_location">Use my current location</string>
+    <string name="cart_address_locating">Finding your location…</string>
+    <string name="cart_address_location_failed">Location unavailable. Allow location access in your phone settings or paste a map pin link below.</string>
+    <string name="cart_address_pin">Delivery pin link</string>
+    <string name="cart_address_pin_hint">Use your current location or paste a full Apple Maps, Google Maps or OpenStreetMap pin link with coordinates. Shortened links are not supported.</string>
+    <string name="cart_address_pin_ready">Delivery location is set.</string>
+    <string name="cart_address_required">Complete the address name, recipient, phone, city and location pin to save.</string>
+    <string name="cart_address_save_failed">Could not save this address. Check the details and your connection, then retry.</string>
+    <string name="cart_address_save">Save address</string>
+    <string name="cart_address_saving">Saving address…</string>
+    <string name="cart_address_cancel">Cancel</string>
+    <string name="cart_address_clear_pin">Clear delivery pin</string>
 </resources>

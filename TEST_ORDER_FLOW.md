@@ -113,3 +113,14 @@ Record IDs for later cleanup are in [the catalog manifest](demo/live-catalog/see
 ## Verification recorded
 
 The deployed API verified all 27 private logins and completed the full single-shop relay journey over its normal HTTP endpoints. It confirmed zero merchant payout accruals, rider settlements, financial ledger entries, provider payment receipts and benefit-consumption records, and the relay slot became available again. [Verification metadata](demo/live-catalog/test-flow-verification.json) contains only non-secret IDs/results. Scripted custody was labelled as a test; this is not a claim of a human physical delivery.
+
+
+## iPhone cart and checkout verification — 10 November 2026
+
+The normal Sequo build was installed and exercised through its actual UI on the connected iPhone using `customer.flow`. Clothing size/colour isolation, shoe sizes, measured portions, repeated quantity changes, removal, empty cart, address creation/editing/switching, temporary location access, relay selection/eligibility and home/relay no-money checkout passed. The phone was left signed into this test customer with an empty cart. The personal account's existing basket was not changed.
+
+In **Cart → Home delivery**, use **Add address** or the edit icon beside a saved address. Enter the recipient/contact details and a precise delivery pin: use **Use my current location** or paste a full Apple Maps, Google Maps or OpenStreetMap coordinate link. Shortened links and place-name-only searches cannot supply a precise pin. Saving an edited address refreshes the delivery quote before checkout becomes available. Location permission is optional; cancelling the form discards its changes.
+
+Two fictional orders were created and test-confirmed on the phone: home delivery, 13,900 CFA (two L/Sable shirts and one S/Indigo shirt), and Tokoin relay pickup, 6,900 CFA (one size-43 shoe item). No money moved; merchant/rider settlements, payout accruals, financial ledger entries and provider webhooks were zero for these orders. The home order later reached the normal merchant-response cancellation deadline; fulfillment was not part of this cart exercise. Create a fresh order and accept promptly when continuing the vendor/rider/hub journey.
+
+The test found and fixed missing cart address controls, navigation screens retaining another screen's scroll position, and an old quote remaining after editing the currently selected address. Native builds and five focused client regression tests passed. Detailed physical-phone evidence and the reusable harness are recorded in the backend repository under `docs/verification/cart-phone-2026-11-10.md` and `scripts/cart-iphone-tests/`. Raw phone screenshots, logs, credentials and device identifiers remain private.
