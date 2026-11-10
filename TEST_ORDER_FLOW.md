@@ -138,3 +138,10 @@ Without a suggestion, saving reuses a complete matching name or creates a reusab
 Sequo search now puts **All / Deals / Negotiable** directly below the search field. Use **Relevance**, **Price: low to high**, **Price: high to low**, or **Nearest** from the sort menu. Nearest appears when the catalog provides valid shop distances. Prices follow the unit/pack shown on each listing; shop offers remain separate.
 
 If a filter leaves no results, **Show all offers** resets it while keeping your search text. For a quick check, search `riz` and compare the two price orders; search `lait` and choose Deals to see the current milk promotion. The redundant search headings have been removed. The update was installed and checked through the actual iPhone UI without changing the cart or placing orders.
+
+
+## Choose a presaved essential in SequoVendor
+
+Open **Catalog → Add product → Choose from essentials**. Milk (**Lait**), beans (**Haricots**), rice and other common staples appear first. Browse Food & groceries, Household, Personal care or Baby, or search French/English names such as `milk` or `beans`. Choose a product, then enter your own offer's price, brand/pack details, stock and sizes/amounts. Save normally; the chosen shared ID is retained.
+
+The starter list contains 70 shared families. A shop offer points to the shared product through `products.product_reference_id`: one Lait master record can serve 100 shop offers with different prices. Choosing a preset creates no shop listing until you save. The full reviewed list is in the backend repository at `docs/catalog/ESSENTIAL_PRODUCTS.md`; custom products remain available when a good is absent from the starter catalog.
